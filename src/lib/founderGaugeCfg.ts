@@ -45,6 +45,7 @@ export enum Ch {
   // ---- v3 catalogue (append-only; MUST match GaugeChannels.h) ----
   MAF, BARO, TIMING, STFT, LTFT, AMBIENT, FUELLVL, CATTEMP, CMDTHR,
   RUNTIME, MAP_ABS, GEAR, DISTMIL, DISTCLR,      // 12..25
+  AFR, LAMBDA,                                   // 26..27 air-fuel ratio (same data)
   COUNT,
 }
 export enum Layout { HERO = 0, BARS = 1 }
@@ -106,6 +107,8 @@ export const CHANNELS: ChannelDef[] = [
   { id: Ch.FUELLVL,  label: 'Fuel level', short: 'FUEL%', unit: '%',    min: 0,   max: 100,   group: 'Fuel' },
   { id: Ch.STFT,     label: 'Short fuel trim',short:'STFT',unit: '%',   min: -25, max: 25,    group: 'Fuel' },
   { id: Ch.LTFT,     label: 'Long fuel trim',short:'LTFT', unit: '%',   min: -25, max: 25,    group: 'Fuel' },
+  { id: Ch.AFR,      label: 'A/F ratio (cmd)',short:'A/F', unit: ':1',   min: 10,  max: 20,    group: 'Fuel' },
+  { id: Ch.LAMBDA,   label: 'Lambda (cmd)',short:'LAMBDA', unit: '',     min: 0.70,max: 1.30,  group: 'Fuel' },
   // Electric
   { id: Ch.VOLT,     label: 'Voltage',    short: 'VOLTS', unit: 'V',    min: 10,  max: 16,    group: 'Electric' },
   { id: Ch.SOC,      label: 'Battery SOC',short: 'SOC',   unit: '%',    min: 0,   max: 100,   group: 'Electric' },
