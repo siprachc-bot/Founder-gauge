@@ -1,0 +1,19 @@
+node_modules
+dist
+dist-device
+dist-ssr
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+.vscode/*
+!.vscode/extensions.json
+.svelte-kit
+
+# iOS (Capacitor) — generated / heavy; the Xcode project itself is kept
+ios/App/Pods
+ios/App/App/public
+ios/App/build
+ios/DerivedData
+*.xcuserstate

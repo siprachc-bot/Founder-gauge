@@ -1,0 +1,173 @@
+/* =====================================================================
+   AXIS Companion — design tokens (matching the device theme)
+   ===================================================================== */
+
+/* Psionic — the same OTF (sourced from ~/Library/Fonts/psionic.otf and
+   copied into public/fonts/) that fontconvert.py turned into Psionic.h
+   for the GC9A01's bitmap renderer. Loaded as a web font so the
+   DevicePreview's gear digit + status text on the CUSTOM page reads
+   pixel-for-pixel like the real device, not whatever the system
+   monospace falls back to.
+   font-display:block while the font is fetching so the preview doesn't
+   flash a generic shape before swapping — the 23 KB OTF lands fast
+   enough that the block isn't perceptible. */
+@font-face {
+  font-family: 'Psionic';
+  src: url('/fonts/psionic.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  /* Color palette: keeps device + PWA visually identical */
+  --bg:         #0a0a0a;
+  --surface:   #141414;
+  --surface-2: #1c1c1c;
+  --border:    #2a2a2a;
+  --fg:        #ffffff;
+  --muted:     #888888;
+  --accent:    #ffa500;
+  --accent-d:  #cc8400;
+  --success:   #00d97e;
+  --danger:    #ff3b3b;
+
+  /* Type */
+  --font-ui:     'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono:   'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  /* Device font — only used inside the LCD preview so the simulated
+     gear / status / G-meter readouts match what the GC9A01 actually
+     draws. Falls back to the UI mono if the OTF hasn't loaded yet. */
+  --font-device: 'Psionic', 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  /* Spacing — 8px grid */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+
+  /* Radii */
+  --r-1: 6px;
+  --r-2: 12px;
+  --r-3: 18px;
+
+  --tap-min: 44px;
+}
+
+/* Reset */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #app { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* iOS safe-area padding */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Kill the iOS double-tap-to-zoom AND the 300 ms tap-delay it implies.
+     `manipulation` keeps single tap, pan, and scroll working — only
+     pinch-zoom + double-tap-zoom are dropped. Pairs with the viewport
+     meta's user-scalable=no so neither path can zoom the layout. */
+  touch-action: manipulation;
+  /* Belt-and-braces on iOS WKWebView: prevents the user-agent stylesheet
+     from re-enabling text-size auto-scaling when rotated. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+#app {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Reusable card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  padding: var(--s-4);
+}
+
+.card + .card { margin-top: var(--s-3); }
+
+/* Buttons */
+button {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  min-height: var(--tap-min);
+  padding: 0 var(--s-4);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  border-radius: var(--r-1);
+  cursor: pointer;
+  transition: background 150ms ease-out, border-color 150ms ease-out;
+}
+button:hover:not(:disabled)  { background: var(--surface-2); }
+button:active:not(:disabled) { transform: scale(0.98); }
+button:disabled              { opacity: 0.5; cursor: not-allowed; }
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+}
+button.primary:hover:not(:disabled) { background: var(--accent-d); border-color: var(--accent-d); }
+
+/* Inputs */
+input[type="text"], input[type="number"], input[type="password"] {
+  font-family: var(--font-mono);
+  font-size: 16px;             /* >=16 prevents iOS zoom on focus */
+  min-height: var(--tap-min);
+  width: 100%;
+  padding: 0 var(--s-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-1);
+  color: var(--fg);
+  outline: none;
+}
+input:focus {
+  border-color: var(--accent);
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: var(--s-1);
+}
+
+h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+h1 { font-size: 24px; }
+h2 { font-size: 18px; }
+h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+.mono { font-family: var(--font-mono); }
+
+/* Status dot */
+.dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: var(--s-2);
+  vertical-align: middle;
+}
+.dot.online  { background: var(--success); box-shadow: 0 0 8px var(--success); }
+.dot.offline { background: var(--muted); }
+.dot.error   { background: var(--danger); }

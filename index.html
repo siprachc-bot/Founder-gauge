@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Founder Gauge</title>
+
+    <!-- Loading splash. Lives in <head> as inline CSS so it paints on the
+         very first frame — before app.css, before Svelte boots, before
+         any JS parses. The image is a <link rel="preload"> so it lands
+         in the same paint round. main.ts adds the .ready class once the
+         Svelte tree is mounted, which fades the splash out and removes
+         it from the DOM. Background and image dimensions match the
+         design tokens in app.css so there's no visible jump when the
+         real UI takes over. -->
+    <link rel="preload" as="image" href="%BASE_URL%sn-splash.png" />
+    <style>
+      html, body { background: #0a0a0a; }
+      #splash {
+        position: fixed;
+        inset: 0;
+        background: #0a0a0a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 400ms ease-out;
+        /* Respect safe-area on notched iPhones so the logo doesn't
+           land under the camera bar in landscape. */
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+                 env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      #splash img {
+        width: 180px;
+        height: 180px;
+        max-width: 45vw;
+        max-height: 45vw;
+        opacity: 0;
+        animation: splash-pop 700ms ease-out forwards;
+        /* Subtle breathing pulse while we wait — communicates "loading"
+           without a spinner. */
+        animation-name: splash-pop, splash-breathe;
+        animation-duration: 700ms, 2s;
+        animation-delay: 0s, 700ms;
+        animation-iteration-count: 1, infinite;
+        animation-timing-function: ease-out, ease-in-out;
+        animation-direction: normal, alternate;
+        animation-fill-mode: forwards, none;
+      }
+      #splash.ready {
+        opacity: 0;
+        pointer-events: none;
+      }
+      @keyframes splash-pop {
+        from { opacity: 0; transform: scale(0.94); }
+        to   { opacity: 1; transform: scale(1); }
+      }
+      @keyframes splash-breathe {
+        from { opacity: 1; }
+        to   { opacity: 0.78; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="splash">
+      <img src="%BASE_URL%sn-splash.png" alt="SN Motorsports" />
+    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

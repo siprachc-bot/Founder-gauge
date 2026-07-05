@@ -1,0 +1,21 @@
+{
+  "_schema": "axis-can-firmware/v1",
+  "monitor": [
+    {
+      "version": "0.2.0",
+      "date": "2026-07-05",
+      "notes": "AXIS CAN gauge OTA-ready release. Adds SN-AXIS-style over-the-air updates from the Founder Gauge app: the gauge self-flashes over BLE (no cable) and can relay a sensor update to the OBD node over ESP-NOW. Also: BLE coexistence fix so the gauge is reliably discoverable while ESP-NOW is live (Wi-Fi modem-sleep hand-off + fast advertising), a firmware-version report (BLE char 7e1c0206), per-page arc colour + settable redline, all OBD channels selectable, calculated gear, and live brightness.",
+      "url": "firmware/axis_can_monitor-v0.2.0.bin",
+      "size_bytes": 1337408
+    }
+  ],
+  "node": [
+    {
+      "version": "0.2.0",
+      "date": "2026-07-05",
+      "notes": "AXIS CAN sensor (OBD reader) OTA-ready release. Broadcasts its firmware version to the gauge (0xAD hello) so the app can show 'update available', and receives wireless firmware updates relayed from the app through the gauge over ESP-NOW. Includes the v0.2 channel + calculated-gear decode set.",
+      "url": "firmware/axis_can_node-v0.2.0.bin",
+      "size_bytes": 921184
+    }
+  ]
+}

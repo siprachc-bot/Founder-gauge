@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>SN AXIS — Support</title>
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --surface: #161616;
+        --fg: #f5f5f5;
+        --muted: #9aa0a6;
+        --accent: #ffa500;
+        --border: #2a2a2a;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+      body { line-height: 1.55; padding: 32px 20px 60px; }
+      .wrap { max-width: 720px; margin: 0 auto; }
+      h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: 0.5px; }
+      .lede { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+      h2 { font-size: 18px; margin: 28px 0 8px; color: var(--accent); letter-spacing: 0.4px; }
+      h3 { font-size: 15px; margin: 18px 0 4px; color: var(--fg); }
+      p, li { font-size: 15px; color: var(--fg); }
+      ul { padding-left: 22px; }
+      ul li { margin-bottom: 6px; }
+      a { color: var(--accent); }
+      code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .footer { color: var(--muted); font-size: 12px; margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); }
+      .pill { display: inline-block; padding: 2px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; color: var(--muted); margin-right: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>SN AXIS — Support</h1>
+      <p class="lede">
+        <span class="pill">iOS</span><span class="pill">PWA</span>
+        Pairing, calibration, OTA, screensaver, music. If anything is
+        stuck, the answer is usually below.
+      </p>
+
+      <h2>Getting started</h2>
+      <ul>
+        <li>
+          Power the AXIS knob (USB-C or installed power). The boot splash
+          appears for ~1 s, then the wizard or last-used screen.
+        </li>
+        <li>
+          Open <strong>SN AXIS</strong> on your phone. The first
+          screen is <strong>Devices</strong> (or DEMO MODE if you don't
+          have a knob handy).
+        </li>
+        <li>
+          Tap <strong>Scan</strong>. The AXIS knob appears in the list
+          within ~5 s; tap to pair. iOS will ask once for Bluetooth
+          permission — accept.
+        </li>
+      </ul>
+
+      <h2>Common questions</h2>
+
+      <h3>The app is stuck on the splash / black screen.</h3>
+      <p>
+        Force-quit and reopen. If it persists, delete and reinstall —
+        the app's only persistent state is the BLE device ID, which
+        re-pairs automatically on next launch.
+      </p>
+
+      <h3>"Scan" finds nothing.</h3>
+      <ul>
+        <li>Bluetooth permission denied. Settings → SN AXIS →
+            allow Bluetooth.</li>
+        <li>AXIS is asleep — tap the knob once to wake it.</li>
+        <li>Another phone is currently paired. AXIS only accepts one
+            host at a time; force-quit the app on the other phone, or
+            power-cycle the knob.</li>
+      </ul>
+
+      <h3>"Connect" hangs / times out.</h3>
+      <ul>
+        <li>Toggle Bluetooth off then on in iOS Settings.</li>
+        <li>On the knob, 5-tap from the gear digit to reach the menu,
+            scroll to <strong>BOOT</strong>, and confirm — a clean
+            reboot clears stale BLE state on the device side.</li>
+        <li>As a last resort, delete the pairing record from iOS
+            Settings → Bluetooth → tap "i" beside the AXIS entry →
+            <strong>Forget This Device</strong>, then re-pair from the
+            app.</li>
+      </ul>
+
+      <h3>Firmware update (OTA) gets stuck or fails.</h3>
+      <ul>
+        <li>WiFi creds wrong. Go to <strong>Sys</strong> → check the
+            "WiFi" tile. Re-enter SSID + password if needed.</li>
+        <li>Knob isn't in range of WiFi. Move it closer to the router
+            before tapping <strong>INSTALL</strong>.</li>
+        <li>HTTPS request to <code>snmotorsport01.github.io</code> is
+            failing. Try again later; this is GitHub's CDN.</li>
+        <li>Bricked the OTA partition. Connect by USB-C and reflash
+            using <code>esptool.py write_flash 0x0 smart_knob_shifter-vX.Y.Z-merged.bin</code>.
+            The merged bin is downloadable from the OTA page in the app.</li>
+      </ul>
+
+      <h3>Calibration won't capture / says "HOLD STILL".</h3>
+      <p>
+        The IMU is integrating motion above the noise floor. Set the
+        knob on a flat, vibration-free surface and tap again. If it
+        persists, tap <strong>SET ZERO</strong> from the main menu to
+        re-acquire the gyro bias.
+      </p>
+
+      <h3>Screensaver upload finishes but doesn't appear.</h3>
+      <p>
+        The decoder PSRAM allocation failed. Verify firmware is
+        v2.5.40+ which fixes the PSRAM mode for the R2 module. If
+        you're on v2.5.40+ and still hit this, the source image is
+        likely too large — resize to under 240×240 before uploading.
+      </p>
+
+      <h3>Music mode shows WAITING instead of track info.</h3>
+      <ul>
+        <li>iPhone isn't paired as a media host. iOS will show a
+            "Receive Bluetooth..." prompt the first time — accept it.</li>
+        <li>Music app is closed. AMS (Apple Media Service) only
+            publishes metadata while a music app is in the
+            foreground or playing in the background.</li>
+        <li>Album art missing: this is normal. AXIS looks the art up
+            via MusicBrainz + Cover Art Archive over WiFi — niche or
+            podcast tracks won't have a match, and the vinyl-spin
+            fallback shows instead.</li>
+      </ul>
+
+      <h3>How do I switch screens on the knob?</h3>
+      <ul>
+        <li><strong>Tap</strong> — context-specific (play/pause on
+            Music, etc.).</li>
+        <li><strong>5-tap</strong> from the gear digit — opens the
+            main menu.</li>
+        <li><strong>Long-press</strong> — back to the previous screen
+            or sleep.</li>
+        <li><strong>Triple-tap</strong> — lock the touch. Long-press
+            again to unlock.</li>
+        <li><strong>Swipe</strong> — varies per screen (e.g.,
+            left/right on Main = gear pattern, on Music = volume).</li>
+      </ul>
+
+      <h2>Demo mode (no hardware required)</h2>
+      <p>
+        Tap <strong>DEMO MODE</strong> on the Devices screen to explore
+        the app without an AXIS knob. The Live page renders a fake
+        telemetry stream; Brand / Screensaver / Music pages preview UI
+        without sending anything. All other pages show static demo
+        data so the layout is visible. Useful for the App Store reviewer
+        and for trying out customisations before buying the hardware.
+      </p>
+
+      <h2>Privacy</h2>
+      <p>
+        SN AXIS does not create accounts, run analytics, embed
+        ad SDKs, or transmit personal data to our servers. The
+        <a href="privacy.html">privacy policy</a> has the full
+        breakdown.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        For anything not covered above, email
+        <a href="mailto:snmotorsport01@gmail.com">snmotorsport01@gmail.com</a>
+        or open an issue at
+        <a href="https://github.com/snmotorsport01/axis-companion/issues">
+          github.com/snmotorsport01/axis-companion/issues</a>.
+        We answer within a couple of business days.
+      </p>
+
+      <p class="footer">
+        SN AXIS is developed and maintained by SN Motorsports.
+        For hardware support (returns, warranty, shipping) please
+        contact the SN Motorsports sales channel where you purchased
+        the AXIS Smart Knob Shifter.
+      </p>
+    </div>
+  </body>
+</html>
