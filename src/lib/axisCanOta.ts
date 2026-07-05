@@ -42,7 +42,7 @@ export interface CanManifest {
 // plan for this account). resolveCanUrl() strips back past /firmware/ so the
 // entry `url`s resolve under .../main/public/firmware/. Owner `siprachc-bot`.
 export const CAN_MANIFEST_URL =
-  'https://raw.githubusercontent.com/siprachc-bot/founder-gauge/main/public/firmware/axis-can.json';
+  'https://raw.githubusercontent.com/siprachc-bot/Founder-gauge/main/public/firmware/axis-can.json';
 
 /** Parse a "0.2.0" version string into a comparable triple. */
 export function parseVer(s: string): FwVersion {
