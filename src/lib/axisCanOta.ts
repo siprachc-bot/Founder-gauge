@@ -37,9 +37,9 @@ export interface CanManifest {
 // Self-hosted on THIS app's own GitHub Pages (founder-gauge/public/firmware/).
 // Absolute https so the native iOS webview (capacitor://localhost) reaches it
 // the same as the web PWA — a relative URL would resolve to capacitor://
-// localhost and fail. Owner is `snmotorsport01`; Pages base is /founder-gauge/.
+// localhost and fail. Owner is `siprachc-bot`; Pages base is /founder-gauge/.
 export const CAN_MANIFEST_URL =
-  'https://snmotorsport01.github.io/founder-gauge/firmware/axis-can.json';
+  'https://siprachc-bot.github.io/founder-gauge/firmware/axis-can.json';
 
 /** Parse a "0.2.0" version string into a comparable triple. */
 export function parseVer(s: string): FwVersion {
