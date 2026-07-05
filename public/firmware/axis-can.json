@@ -11,11 +11,11 @@
   ],
   "node": [
     {
-      "version": "0.2.0",
+      "version": "0.2.1",
       "date": "2026-07-05",
-      "notes": "AXIS CAN sensor (OBD reader) OTA-ready release. Broadcasts its firmware version to the gauge (0xAD hello) so the app can show 'update available', and receives wireless firmware updates relayed from the app through the gauge over ESP-NOW. Includes the v0.2 channel + calculated-gear decode set.",
-      "url": "firmware/axis_can_node-v0.2.0.bin",
-      "size_bytes": 921184
+      "notes": "Instant reconnect after starting the car — no more waiting or pressing the sensor's button. The sensor now wakes the moment the car's data bus comes alive (CAN-activity wake) instead of only on a 30-second timer. Also broadcasts which wake triggered it (shown on the gauge log). Includes the v0.2 channel + calculated-gear decode set and wireless (OTA) updates relayed from the app through the gauge.",
+      "url": "firmware/axis_can_node-v0.2.1.bin",
+      "size_bytes": 921920
     }
   ]
 }
