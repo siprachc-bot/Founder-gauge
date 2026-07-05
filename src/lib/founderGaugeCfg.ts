@@ -1,10 +1,11 @@
 // =====================================================================
-//  founderGaugeCfg.ts — BLE client + 21-byte packed serialization for the
+//  founderGaugeCfg.ts — BLE client + 46-byte packed serialization for the
 //  AXIS CAN MONITOR's "Custom Gauge" (Founder Gauge app).
 //
 //  This is NOT the gauge_fw's rich JSON config. The MONITOR stores a flat
-//  packed struct (src/ui/GaugeConfig.h): version + 4 pages × (layout + 4 ch).
-//  sizeof == 21 bytes. We send exactly those 21 bytes over one ATT write.
+//  packed struct (src/ui/GaugeConfig.h): version + 4 pages × (layout + 4 ch +
+//  arcColor u16 + peak f32) + global brightness. sizeof == CFG_BYTES == 46.
+//  We send exactly those 46 bytes over one ATT write (GATT Long Write on iOS).
 //
 //  KEEP IN SYNC with:
 //    axis_can_monitor/src/BleGaugeCfg.cpp   (svc 7e1c0201 / cfg 0202 / ack 0203)
@@ -298,7 +299,7 @@ export class MonitorBleClient {
     try { await CapBle.stopNotifications(this.deviceId, MON_SVC, ACK_CHAR); } catch {}
   }
 
-  /** Read the 21-byte struct off the monitor and decode it. */
+  /** Read the 46-byte struct off the monitor and decode it. */
   async config(): Promise<GaugeCfg> {
     // Precise error if the monitor svc wasn't discovered (wrong device, or the
     // deferred BLE hasn't come up ~2 s after boot).
@@ -319,7 +320,7 @@ export class MonitorBleClient {
     return decodeCfg(v);
   }
 
-  /** Write the full 21-byte struct. Firmware validates + persists to NVS and
+  /** Write the full 46-byte struct. Firmware validates + persists to NVS and
    *  fires the ack notify. */
   async setConfig(c: GaugeCfg): Promise<void> {
     const bytes = encodeCfg(c);
@@ -370,6 +371,7 @@ export class MonitorBleClient {
     });
     const write = (bytes: Uint8Array) =>
       CapBle.write(this.deviceId, MON_SVC, OTA_CHAR, new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
+    let done = false;   // true once the device confirmed + is rebooting (→ no ABORT)
     try {
       // BEGIN [0x00, target u8, size u32 LE]
       const beg = new Uint8Array(6); beg[0] = 0x00; beg[1] = target & 0xff;
@@ -384,13 +386,19 @@ export class MonitorBleClient {
         await write(p);
         off = end;
         const s = await nextNotify();
-        if (s === 1) return;                 // done — device rebooting
+        if (s === 1) { done = true; return; }  // done — device rebooting
         if (s === 2) throw new Error('device reported a write error');
         // s === 0 → ready for the next chunk
       }
       // all bytes sent but no "done" yet — wait one more (auto-END in flight)
       if ((await nextNotify()) !== 1) throw new Error('device did not confirm');
+      done = true;
     } finally {
+      // If we bailed mid-transfer (timeout / write error / user left), tell the
+      // device to ABORT (0x03) — else it sits frozen in RD_CHUNK waiting for the
+      // next chunk, and the gauge render stays frozen (App::loop early-returns
+      // while an OTA is active). Skip on success (device is already rebooting).
+      if (!done) { try { await write(new Uint8Array([0x03])); } catch {} }
       try { await CapBle.stopNotifications(this.deviceId, MON_SVC, OTA_CHAR); } catch {}
     }
   }

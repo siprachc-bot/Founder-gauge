@@ -39,7 +39,10 @@
   const PAGE_NAMES = ['MAIN', 'PAGE 2', 'PAGE 3', 'PAGE 4'];
 
   // Dirty = the on-screen layout differs from what's on the monitor.
-  let dirty = $derived(JSON.stringify(cfg) !== JSON.stringify(saved));
+  // Compare the NORMALISED cfg (peak null→0, clamped, layout forced) against the
+  // already-normalised `saved`, so an emptied peak field (null) doesn't falsely
+  // read as "unsaved" when it coerces to the same 0 that's on the device.
+  let dirty = $derived(JSON.stringify(normalize(cfg)) !== JSON.stringify(saved));
 
   const clone = (c: GaugeCfg): GaugeCfg => JSON.parse(JSON.stringify(c));
 
@@ -50,12 +53,17 @@
     const d = defaultCfg();
     return {
       version: c.version || d.version,
-      pages: c.pages.map(p => ({
-        layout: Layout.HERO,
-        ch: [p.ch?.[0] ?? Ch.NONE, p.ch?.[1] ?? Ch.NONE, Ch.NONE, Ch.NONE],
-        arcColor: p.arcColor || ARC_DEFAULT,
-        peak: (Number.isFinite(p.peak) && p.peak > 0) ? p.peak : 0,
-      })),
+      pages: c.pages.map(p => {
+        const ch: [Ch, Ch, Ch, Ch] =
+          [p.ch?.[0] ?? Ch.NONE, p.ch?.[1] ?? Ch.NONE, Ch.NONE, Ch.NONE];
+        // Peak (native-unit redline): coerce null/NaN/negative → 0 (off), and
+        // clamp to the primary channel's max so a fat-fingered off-scale value
+        // (e.g. 99999 on an RPM page) can't be written as a bogus marker.
+        const mx = channelDef(ch[0])?.max ?? 0;
+        let peak = (Number.isFinite(p.peak) && (p.peak as number) > 0) ? (p.peak as number) : 0;
+        if (mx > 0 && peak > mx) peak = mx;
+        return { layout: Layout.HERO, ch, arcColor: p.arcColor || ARC_DEFAULT, peak };
+      }),
       brightness: Number.isFinite(c.brightness)
         ? Math.max(8, Math.min(255, Math.round(c.brightness))) : BRIGHT_DEFAULT,
     };

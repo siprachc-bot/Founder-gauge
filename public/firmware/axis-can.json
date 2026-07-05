@@ -2,20 +2,20 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
-      "version": "0.2.0",
+      "version": "0.2.1",
       "date": "2026-07-05",
-      "notes": "AXIS CAN gauge OTA-ready release. Adds SN-AXIS-style over-the-air updates from the Founder Gauge app: the gauge self-flashes over BLE (no cable) and can relay a sensor update to the OBD node over ESP-NOW. Also: BLE coexistence fix so the gauge is reliably discoverable while ESP-NOW is live (Wi-Fi modem-sleep hand-off + fast advertising), a firmware-version report (BLE char 7e1c0206), per-page arc colour + settable redline, all OBD channels selectable, calculated gear, and live brightness.",
-      "url": "firmware/axis_can_monitor-v0.2.0.bin",
-      "size_bytes": 1337408
+      "notes": "Screen brightness now actually dims the gauge (the slider + auto-dim were previously dead — this AMOLED ignores the hardware brightness command, so dimming is now done in software). Under the hood: safer wireless sensor updates (over-size chunks are rejected instead of silently corrupting the image) and a small update-acknowledgement race hardened. Includes the v0.2 release: SN-AXIS-style over-the-air updates, BLE discoverability fix, per-page arc colour + settable redline, all OBD channels, calculated gear.",
+      "url": "firmware/axis_can_monitor-v0.2.1.bin",
+      "size_bytes": 1337952
     }
   ],
   "node": [
     {
-      "version": "0.2.1",
+      "version": "0.2.2",
       "date": "2026-07-05",
-      "notes": "Instant reconnect after starting the car — no more waiting or pressing the sensor's button. The sensor now wakes the moment the car's data bus comes alive (CAN-activity wake) instead of only on a 30-second timer. Also broadcasts which wake triggered it (shown on the gauge log). Includes the v0.2 channel + calculated-gear decode set and wireless (OTA) updates relayed from the app through the gauge.",
-      "url": "firmware/axis_can_node-v0.2.1.bin",
-      "size_bytes": 921920
+      "notes": "Instant reconnect after starting the car — no waiting, no pressing the sensor's button. The sensor wakes the moment the car's data bus comes alive (CAN-activity wake) instead of only on a 30-second timer. This build also stops a parked car's background bus chatter from keeping the sensor awake and draining the battery (a false wake now re-sleeps in ~5s instead of 90s). Includes the v0.2 channel + calculated-gear set and wireless (OTA) updates relayed through the gauge.",
+      "url": "firmware/axis_can_node-v0.2.2.bin",
+      "size_bytes": 921936
     }
   ]
 }
