@@ -66,6 +66,26 @@
       }),
       brightness: Number.isFinite(c.brightness)
         ? Math.max(8, Math.min(255, Math.round(c.brightness))) : BRIGHT_DEFAULT,
+      // Vehicle-global calc-gear params. MUST be carried through here or the
+      // dirty-check/save (which run on normalize(cfg)) silently drop them.
+      rpmLimit: Number.isFinite(c.rpmLimit)
+        ? Math.max(1000, Math.min(12000, Math.round(c.rpmLimit))) : d.rpmLimit,
+      gearCount: Number.isFinite(c.gearCount)
+        ? Math.max(1, Math.min(8, Math.round(c.gearCount))) : d.gearCount,
+      // shiftRpm: 0 = off, else clamped to a sane RPM window.
+      shiftRpm: Number.isFinite(c.shiftRpm)
+        ? (c.shiftRpm <= 0 ? 0 : Math.max(1000, Math.min(12000, Math.round(c.shiftRpm)))) : d.shiftRpm,
+      // Drivetrain (accurate calc-gear). Always length-8; unused gears keep their default.
+      gearRatios: Array.from({ length: 8 }, (_, i) => {
+        const r = c.gearRatios?.[i];
+        return (Number.isFinite(r) && (r as number) > 0)
+          ? Math.round((r as number) * 1000) / 1000 : (d.gearRatios[i] ?? 0);
+      }),
+      finalDrive: (Number.isFinite(c.finalDrive) && c.finalDrive > 0)
+        ? Math.round(c.finalDrive * 1000) / 1000 : d.finalDrive,
+      tireWidth:  Number.isFinite(c.tireWidth)  ? Math.max(100, Math.min(400, Math.round(c.tireWidth)))  : d.tireWidth,
+      tireAspect: Number.isFinite(c.tireAspect) ? Math.max(20,  Math.min(90,  Math.round(c.tireAspect))) : d.tireAspect,
+      tireRim:    Number.isFinite(c.tireRim)    ? Math.max(10,  Math.min(26,  Math.round(c.tireRim)))    : d.tireRim,
     };
   }
 
@@ -445,6 +465,55 @@
       <span class="bright-val">{Math.round(cfg.brightness / 255 * 100)}%</span>
     </div>
     <input type="range" min="8" max="255" value={cfg.brightness} oninput={onBrightness} />
+  </div>
+
+  <!-- vehicle / drivetrain: feeds the monitor's calculated-gear rule -->
+  <div class="card">
+    <div class="bright-head"><span class="lbl">Drivetrain</span></div>
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+      <span>Redline (RPM)</span>
+      <input type="number" min="1000" max="12000" step="100" bind:value={cfg.rpmLimit}
+             style="width:96px;text-align:right;" />
+    </label>
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+      <span>Forward gears</span>
+      <select bind:value={cfg.gearCount} style="width:96px;">
+        {#each [4, 5, 6, 7, 8] as n}<option value={n}>{n}</option>{/each}
+      </select>
+    </label>
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+      <span>Shift light (RPM)</span>
+      <input type="number" min="0" max="12000" step="100" bind:value={cfg.shiftRpm}
+             style="width:96px;text-align:right;" />
+    </label>
+
+    <div style="margin-top:12px;opacity:.85;font-size:.85em;">Gear ratios (for accurate gear)</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;margin-top:6px;">
+      {#each Array(cfg.gearCount) as _, i}
+        <label style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span style="opacity:.7;">G{i + 1}</span>
+          <input type="number" min="0" max="20" step="0.001" bind:value={cfg.gearRatios[i]}
+                 style="width:80px;text-align:right;" />
+        </label>
+      {/each}
+    </div>
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+      <span>Final drive</span>
+      <input type="number" min="0.5" max="10" step="0.001" bind:value={cfg.finalDrive}
+             style="width:96px;text-align:right;" />
+    </label>
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+      <span>Tyre size</span>
+      <span style="display:flex;align-items:center;gap:4px;">
+        <input type="number" min="100" max="400" step="5" bind:value={cfg.tireWidth}  style="width:56px;text-align:right;" />/
+        <input type="number" min="20"  max="90"  step="5" bind:value={cfg.tireAspect} style="width:44px;text-align:right;" />R
+        <input type="number" min="10"  max="26"  step="1" bind:value={cfg.tireRim}    style="width:44px;text-align:right;" />
+      </span>
+    </label>
+    <p style="opacity:.6;font-size:.8em;margin-top:8px;line-height:1.4;">
+      The gear is calculated from RPM + speed using your gear ratios, final drive
+      and tyre size. Shift light flashes the screen red at the RPM above (0 = off).
+    </p>
   </div>
 
   <!-- SN-AXIS-style firmware updates (gauge + sensor, from GitHub releases) -->

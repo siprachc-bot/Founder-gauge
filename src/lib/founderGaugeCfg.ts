@@ -50,10 +50,17 @@ export enum Ch {
 }
 export enum Layout { HERO = 0, BARS = 1 }
 
-export const CFG_VERSION   = 3;         // must equal GaugeCfg.version in defaultCfg() (v3 = per-page colour+peak, brightness, expanded channels)
+export const CFG_VERSION   = 5;         // must equal GaugeCfg.version in defaultCfg() (v5 = + gear ratios/final/tyre for accurate calc-gear)
 export const GAUGE_PAGES   = 4;
 export const SLOTS_PER_PAGE = 4;        // HERO:[0]=primary [1]=support ; BARS:[0..3]
 export const BRIGHT_DEFAULT = 200;      // matches firmware GAUGE_BRIGHT_DEFAULT
+export const RPM_LIMIT_DEFAULT  = 6000; // redline for calc-gear (V60 T8); app-configurable per car
+export const GEAR_COUNT_DEFAULT = 8;    // forward gears (Aisin AWF8 = 8-speed)
+export const SHIFT_RPM_DEFAULT  = 5500; // shift-light trigger RPM (0 = off); app-configurable
+// Drivetrain for the accurate calc-gear (AWF8 / V60 T8) — user-editable per car.
+export const GEAR_RATIOS_DEFAULT = [5.250, 3.029, 1.950, 1.457, 1.221, 1.000, 0.809, 0.673];
+export const FINAL_DRIVE_DEFAULT = 3.10;                         // reproduces the verified k≈24.5
+export const TIRE_DEFAULT = { width: 235, aspect: 40, rim: 19 }; // 235/40R19
 
 // Arc / accent colour (RGB565). Default = warm amber, matches the firmware
 // GAUGE_ARC_DEFAULT (0xFDA0). The device is RGB565-native; convert to/from the
@@ -137,6 +144,14 @@ export interface GaugeCfg {
   version: number;
   pages: PageCfg[];       // pages.length == GAUGE_PAGES
   brightness: number;     // 0..255 global AMOLED brightness
+  rpmLimit: number;       // redline (RPM) for the monitor's calc-gear (v4)
+  gearCount: number;      // forward gears in the box, 1..8 (v4)
+  shiftRpm: number;       // shift-light trigger RPM; 0 = off (v4)
+  gearRatios: number[];   // per-gear ratio, 1st..8th (length 8) (v5)
+  finalDrive: number;     // final-drive ratio (v5)
+  tireWidth: number;      // tyre section width mm, e.g. 235 (v5)
+  tireAspect: number;     // aspect ratio %, e.g. 40 (v5)
+  tireRim: number;        // rim diameter inches, e.g. 19 (v5)
 }
 
 // Factory default — mirrors GaugeConfig.h defaultCfg() so the app "New" state
@@ -151,13 +166,24 @@ export function defaultCfg(): GaugeCfg {
       { layout: Layout.HERO, ch: [Ch.SOC,      Ch.VOLT,    Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
     ],
     brightness: BRIGHT_DEFAULT,
+    rpmLimit: RPM_LIMIT_DEFAULT,
+    gearCount: GEAR_COUNT_DEFAULT,
+    shiftRpm: SHIFT_RPM_DEFAULT,
+    gearRatios: [...GEAR_RATIOS_DEFAULT],
+    finalDrive: FINAL_DRIVE_DEFAULT,
+    tireWidth: TIRE_DEFAULT.width,
+    tireAspect: TIRE_DEFAULT.aspect,
+    tireRim: TIRE_DEFAULT.rim,
   };
 }
 
-// ---- 46-byte packed (de)serialization — byte-exact with the packed struct ----
+// ---- 91-byte packed (de)serialization — byte-exact with the packed struct ----
 //  [0] version | 4 pages of { layout(1), ch[0..3](4), arcColor u16 LE(2), peak
-//  f32 LE(4) } = 4×11 | brightness(1)
-export const CFG_BYTES = 1 + GAUGE_PAGES * (1 + SLOTS_PER_PAGE + 2 + 4) + 1; // 46
+//  f32 LE(4) } = 4×11 | brightness(1) | rpmLimit u16 LE(2) | gearCount(1) |
+//  shiftRpm u16 LE(2) | gearRatios 8×f32 LE(32) | finalDrive f32 LE(4) |
+//  tireWidth u16 LE(2) | tireAspect(1) | tireRim(1)
+export const CFG_BYTES = 1 + GAUGE_PAGES * (1 + SLOTS_PER_PAGE + 2 + 4) + 1 + 2 + 1 + 2
+                           + 8 * 4 + 4 + 2 + 1 + 1; // 91
 
 export function encodeCfg(c: GaugeCfg): Uint8Array {
   const b  = new Uint8Array(CFG_BYTES);
@@ -172,6 +198,14 @@ export function encodeCfg(c: GaugeCfg): Uint8Array {
     dv.setFloat32(o, pg.peak ?? 0, true);                        o += 4;
   }
   b[o++] = (c.brightness ?? BRIGHT_DEFAULT) & 0xff;
+  dv.setUint16(o, (c.rpmLimit ?? RPM_LIMIT_DEFAULT) & 0xffff, true); o += 2;
+  b[o++] = (c.gearCount ?? GEAR_COUNT_DEFAULT) & 0xff;
+  dv.setUint16(o, (c.shiftRpm ?? SHIFT_RPM_DEFAULT) & 0xffff, true); o += 2;
+  for (let i = 0; i < 8; i++) { dv.setFloat32(o, c.gearRatios?.[i] ?? 0, true); o += 4; }
+  dv.setFloat32(o, c.finalDrive ?? FINAL_DRIVE_DEFAULT, true);       o += 4;
+  dv.setUint16(o, (c.tireWidth ?? TIRE_DEFAULT.width) & 0xffff, true); o += 2;
+  b[o++] = (c.tireAspect ?? TIRE_DEFAULT.aspect) & 0xff;
+  b[o++] = (c.tireRim ?? TIRE_DEFAULT.rim) & 0xff;
   return b;
 }
 
@@ -194,8 +228,26 @@ export function decodeCfg(v: DataView): GaugeCfg {
       peak: (Number.isFinite(peak) && peak > 0) ? Math.round(peak * 100) / 100 : 0,
     });
   }
-  const brightness = (o < v.byteLength) ? v.getUint8(o) : BRIGHT_DEFAULT;
-  return { version, pages, brightness };
+  const brightness = (o < v.byteLength) ? v.getUint8(o) : BRIGHT_DEFAULT; o += 1;
+  // Length-guarded so an older 46-byte v3 blob (monitor not yet updated) still
+  // decodes, defaulting the new fields.
+  const rpmLimit  = (o + 1 < v.byteLength) ? v.getUint16(o, true) : RPM_LIMIT_DEFAULT; o += 2;
+  const gearCount = (o < v.byteLength) ? v.getUint8(o) : GEAR_COUNT_DEFAULT; o += 1;
+  const shiftRpm  = (o + 1 < v.byteLength) ? v.getUint16(o, true) : SHIFT_RPM_DEFAULT; o += 2;
+  // v5 drivetrain — round float32 storage noise (3.0299999 → 3.03) so the inputs
+  // show clean numbers and the dirty-check stays stable.
+  const r3 = (x: number) => Math.round(x * 1000) / 1000;
+  const gearRatios: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    gearRatios.push((o + 3 < v.byteLength) ? r3(v.getFloat32(o, true)) : (GEAR_RATIOS_DEFAULT[i] ?? 0));
+    o += 4;
+  }
+  const finalDrive = (o + 3 < v.byteLength) ? r3(v.getFloat32(o, true)) : FINAL_DRIVE_DEFAULT; o += 4;
+  const tireWidth  = (o + 1 < v.byteLength) ? v.getUint16(o, true) : TIRE_DEFAULT.width; o += 2;
+  const tireAspect = (o < v.byteLength) ? v.getUint8(o) : TIRE_DEFAULT.aspect; o += 1;
+  const tireRim    = (o < v.byteLength) ? v.getUint8(o) : TIRE_DEFAULT.rim;
+  return { version, pages, brightness, rpmLimit, gearCount, shiftRpm,
+           gearRatios, finalDrive, tireWidth, tireAspect, tireRim };
 }
 
 // Client-side mirror of firmware cfgValid() — block a bad SAVE before it goes.
@@ -210,6 +262,15 @@ export function cfgValid(c: GaugeCfg): boolean {
     if (!(pg.arcColor >= 0 && pg.arcColor <= 0xffff)) return false;
   }
   if (!(c.brightness >= 0 && c.brightness <= 255)) return false;
+  if (!(c.rpmLimit >= 1000 && c.rpmLimit <= 12000)) return false;
+  if (!(c.gearCount >= 1 && c.gearCount <= 8)) return false;
+  if (!(c.shiftRpm === 0 || (c.shiftRpm >= 1000 && c.shiftRpm <= 12000))) return false;
+  if (!(c.finalDrive > 0.5 && c.finalDrive < 10)) return false;
+  if (!(c.tireWidth >= 100 && c.tireWidth <= 400)) return false;
+  if (!(c.tireAspect >= 20 && c.tireAspect <= 90)) return false;
+  if (!(c.tireRim >= 10 && c.tireRim <= 26)) return false;
+  for (let i = 0; i < c.gearCount && i < 8; i++)
+    if (!(c.gearRatios[i] > 0 && c.gearRatios[i] < 20)) return false;
   return true;
 }
 
