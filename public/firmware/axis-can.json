@@ -2,11 +2,11 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
-      "version": "0.5.1",
+      "version": "0.5.2",
       "date": "2026-07-06",
-      "notes": "New gauge look — arcs render with a smooth dithered gradient (no banding), start with a clean FLAT edge, and fill ramps 10%→100% brightness; the bar page gets square ends + the same gradient; support readouts sized up to 13pt. (v0.5.1 corrects a display/touch pin regression in the withdrawn v0.5.0 build that left the 1.32 screen dark.) Purely visual — all channels/telemetry unchanged.",
-      "url": "firmware/axis_can_monitor-v0.5.1.bin",
-      "size_bytes": 1356240
+      "notes": "Monitor keeps its OWN look: the 5-arc CONCENTRIC 'MAIN' page (that's the standalone AXIS gauge's identity) is removed — the 4 default pages are now BOOST / battery / temps / RPM in the monitor's HERO + BARS style, with the smooth dithered gradient arcs (flat edge, 10→100% fill, 13pt readouts). (Supersedes v0.5.1 which still showed the 5-arc page, and the withdrawn v0.5.0 that had a display/touch pin regression.)",
+      "url": "firmware/axis_can_monitor-v0.5.2.bin",
+      "size_bytes": 1345936
     },
     {
       "version": "0.3.0",
