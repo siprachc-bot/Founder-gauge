@@ -160,10 +160,11 @@ export function defaultCfg(): GaugeCfg {
   return {
     version: CFG_VERSION,
     pages: [
-      { layout: Layout.HERO, ch: [Ch.BOOST,    Ch.COOLANT, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 1.6  },
-      { layout: Layout.HERO, ch: [Ch.RPM,      Ch.SPEED,   Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 6800 },
-      { layout: Layout.HERO, ch: [Ch.THROTTLE, Ch.COOLANT, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
-      { layout: Layout.HERO, ch: [Ch.SOC,      Ch.VOLT,    Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
+      // ch.length MUST == SLOTS_PER_PAGE (5) — a short array trips client cfgValid.
+      { layout: Layout.HERO, ch: [Ch.BOOST,    Ch.COOLANT, Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 1.6  },
+      { layout: Layout.HERO, ch: [Ch.RPM,      Ch.SPEED,   Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 6800 },
+      { layout: Layout.HERO, ch: [Ch.THROTTLE, Ch.COOLANT, Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
+      { layout: Layout.HERO, ch: [Ch.SOC,      Ch.VOLT,    Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
     ],
     brightness: BRIGHT_DEFAULT,
     rpmLimit: RPM_LIMIT_DEFAULT,

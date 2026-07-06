@@ -16,7 +16,7 @@
   import { store } from '../lib/store.svelte';
   import {
     MonitorBleClient, defaultCfg, cfgValid, channelShort, channelDef,
-    CHANNELS, CHANNEL_GROUPS, Ch, Layout, ARC_DEFAULT, BRIGHT_DEFAULT,
+    CHANNELS, CHANNEL_GROUPS, Ch, Layout, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE,
     hexToRgb565, rgb565ToHex, verStr, verCmp,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
     type GaugeCfg, type DeviceVersions,
@@ -54,8 +54,13 @@
     return {
       version: c.version || d.version,
       pages: c.pages.map(p => {
-        const ch: [Ch, Ch, Ch, Ch] =
-          [p.ch?.[0] ?? Ch.NONE, p.ch?.[1] ?? Ch.NONE, Ch.NONE, Ch.NONE];
+        // Length MUST equal SLOTS_PER_PAGE (firmware v6 = 5) or client cfgValid
+        // rejects the whole save with "check value". HERO uses slot 0 (primary)
+        // + slot 1 (support); the rest are reserved → NONE.
+        const ch: Ch[] = Array.from({ length: SLOTS_PER_PAGE }, (_, s) =>
+          s === 0 ? (p.ch?.[0] ?? Ch.NONE)
+        : s === 1 ? (p.ch?.[1] ?? Ch.NONE)
+        : Ch.NONE);
         // Peak (native-unit redline): coerce null/NaN/negative → 0 (off), and
         // clamp to the primary channel's max so a fat-fingered off-scale value
         // (e.g. 99999 on an RPM page) can't be written as a bogus marker.
