@@ -18,6 +18,13 @@
   ],
   "node": [
     {
+      "version": "0.4.1",
+      "date": "2026-07-06",
+      "notes": "Fixes wireless (over-the-air) updates to the sensor, which were failing with a 'write error'. The sensor now saves the incoming firmware safely in the background instead of during the radio callback, matching how the display already updates itself. NOTE: because this fix lives in the sensor's own update receiver, this one version has to be installed by USB cable — after that, all future sensor updates go wirelessly as normal. Includes the v0.4.0 battery-save fix (engine-off deep sleep, <10 V threshold, instant CAN-wake) and everything from v0.3.x (A/F channel, gearbox auto-detect).",
+      "url": "firmware/axis_can_node-v0.4.1.bin",
+      "size_bytes": 924272
+    },
+    {
       "version": "0.4.0",
       "date": "2026-07-06",
       "notes": "Battery-save fix: the sensor now recognises the engine-off state (the car's control-module voltage reads ~0.2 V when parked) and goes to deep sleep, so it no longer keeps the 12 V battery awake while the car sits. The off threshold is <10 V; it wakes instantly the moment the car's CAN bus comes alive (ignition/unlock). Includes everything from v0.3.x — the A/F (air-fuel) channel, gearbox auto-detect, and instant CAN-wake reconnect.",
