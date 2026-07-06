@@ -2,10 +2,10 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
-      "version": "0.5.2",
+      "version": "0.5.3",
       "date": "2026-07-06",
-      "notes": "Monitor keeps its OWN look: the 5-arc CONCENTRIC 'MAIN' page (that's the standalone AXIS gauge's identity) is removed — the 4 default pages are now BOOST / battery / temps / RPM in the monitor's HERO + BARS style, with the smooth dithered gradient arcs (flat edge, 10→100% fill, 13pt readouts). (Supersedes v0.5.1 which still showed the 5-arc page, and the withdrawn v0.5.0 that had a display/touch pin regression.)",
-      "url": "firmware/axis_can_monitor-v0.5.2.bin",
+      "notes": "AXIS Monitor is HERO-only: 4 single-value pages (tap to cycle) — TURBO / RPM / COOLANT / BATTERY — each one big arc + value with the smooth dithered gradient (flat edge, 10→100% fill, 13pt readout). No BARS or 5-arc pages. (Supersedes v0.5.2/0.5.1; the withdrawn v0.5.0 had a display/touch pin regression.)",
+      "url": "firmware/axis_can_monitor-v0.5.3.bin",
       "size_bytes": 1345936
     },
     {
