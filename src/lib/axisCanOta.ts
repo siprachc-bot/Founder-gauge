@@ -34,15 +34,21 @@ export interface CanManifest {
   node: CanReleaseEntry[];
 }
 
-// Self-hosted on THIS app's own GitHub Pages (founder-gauge/public/firmware/).
-// Absolute https so the native iOS webview (capacitor://localhost) reaches it
-// the same as the web PWA — a relative URL would resolve to capacitor://
-// localhost and fail. Served straight from the PUBLIC repo via raw.github-
-// usercontent.com (CORS `*`, no GitHub Pages needed — Pages requires a paid
-// plan for this account). resolveCanUrl() strips back past /firmware/ so the
-// entry `url`s resolve under .../main/public/firmware/. Owner `siprachc-bot`.
+// Served from the PUBLIC repo via the jsDelivr CDN (cdn.jsdelivr.net/gh/…),
+// NOT raw.githubusercontent.com. raw.* is not a CDN: it aggressively rate-
+// limits (HTTP 429) and streams binaries slowly, which broke OTA downloads.
+// jsDelivr is a real multi-CDN with edge PoPs (incl. Bangkok), CORS `*` (so
+// the native iOS webview at capacitor://localhost reaches it like the web PWA),
+// and mirrors the exact repo path. Absolute https for the same webview reason.
+// resolveCanUrl() strips back past /firmware/ so entry `url`s resolve under
+// .../public/firmware/. Owner `siprachc-bot`.
+//
+// FRESHNESS: jsDelivr edge-caches `@main` for ~12 h (s-maxage). After pushing a
+// new manifest/bin, purge it so the app sees it immediately:
+//   curl https://purge.jsdelivr.net/gh/siprachc-bot/Founder-gauge@main/public/firmware/axis-can.json
+// Versioned .bin filenames are immutable, so their cache is a feature, not a bug.
 export const CAN_MANIFEST_URL =
-  'https://raw.githubusercontent.com/siprachc-bot/Founder-gauge/main/public/firmware/axis-can.json';
+  'https://cdn.jsdelivr.net/gh/siprachc-bot/Founder-gauge@main/public/firmware/axis-can.json';
 
 /** Parse a "0.2.0" version string into a comparable triple. */
 export function parseVer(s: string): FwVersion {
