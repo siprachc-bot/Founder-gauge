@@ -50,9 +50,9 @@ export enum Ch {
 }
 export enum Layout { HERO = 0, BARS = 1 }
 
-export const CFG_VERSION   = 5;         // must equal GaugeCfg.version in defaultCfg() (v5 = + gear ratios/final/tyre for accurate calc-gear)
+export const CFG_VERSION   = 6;         // MUST equal GaugeCfg.version in the firmware's defaultCfg() (v6 = ch[5] per page: HERO/BARS + a reserved 5th slot). Was 5/ch[4]=91B → the v6 firmware (95B) rejected every write.
 export const GAUGE_PAGES   = 4;
-export const SLOTS_PER_PAGE = 4;        // HERO:[0]=primary [1]=support ; BARS:[0..3]
+export const SLOTS_PER_PAGE = 5;        // HERO:[0]=primary [1..3]=support ; BARS:[0..3] ; slot[4] reserved — matches firmware GaugeConfig.h
 export const BRIGHT_DEFAULT = 200;      // matches firmware GAUGE_BRIGHT_DEFAULT
 export const RPM_LIMIT_DEFAULT  = 6000; // redline for calc-gear (V60 T8); app-configurable per car
 export const GEAR_COUNT_DEFAULT = 8;    // forward gears (Aisin AWF8 = 8-speed)
@@ -177,13 +177,13 @@ export function defaultCfg(): GaugeCfg {
   };
 }
 
-// ---- 91-byte packed (de)serialization — byte-exact with the packed struct ----
-//  [0] version | 4 pages of { layout(1), ch[0..3](4), arcColor u16 LE(2), peak
-//  f32 LE(4) } = 4×11 | brightness(1) | rpmLimit u16 LE(2) | gearCount(1) |
+// ---- 95-byte packed (de)serialization — byte-exact with the firmware struct ----
+//  [0] version | 4 pages of { layout(1), ch[0..4](5), arcColor u16 LE(2), peak
+//  f32 LE(4) } = 4×12 | brightness(1) | rpmLimit u16 LE(2) | gearCount(1) |
 //  shiftRpm u16 LE(2) | gearRatios 8×f32 LE(32) | finalDrive f32 LE(4) |
 //  tireWidth u16 LE(2) | tireAspect(1) | tireRim(1)
 export const CFG_BYTES = 1 + GAUGE_PAGES * (1 + SLOTS_PER_PAGE + 2 + 4) + 1 + 2 + 1 + 2
-                           + 8 * 4 + 4 + 2 + 1 + 1; // 91
+                           + 8 * 4 + 4 + 2 + 1 + 1; // 95 (SLOTS_PER_PAGE=5 → PageCfg 12)
 
 export function encodeCfg(c: GaugeCfg): Uint8Array {
   const b  = new Uint8Array(CFG_BYTES);
