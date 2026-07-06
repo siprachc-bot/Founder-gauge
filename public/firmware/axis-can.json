@@ -11,6 +11,13 @@
   ],
   "node": [
     {
+      "version": "0.4.0",
+      "date": "2026-07-06",
+      "notes": "Battery-save fix: the sensor now recognises the engine-off state (the car's control-module voltage reads ~0.2 V when parked) and goes to deep sleep, so it no longer keeps the 12 V battery awake while the car sits. The off threshold is <10 V; it wakes instantly the moment the car's CAN bus comes alive (ignition/unlock). Includes everything from v0.3.x — the A/F (air-fuel) channel, gearbox auto-detect, and instant CAN-wake reconnect.",
+      "url": "firmware/axis_can_node-v0.4.0.bin",
+      "size_bytes": 924080
+    },
+    {
       "version": "0.3.0",
       "date": "2026-07-05",
       "notes": "Adds the A/F (air-fuel ratio) reading — the sensor now decodes the ECU's commanded mixture (OBD PID 0x44) so the gauge can show A/F or lambda. Gear calculation now auto-detects the gearbox: it fits both an Aisin AWF8 and a ZF 8HP ratio table against live rpm÷speed and locks onto whichever matches your car. Includes v0.2.2's instant CAN-wake reconnect + no-drain sleep.",
