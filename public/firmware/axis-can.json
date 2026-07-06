@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.5.0",
+      "date": "2026-07-06",
+      "notes": "New gauge look, matched to the standalone AXIS gauge: the arcs now render with a smooth dithered gradient (no visible banding), start with a clean FLAT edge (no rounded blob at the base), and the fill ramps 10%→100% brightness. The bar page gets square ends + the same gradient. Support readouts are sized up a touch (13pt) for readability. Purely visual — all channels/telemetry unchanged.",
+      "url": "firmware/axis_can_monitor-v0.5.0.bin",
+      "size_bytes": 1356208
+    },
+    {
       "version": "0.3.0",
       "date": "2026-07-05",
       "notes": "New A/F (air-fuel ratio) channel — place it on any page as 'A/F' (10–20) or as 'λ' lambda (0.70–1.30). It's the ECU's commanded/target mixture (from OBD PID 0x44), so it reads ~14.6 at cruise and richens under boost/full throttle; the gauge hides it automatically if your car doesn't report it. Also: gear now auto-detects the gearbox (Aisin AWF8 vs ZF 8HP) for a more accurate calculated gear. Includes the v0.2 release: working screen brightness, per-page arc colour + redline, all OBD channels, and wireless (OTA) updates.",
