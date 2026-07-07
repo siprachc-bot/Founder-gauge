@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.7.3",
+      "date": "2026-07-07",
+      "notes": "No more false alerts after you switch off. When the engine goes off the sensor now tells the gauge instantly, so the gauge closes cleanly instead of holding the last reading — which sometimes flashed a false LOW FUEL (or other warning) on a car that was already off. Warnings also only trigger on fresh live data now, and any on-screen alarm clears the moment the link drops. Pair with sensor v0.4.5. Everything from v0.7.2 (the Phase-B channels) unchanged.",
+      "url": "firmware/axis_can_monitor-v0.7.3.bin",
+      "size_bytes": 1390832
+    },
+    {
       "version": "0.7.2",
       "date": "2026-07-07",
       "notes": "New Phase-B readings on the gauge. Pairs with sensor v0.4.4 to decode and display six more channels your car quietly answers: measured air-fuel ratio / lambda (the real wideband value, distinct from the commanded one), absolute engine load, accelerator-pedal position, fuel-rail pressure, relative throttle, and a fault-code (DTC) count that flags amber if your car has stored an emissions code. Add any of them to a gauge page in the app. Everything from v0.7.x (Last-drive recap, rim-halo shift-light, safety alerts) unchanged. Update the sensor to v0.4.4 as well so these channels actually arrive.",
@@ -59,6 +66,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.4.5",
+      "date": "2026-07-07",
+      "notes": "Tells the gauge the moment the engine goes off. Just before the sensor goes to sleep (engine off / car parked) it now sends a quick 'sleeping' notice so the gauge closes instantly and drops any warning — no more false LOW FUEL lingering on the last reading after you switch off. Pair with display v0.7.3. Everything from v0.4.4 (Phase-B channels) unchanged.",
+      "url": "firmware/axis_can_node-v0.4.5.bin",
+      "size_bytes": 924784
+    },
     {
       "version": "0.4.4",
       "date": "2026-07-07",
