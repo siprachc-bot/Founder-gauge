@@ -53,6 +53,13 @@
   ],
   "node": [
     {
+      "version": "0.4.2",
+      "date": "2026-07-07",
+      "notes": "DIAGNOSTIC build: on the first engine-on after installing, the sensor probes every OBD reading and reports which ones your car actually answers — usually more than the car admits to supporting. Look at the gauge's diagnostic log (press and hold the screen) a few seconds after starting the engine to see the list. This build pauses telemetry ~10 s at each start while it scans; switch back to a normal build once you've captured the list.",
+      "url": "firmware/axis_can_node-v0.4.2.bin",
+      "size_bytes": 924720
+    },
+    {
       "version": "0.4.1",
       "date": "2026-07-06",
       "notes": "Fixes wireless (over-the-air) updates to the sensor, which were failing with a 'write error'. The sensor now saves the incoming firmware safely in the background instead of during the radio callback, matching how the display already updates itself. NOTE: because this fix lives in the sensor's own update receiver, this one version has to be installed by USB cable — after that, all future sensor updates go wirelessly as normal. Includes the v0.4.0 battery-save fix (engine-off deep sleep, <10 V threshold, instant CAN-wake) and everything from v0.3.x (A/F channel, gearbox auto-detect).",
