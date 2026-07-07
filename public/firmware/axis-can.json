@@ -2,9 +2,16 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.7.4",
+      "date": "2026-07-07",
+      "notes": "Acceleration timer. From a standing start the gauge now times your run and flashes a 0-60 / 0-100 km/h result card, then remembers your best \u2014 a green 'NEW BEST!' when you beat it. No setup: it arms when you're stopped, starts when you launch, and shows the splits. Tap to dismiss. Uses the speed already on the sensor link, so nothing else changes. Everything from v0.7.3 (engine-off alert fix) unchanged.",
+      "url": "firmware/axis_can_monitor-v0.7.4.bin",
+      "size_bytes": 1412496
+    },
+    {
       "version": "0.7.3",
       "date": "2026-07-07",
-      "notes": "No more false alerts after you switch off. When the engine goes off the sensor now tells the gauge instantly, so the gauge closes cleanly instead of holding the last reading — which sometimes flashed a false LOW FUEL (or other warning) on a car that was already off. Warnings also only trigger on fresh live data now, and any on-screen alarm clears the moment the link drops. Pair with sensor v0.4.5. Everything from v0.7.2 (the Phase-B channels) unchanged.",
+      "notes": "No more false alerts after you switch off. When the engine goes off the sensor now tells the gauge instantly, so the gauge closes cleanly instead of holding the last reading \u2014 which sometimes flashed a false LOW FUEL (or other warning) on a car that was already off. Warnings also only trigger on fresh live data now, and any on-screen alarm clears the moment the link drops. Pair with sensor v0.4.5. Everything from v0.7.2 (the Phase-B channels) unchanged.",
       "url": "firmware/axis_can_monitor-v0.7.3.bin",
       "size_bytes": 1390832
     },
@@ -18,49 +25,49 @@
     {
       "version": "0.7.1",
       "date": "2026-07-07",
-      "notes": "Drive-recap tidy-up: on cars whose OBD port doesn't report fuel flow (like this V60 T8, where fuel data is gated off), the recap card no longer claims 'EV drive' — it just shows your battery swing. Everything else from v0.7.0 (the Last-drive card) unchanged.",
+      "notes": "Drive-recap tidy-up: on cars whose OBD port doesn't report fuel flow (like this V60 T8, where fuel data is gated off), the recap card no longer claims 'EV drive' \u2014 it just shows your battery swing. Everything else from v0.7.0 (the Last-drive card) unchanged.",
       "url": "firmware/axis_can_monitor-v0.7.1.bin",
       "size_bytes": 1437248
     },
     {
       "version": "0.7.0",
       "date": "2026-07-07",
-      "notes": "Drive recap. When you switch off, the gauge remembers your drive; the next time you start the car it greets you with a 'Last drive' card — distance, time, top speed, max RPM, peak boost, peak water temp, plus your battery swing and fuel used. It shows for a few seconds (tap to skip) then the gauge takes over. A real overheat/low-fuel alarm still comes through instantly, even over the recap. Includes v0.6.2's rim-halo shift-light and v0.6.1's faster updates + v0.6.0 alerts.",
+      "notes": "Drive recap. When you switch off, the gauge remembers your drive; the next time you start the car it greets you with a 'Last drive' card \u2014 distance, time, top speed, max RPM, peak boost, peak water temp, plus your battery swing and fuel used. It shows for a few seconds (tap to skip) then the gauge takes over. A real overheat/low-fuel alarm still comes through instantly, even over the recap. Includes v0.6.2's rim-halo shift-light and v0.6.1's faster updates + v0.6.0 alerts.",
       "url": "firmware/axis_can_monitor-v0.7.0.bin",
       "size_bytes": 1437216
     },
     {
       "version": "0.6.2",
       "date": "2026-07-07",
-      "notes": "New shift-light look. When you pass your set shift RPM the gauge now glows a pulsing red ring around the rim and the RPM figure flashes red — on a black screen, so the readout stays crisp — instead of flooding the whole screen red. Elegant, and it won't smear on the display. Includes v0.6.1's faster Bluetooth updates and the v0.6.0 safety alerts.",
+      "notes": "New shift-light look. When you pass your set shift RPM the gauge now glows a pulsing red ring around the rim and the RPM figure flashes red \u2014 on a black screen, so the readout stays crisp \u2014 instead of flooding the whole screen red. Elegant, and it won't smear on the display. Includes v0.6.1's faster Bluetooth updates and the v0.6.0 safety alerts.",
       "url": "firmware/axis_can_monitor-v0.6.2.bin",
       "size_bytes": 1415552
     },
     {
       "version": "0.6.1",
       "date": "2026-07-07",
-      "notes": "Faster updates + a smoother shift light. Firmware updates now transfer several times faster over Bluetooth (the gauge receives them in batches instead of one small piece at a time). The shift-light — the full-screen red flash at your set shift RPM — is now a smooth pulse that fills the whole screen, instead of stuttering in from the top. Includes the v0.6.0 safety alerts (coolant/oil/cat overheat, low 12 V, low fuel).",
+      "notes": "Faster updates + a smoother shift light. Firmware updates now transfer several times faster over Bluetooth (the gauge receives them in batches instead of one small piece at a time). The shift-light \u2014 the full-screen red flash at your set shift RPM \u2014 is now a smooth pulse that fills the whole screen, instead of stuttering in from the top. Includes the v0.6.0 safety alerts (coolant/oil/cat overheat, low 12 V, low fuel).",
       "url": "firmware/axis_can_monitor-v0.6.1.bin",
       "size_bytes": 1415216
     },
     {
       "version": "0.6.0",
       "date": "2026-07-07",
-      "notes": "Safety alerts — the gauge now watches your engine even while you're looking at another page. If coolant, oil, or catalyst temperature runs too hot, the 12 V battery drops too low, or the tank is nearly empty, a full-screen warning flashes over whatever page you're on, showing the value and how urgent it is. Tap to dismiss: a real overheat comes back if it's still too hot, while a low-fuel warning stays quiet until you refuel. It ignores brief bad sensor readings and, on the hybrid, doesn't false-alarm on oil/cat temps while the car runs on electric. Includes everything from v0.5.x — the smooth gold gradient arc, iPhone-fast tap, and the page-change fade.",
+      "notes": "Safety alerts \u2014 the gauge now watches your engine even while you're looking at another page. If coolant, oil, or catalyst temperature runs too hot, the 12 V battery drops too low, or the tank is nearly empty, a full-screen warning flashes over whatever page you're on, showing the value and how urgent it is. Tap to dismiss: a real overheat comes back if it's still too hot, while a low-fuel warning stays quiet until you refuel. It ignores brief bad sensor readings and, on the hybrid, doesn't false-alarm on oil/cat temps while the car runs on electric. Includes everything from v0.5.x \u2014 the smooth gold gradient arc, iPhone-fast tap, and the page-change fade.",
       "url": "firmware/axis_can_monitor-v0.6.0.bin",
       "size_bytes": 1414320
     },
     {
       "version": "0.5.3",
       "date": "2026-07-06",
-      "notes": "AXIS Monitor is HERO-only: 4 single-value pages (tap to cycle) — TURBO / RPM / COOLANT / BATTERY — each one big arc + value with the smooth dithered gradient (flat edge, 10→100% fill, 13pt readout). No BARS or 5-arc pages. (Supersedes v0.5.2/0.5.1; the withdrawn v0.5.0 had a display/touch pin regression.)",
+      "notes": "AXIS Monitor is HERO-only: 4 single-value pages (tap to cycle) \u2014 TURBO / RPM / COOLANT / BATTERY \u2014 each one big arc + value with the smooth dithered gradient (flat edge, 10\u2192100% fill, 13pt readout). No BARS or 5-arc pages. (Supersedes v0.5.2/0.5.1; the withdrawn v0.5.0 had a display/touch pin regression.)",
       "url": "firmware/axis_can_monitor-v0.5.3.bin",
       "size_bytes": 1345936
     },
     {
       "version": "0.3.0",
       "date": "2026-07-05",
-      "notes": "New A/F (air-fuel ratio) channel — place it on any page as 'A/F' (10–20) or as 'λ' lambda (0.70–1.30). It's the ECU's commanded/target mixture (from OBD PID 0x44), so it reads ~14.6 at cruise and richens under boost/full throttle; the gauge hides it automatically if your car doesn't report it. Also: gear now auto-detects the gearbox (Aisin AWF8 vs ZF 8HP) for a more accurate calculated gear. Includes the v0.2 release: working screen brightness, per-page arc colour + redline, all OBD channels, and wireless (OTA) updates.",
+      "notes": "New A/F (air-fuel ratio) channel \u2014 place it on any page as 'A/F' (10\u201320) or as '\u03bb' lambda (0.70\u20131.30). It's the ECU's commanded/target mixture (from OBD PID 0x44), so it reads ~14.6 at cruise and richens under boost/full throttle; the gauge hides it automatically if your car doesn't report it. Also: gear now auto-detects the gearbox (Aisin AWF8 vs ZF 8HP) for a more accurate calculated gear. Includes the v0.2 release: working screen brightness, per-page arc colour + redline, all OBD channels, and wireless (OTA) updates.",
       "url": "firmware/axis_can_monitor-v0.3.0.bin",
       "size_bytes": 1338128
     }
@@ -69,49 +76,49 @@
     {
       "version": "0.4.5",
       "date": "2026-07-07",
-      "notes": "Tells the gauge the moment the engine goes off. Just before the sensor goes to sleep (engine off / car parked) it now sends a quick 'sleeping' notice so the gauge closes instantly and drops any warning — no more false LOW FUEL lingering on the last reading after you switch off. Pair with display v0.7.3. Everything from v0.4.4 (Phase-B channels) unchanged.",
+      "notes": "Tells the gauge the moment the engine goes off. Just before the sensor goes to sleep (engine off / car parked) it now sends a quick 'sleeping' notice so the gauge closes instantly and drops any warning \u2014 no more false LOW FUEL lingering on the last reading after you switch off. Pair with display v0.7.3. Everything from v0.4.4 (Phase-B channels) unchanged.",
       "url": "firmware/axis_can_node-v0.4.5.bin",
       "size_bytes": 924784
     },
     {
       "version": "0.4.4",
       "date": "2026-07-07",
-      "notes": "Phase B — reads the last of the hidden channels. On top of v0.4.3's unlocked set, the sensor now also decodes measured (wideband) air-fuel ratio, absolute engine load, accelerator-pedal position, fuel-rail pressure, relative throttle, and the stored fault-code count. Pair with display v0.7.2 to show them; pick any as a gauge in the app. No pause at startup (the diagnostic scan stays off).",
+      "notes": "Phase B \u2014 reads the last of the hidden channels. On top of v0.4.3's unlocked set, the sensor now also decodes measured (wideband) air-fuel ratio, absolute engine load, accelerator-pedal position, fuel-rail pressure, relative throttle, and the stored fault-code count. Pair with display v0.7.2 to show them; pick any as a gauge in the app. No pause at startup (the diagnostic scan stays off).",
       "url": "firmware/axis_can_node-v0.4.4.bin",
       "size_bytes": 924752
     },
     {
       "version": "0.4.3",
       "date": "2026-07-07",
-      "notes": "Unlocks the hidden readings. Your car's OBD port quietly answers far more sensors than it officially lists — its support list admitted only 3, but a full probe found 40 readable. This build stops trusting that under-reported list and reads the whole verified set directly, so channels that were silently blank now come alive: fuel level, fuel rate (used for the drive recap), catalyst temperature, intake & ambient air temp, airflow (MAF), engine load, throttle, spark timing, fuel trims, run time and trip distance — pick any of them for a gauge page in the app. Oil temperature genuinely isn't offered by this car, so it stays hidden. The one-time diagnostic scan from v0.4.2 is now switched off (no more ~10 s pause at each start).",
+      "notes": "Unlocks the hidden readings. Your car's OBD port quietly answers far more sensors than it officially lists \u2014 its support list admitted only 3, but a full probe found 40 readable. This build stops trusting that under-reported list and reads the whole verified set directly, so channels that were silently blank now come alive: fuel level, fuel rate (used for the drive recap), catalyst temperature, intake & ambient air temp, airflow (MAF), engine load, throttle, spark timing, fuel trims, run time and trip distance \u2014 pick any of them for a gauge page in the app. Oil temperature genuinely isn't offered by this car, so it stays hidden. The one-time diagnostic scan from v0.4.2 is now switched off (no more ~10 s pause at each start).",
       "url": "firmware/axis_can_node-v0.4.3.bin",
       "size_bytes": 924368
     },
     {
       "version": "0.4.2",
       "date": "2026-07-07",
-      "notes": "DIAGNOSTIC build: on the first engine-on after installing, the sensor probes every OBD reading and reports which ones your car actually answers — usually more than the car admits to supporting. Look at the gauge's diagnostic log (press and hold the screen) a few seconds after starting the engine to see the list. This build pauses telemetry ~10 s at each start while it scans; switch back to a normal build once you've captured the list.",
+      "notes": "DIAGNOSTIC build: on the first engine-on after installing, the sensor probes every OBD reading and reports which ones your car actually answers \u2014 usually more than the car admits to supporting. Look at the gauge's diagnostic log (press and hold the screen) a few seconds after starting the engine to see the list. This build pauses telemetry ~10 s at each start while it scans; switch back to a normal build once you've captured the list.",
       "url": "firmware/axis_can_node-v0.4.2.bin",
       "size_bytes": 924720
     },
     {
       "version": "0.4.1",
       "date": "2026-07-06",
-      "notes": "Fixes wireless (over-the-air) updates to the sensor, which were failing with a 'write error'. The sensor now saves the incoming firmware safely in the background instead of during the radio callback, matching how the display already updates itself. NOTE: because this fix lives in the sensor's own update receiver, this one version has to be installed by USB cable — after that, all future sensor updates go wirelessly as normal. Includes the v0.4.0 battery-save fix (engine-off deep sleep, <10 V threshold, instant CAN-wake) and everything from v0.3.x (A/F channel, gearbox auto-detect).",
+      "notes": "Fixes wireless (over-the-air) updates to the sensor, which were failing with a 'write error'. The sensor now saves the incoming firmware safely in the background instead of during the radio callback, matching how the display already updates itself. NOTE: because this fix lives in the sensor's own update receiver, this one version has to be installed by USB cable \u2014 after that, all future sensor updates go wirelessly as normal. Includes the v0.4.0 battery-save fix (engine-off deep sleep, <10 V threshold, instant CAN-wake) and everything from v0.3.x (A/F channel, gearbox auto-detect).",
       "url": "firmware/axis_can_node-v0.4.1.bin",
       "size_bytes": 924272
     },
     {
       "version": "0.4.0",
       "date": "2026-07-06",
-      "notes": "Battery-save fix: the sensor now recognises the engine-off state (the car's control-module voltage reads ~0.2 V when parked) and goes to deep sleep, so it no longer keeps the 12 V battery awake while the car sits. The off threshold is <10 V; it wakes instantly the moment the car's CAN bus comes alive (ignition/unlock). Includes everything from v0.3.x — the A/F (air-fuel) channel, gearbox auto-detect, and instant CAN-wake reconnect.",
+      "notes": "Battery-save fix: the sensor now recognises the engine-off state (the car's control-module voltage reads ~0.2 V when parked) and goes to deep sleep, so it no longer keeps the 12 V battery awake while the car sits. The off threshold is <10 V; it wakes instantly the moment the car's CAN bus comes alive (ignition/unlock). Includes everything from v0.3.x \u2014 the A/F (air-fuel) channel, gearbox auto-detect, and instant CAN-wake reconnect.",
       "url": "firmware/axis_can_node-v0.4.0.bin",
       "size_bytes": 924080
     },
     {
       "version": "0.3.0",
       "date": "2026-07-05",
-      "notes": "Adds the A/F (air-fuel ratio) reading — the sensor now decodes the ECU's commanded mixture (OBD PID 0x44) so the gauge can show A/F or lambda. Gear calculation now auto-detects the gearbox: it fits both an Aisin AWF8 and a ZF 8HP ratio table against live rpm÷speed and locks onto whichever matches your car. Includes v0.2.2's instant CAN-wake reconnect + no-drain sleep.",
+      "notes": "Adds the A/F (air-fuel ratio) reading \u2014 the sensor now decodes the ECU's commanded mixture (OBD PID 0x44) so the gauge can show A/F or lambda. Gear calculation now auto-detects the gearbox: it fits both an Aisin AWF8 and a ZF 8HP ratio table against live rpm\u00f7speed and locks onto whichever matches your car. Includes v0.2.2's instant CAN-wake reconnect + no-drain sleep.",
       "url": "firmware/axis_can_node-v0.3.0.bin",
       "size_bytes": 922176
     }
