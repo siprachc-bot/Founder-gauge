@@ -436,28 +436,64 @@ export class MonitorBleClient {
     });
     const write = (bytes: Uint8Array) =>
       CapBle.write(this.deviceId, MON_SVC, OTA_CHAR, new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
-    let done = false;   // true once the device confirmed + is rebooting (→ no ABORT)
+    const writeNR = (bytes: Uint8Array) =>
+      CapBle.writeWithoutResponse(this.deviceId, MON_SVC, OTA_CHAR, new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
+    // Windowed self-OTA ONLY for the monitor (target 1): burst a batch of chunks
+    // with no per-chunk ack, then one SYNC carrying the batch's chunk count as the
+    // barrier. ~6× faster than a per-chunk round-trip. The node relay (target 0)
+    // stays legacy stop-and-wait — its bottleneck is the ESP-NOW hop, not BLE.
+    const windowed = target === OTA_TARGET_MONITOR;
+    const WIN = 16;       // chunks per batch (matches monitor OTA_WIN_MAX)
+    const WCHUNK = 180;   // WNR-safe: 1 (op) + 180 = 181 <= 185 (min iOS MTU) - 3
+    let done = false;     // true once the device confirmed + is rebooting (→ no ABORT)
     try {
-      // BEGIN [0x00, target u8, size u32 LE]
-      const beg = new Uint8Array(6); beg[0] = 0x00; beg[1] = target & 0xff;
-      new DataView(beg.buffer).setUint32(2, bin.length, true);
-      await write(beg);
-      if ((await nextNotify()) !== 0) throw new Error('device rejected the update');
-      // DATA [0x01, payload…] — chunk by chunk; the monitor auto-ENDs on the last
-      let off = 0;
-      while (off < bin.length) {
-        const end = Math.min(off + OTA_CHUNK, bin.length);
-        const p = new Uint8Array(1 + (end - off)); p[0] = 0x01; p.set(bin.subarray(off, end), 1);
-        await write(p);
-        off = end;
-        const s = await nextNotify();
-        if (s === 1) { done = true; return; }  // done — device rebooting
-        if (s === 2) throw new Error('device reported a write error');
-        // s === 0 → ready for the next chunk
+      if (windowed) {
+        // BEGIN [0x00, target u8, size u32 LE, window u8]
+        const beg = new Uint8Array(7); beg[0] = 0x00; beg[1] = target & 0xff;
+        new DataView(beg.buffer).setUint32(2, bin.length, true); beg[6] = WIN;
+        await write(beg);
+        if ((await nextNotify()) !== 0) throw new Error('device rejected the update');
+        let off = 0, naks = 0;
+        while (off < bin.length) {
+          const batchEnd = Math.min(off + WIN * WCHUNK, bin.length);
+          let n = 0;
+          for (let c = off; c < batchEnd; c += WCHUNK) {         // burst the batch, no per-chunk wait
+            const e = Math.min(c + WCHUNK, batchEnd);
+            const p = new Uint8Array(1 + (e - c)); p[0] = 0x01; p.set(bin.subarray(c, e), 1);
+            await writeNR(p); n++;
+          }
+          await write(new Uint8Array([0x02, n & 0xff]));         // SYNC [count] — with-response barrier
+          const s = await nextNotify();
+          if (s === 1) { done = true; return; }                  // done — device rebooting
+          if (s === 2) throw new Error('device reported a write error');
+          if (s === 3) { if (++naks > 8) throw new Error('too many dropped batches'); continue; } // NAK: resend batch
+          naks = 0; off = batchEnd;                              // s === 0: batch committed → advance
+        }
+        if ((await nextNotify()) !== 1) throw new Error('device did not confirm');
+        done = true;
+      } else {
+        // ---- legacy stop-and-wait (node relay) ----
+        // BEGIN [0x00, target u8, size u32 LE]
+        const beg = new Uint8Array(6); beg[0] = 0x00; beg[1] = target & 0xff;
+        new DataView(beg.buffer).setUint32(2, bin.length, true);
+        await write(beg);
+        if ((await nextNotify()) !== 0) throw new Error('device rejected the update');
+        // DATA [0x01, payload…] — chunk by chunk; the monitor auto-ENDs on the last
+        let off = 0;
+        while (off < bin.length) {
+          const end = Math.min(off + OTA_CHUNK, bin.length);
+          const p = new Uint8Array(1 + (end - off)); p[0] = 0x01; p.set(bin.subarray(off, end), 1);
+          await write(p);
+          off = end;
+          const s = await nextNotify();
+          if (s === 1) { done = true; return; }  // done — device rebooting
+          if (s === 2) throw new Error('device reported a write error');
+          // s === 0 → ready for the next chunk
+        }
+        // all bytes sent but no "done" yet — wait one more (auto-END in flight)
+        if ((await nextNotify()) !== 1) throw new Error('device did not confirm');
+        done = true;
       }
-      // all bytes sent but no "done" yet — wait one more (auto-END in flight)
-      if ((await nextNotify()) !== 1) throw new Error('device did not confirm');
-      done = true;
     } finally {
       // If we bailed mid-transfer (timeout / write error / user left), tell the
       // device to ABORT (0x03) — else it sits frozen in RD_CHUNK waiting for the

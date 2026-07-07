@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.6.1",
+      "date": "2026-07-07",
+      "notes": "Faster updates + a smoother shift light. Firmware updates now transfer several times faster over Bluetooth (the gauge receives them in batches instead of one small piece at a time). The shift-light — the full-screen red flash at your set shift RPM — is now a smooth pulse that fills the whole screen, instead of stuttering in from the top. Includes the v0.6.0 safety alerts (coolant/oil/cat overheat, low 12 V, low fuel).",
+      "url": "firmware/axis_can_monitor-v0.6.1.bin",
+      "size_bytes": 1415216
+    },
+    {
       "version": "0.6.0",
       "date": "2026-07-07",
       "notes": "Safety alerts — the gauge now watches your engine even while you're looking at another page. If coolant, oil, or catalyst temperature runs too hot, the 12 V battery drops too low, or the tank is nearly empty, a full-screen warning flashes over whatever page you're on, showing the value and how urgent it is. Tap to dismiss: a real overheat comes back if it's still too hot, while a low-fuel warning stays quiet until you refuel. It ignores brief bad sensor readings and, on the hybrid, doesn't false-alarm on oil/cat temps while the car runs on electric. Includes everything from v0.5.x — the smooth gold gradient arc, iPhone-fast tap, and the page-change fade.",
