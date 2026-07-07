@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.6.2",
+      "date": "2026-07-07",
+      "notes": "New shift-light look. When you pass your set shift RPM the gauge now glows a pulsing red ring around the rim and the RPM figure flashes red — on a black screen, so the readout stays crisp — instead of flooding the whole screen red. Elegant, and it won't smear on the display. Includes v0.6.1's faster Bluetooth updates and the v0.6.0 safety alerts.",
+      "url": "firmware/axis_can_monitor-v0.6.2.bin",
+      "size_bytes": 1415552
+    },
+    {
       "version": "0.6.1",
       "date": "2026-07-07",
       "notes": "Faster updates + a smoother shift light. Firmware updates now transfer several times faster over Bluetooth (the gauge receives them in batches instead of one small piece at a time). The shift-light — the full-screen red flash at your set shift RPM — is now a smooth pulse that fills the whole screen, instead of stuttering in from the top. Includes the v0.6.0 safety alerts (coolant/oil/cat overheat, low 12 V, low fuel).",
