@@ -124,14 +124,15 @@
   // ---- Version-gate the channel picker ----------------------------------
   // The Phase-B channels (id >= Ch.LAMBDA_M) only exist in monitor firmware
   // >= v0.7.2. An older gauge's cfgValid() REJECTS any config carrying a
-  // channel id >= its CH_COUNT, so offering these on a v0.7.1 gauge produces a
-  // cryptic "Rejected — check values". Hide them until the gauge is updated;
-  // they reappear the moment devVers refreshes after an OTA. Unknown version
-  // (demo / not yet read) shows everything.
+  // channel id >= its CH_COUNT, so saving one to a v0.7.1 gauge produces a
+  // cryptic "Rejected — check values". Rather than HIDE them (confusing — the
+  // channels seem to vanish), keep them VISIBLE but DISABLED with a "· needs
+  // v0.7.2" hint until the gauge reports a new-enough version (devVers refreshes
+  // after an OTA → they enable). Unknown version (demo / not read yet) = enabled.
   const PHASE_B_MIN: FwVersion = { major: 0, minor: 7, patch: 2 };
   const monHasPhaseB = $derived(!devVers?.monitor || verCmp(devVers.monitor, PHASE_B_MIN) >= 0);
-  const availChannels = $derived(
-    monHasPhaseB ? CHANNELS : CHANNELS.filter(c => c.id < Ch.LAMBDA_M));
+  // A channel the CONNECTED gauge is too old to accept (can't be selected/saved).
+  const chGated = (id: number) => !monHasPhaseB && id >= Ch.LAMBDA_M;
   // A stale config still carrying a gated channel would reject on save — flag it
   // so the reject message can point the user at the firmware update.
   const cfgNeedsNewerMon = $derived(!monHasPhaseB &&
@@ -449,8 +450,8 @@
                 <option value={Ch.NONE}>— empty —</option>
                 {#each CHANNEL_GROUPS as g (g)}
                   <optgroup label={g}>
-                    {#each availChannels.filter(c => c.group === g) as c (c.id)}
-                      <option value={c.id}>{c.label}{c.unit ? ` (${c.unit})` : ''}</option>
+                    {#each CHANNELS.filter(c => c.group === g) as c (c.id)}
+                      <option value={c.id} disabled={chGated(c.id)}>{c.label}{c.unit ? ` (${c.unit})` : ''}{chGated(c.id) ? ' · needs v0.7.2' : ''}</option>
                     {/each}
                   </optgroup>
                 {/each}
@@ -462,8 +463,8 @@
                 <option value={Ch.NONE}>— empty —</option>
                 {#each CHANNEL_GROUPS as g (g)}
                   <optgroup label={g}>
-                    {#each availChannels.filter(c => c.group === g) as c (c.id)}
-                      <option value={c.id}>{c.label}{c.unit ? ` (${c.unit})` : ''}</option>
+                    {#each CHANNELS.filter(c => c.group === g) as c (c.id)}
+                      <option value={c.id} disabled={chGated(c.id)}>{c.label}{c.unit ? ` (${c.unit})` : ''}{chGated(c.id) ? ' · needs v0.7.2' : ''}</option>
                     {/each}
                   </optgroup>
                 {/each}
