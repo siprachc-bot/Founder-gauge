@@ -35,9 +35,10 @@ Goal: auto-discover readable PIDs/DIDs on any car/brand, not just the V60.
 - 🟢 node `0xAE` sleep packet + gauge force-clear-on-stale + WARNING fresh-arm gate + `clearAll()` on sleep transition. Kills false LOW FUEL after key-off.
 - 🟡 **Fuel-value sanity** — 0x2F un-gated but its live value not yet confirmed sane on a real fuel change (could false-fire LOW FUEL if it decodes garbage). **Blocker: watch the live % on a real drive; add a sane floor if needed.**
 
-## 3. DTC dictionary — gauge WARNING + app full-detail  🟡 / 🔵
+## 3. DTC dictionary — gauge WARNING + app full-detail  🟢 (Mode-03 verified) / 🔵
 
-- 🟡 **Mode 03 read on the node** (`scanDtc()` + `0xD0` DTC-list packet) — needs ISO-TP multi-frame (§1). **Blocker: confirm the SPA gateway even serves Mode 03 to the OBD port + from how many ECUs (in-car RE, like the PID scan).** *(scaffolded behind `DTC_SCAN_EN=false`)*
+- ✅ **Mode 03 read VERIFIED IN-CAR (2026-07-08)** — flashed DTC_SCAN_EN on the V60 T8: the SPA gateway **DOES** serve Mode-03 (ECU answered `43 00` → 0 codes). `recvMode03_` ISO-TP receiver works. DTC-on-gauge is reachable from OBD on this car. ⚠️ only the Single-Frame path is exercised (0 codes); the multi-frame FF+FlowControl+CF path awaits a car with ≥3 stored codes. Node reverted to clean v0.4.5.
+- 🔵 **`0xD0` DTC-list ESP-NOW packet** (node→gauge) — send the read codes when scanned (separate from the hot telemetry frame). Then bump node→v0.4.6 with `scanDtc()` on a dtcCount-rising-edge trigger (not per-boot).
 - 🔵 **Gauge DTC WARNING** — reuse `AlertOverlay` (AlertSev::WARNING, amber): "CHECK ENGINE · P0128 · Powertrain · see app". Decode 2-byte → letter+category **offline**; P1xxx → "see app". Optionally map known-severe codes (misfire P0300 / overheat) → DANGER.
 - 🔵 **Gauge generic DTC dictionary** in SPIFFS (~85 KB generic, +Volvo P1xxx ~145 KB; 1.97 MB free). Sorted 2-byte-key → short-desc, binary search. Swappable data file (Thai/English), NOT compiled into the image.
 - 🔵 **App full-detail screen** — code list + human title + cause/what-to-do (bundled JSON) + **AI DTC explainer** (RAG + live context, disclaimer). Matches the earlier mockup.
