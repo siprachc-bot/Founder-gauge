@@ -46,6 +46,8 @@ export enum Ch {
   MAF, BARO, TIMING, STFT, LTFT, AMBIENT, FUELLVL, CATTEMP, CMDTHR,
   RUNTIME, MAP_ABS, GEAR, DISTMIL, DISTCLR,      // 12..25
   AFR, LAMBDA,                                   // 26..27 air-fuel ratio (same data)
+  // ---- Phase B (append-only; MUST match GaugeChannels.h) ----
+  LAMBDA_M, AFR_M, ABSLOAD, PEDAL, FRP, RELTHR, DTC,  // 28..34
   COUNT,
 }
 export enum Layout { HERO = 0, BARS = 1 }
@@ -103,6 +105,9 @@ export const CHANNELS: ChannelDef[] = [
   { id: Ch.MAF,      label: 'Air flow (MAF)',short:'MAF', unit: 'g/s',  min: 0,   max: 400,   group: 'Engine' },
   { id: Ch.TIMING,   label: 'Spark advance',short:'ADV',  unit: '°',    min: -20, max: 50,    group: 'Engine' },
   { id: Ch.GEAR,     label: 'Gear (calc)',short: 'GEAR',  unit: '',     min: 0,   max: 8,     group: 'Engine' },
+  { id: Ch.ABSLOAD,  label: 'Absolute load',short:'ALOAD',unit: '%',    min: 0,   max: 250,   group: 'Engine' },
+  { id: Ch.PEDAL,    label: 'Accelerator pedal',short:'PEDAL',unit:'%', min: 0,   max: 100,   group: 'Engine' },
+  { id: Ch.RELTHR,   label: 'Rel. throttle',short:'RTHR', unit: '%',    min: 0,   max: 100,   group: 'Engine' },
   // Temps
   { id: Ch.COOLANT,  label: 'Water temp', short: 'WTEMP', unit: '°C',   min: 40,  max: 120,   peak: 110,  group: 'Temps' },
   { id: Ch.OILTEMP,  label: 'Oil temp',   short: 'OIL T', unit: '°C',   min: 40,  max: 150,   peak: 125,  group: 'Temps' },
@@ -116,6 +121,9 @@ export const CHANNELS: ChannelDef[] = [
   { id: Ch.LTFT,     label: 'Long fuel trim',short:'LTFT', unit: '%',   min: -25, max: 25,    group: 'Fuel' },
   { id: Ch.AFR,      label: 'A/F ratio (cmd)',short:'A/F', unit: ':1',   min: 10,  max: 20,    group: 'Fuel' },
   { id: Ch.LAMBDA,   label: 'Lambda (cmd)',short:'LAMBDA', unit: '',     min: 0.70,max: 1.30,  group: 'Fuel' },
+  { id: Ch.AFR_M,    label: 'A/F actual (wideband)',short:'AF ACT',unit:':1',min:10,max: 20,   group: 'Fuel' },
+  { id: Ch.LAMBDA_M, label: 'Lambda actual',short:'λ ACT', unit: '',     min: 0.70,max: 1.30,  group: 'Fuel' },
+  { id: Ch.FRP,      label: 'Fuel rail pressure',short:'FRAIL',unit:'bar',min: 0,  max: 250,   group: 'Fuel' },
   // Electric
   { id: Ch.VOLT,     label: 'Voltage',    short: 'VOLTS', unit: 'V',    min: 10,  max: 16,    group: 'Electric' },
   { id: Ch.SOC,      label: 'Battery SOC',short: 'SOC',   unit: '%',    min: 0,   max: 100,   group: 'Electric' },
@@ -124,6 +132,7 @@ export const CHANNELS: ChannelDef[] = [
   { id: Ch.RUNTIME,  label: 'Run time',   short: 'RUN',   unit: 's',    min: 0,   max: 65535, group: 'Trip' },
   { id: Ch.DISTMIL,  label: 'Dist. MIL on',short:'dMIL',  unit: 'km',   min: 0,   max: 65535, group: 'Trip' },
   { id: Ch.DISTCLR,  label: 'Dist. cleared',short:'dCLR', unit: 'km',   min: 0,   max: 65535, group: 'Trip' },
+  { id: Ch.DTC,      label: 'Fault codes (count)',short:'DTC',unit: '',  min: 0,   max: 20,    group: 'Trip' },
 ];
 export function channelDef(id: number): ChannelDef | undefined {
   return CHANNELS.find(c => c.id === id);
