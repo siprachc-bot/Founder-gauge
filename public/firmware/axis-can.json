@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.7.2",
+      "date": "2026-07-07",
+      "notes": "New Phase-B readings on the gauge. Pairs with sensor v0.4.4 to decode and display six more channels your car quietly answers: measured air-fuel ratio / lambda (the real wideband value, distinct from the commanded one), absolute engine load, accelerator-pedal position, fuel-rail pressure, relative throttle, and a fault-code (DTC) count that flags amber if your car has stored an emissions code. Add any of them to a gauge page in the app. Everything from v0.7.x (Last-drive recap, rim-halo shift-light, safety alerts) unchanged. Update the sensor to v0.4.4 as well so these channels actually arrive.",
+      "url": "firmware/axis_can_monitor-v0.7.2.bin",
+      "size_bytes": 1390656
+    },
+    {
       "version": "0.7.1",
       "date": "2026-07-07",
       "notes": "Drive-recap tidy-up: on cars whose OBD port doesn't report fuel flow (like this V60 T8, where fuel data is gated off), the recap card no longer claims 'EV drive' — it just shows your battery swing. Everything else from v0.7.0 (the Last-drive card) unchanged.",
@@ -52,6 +59,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.4.4",
+      "date": "2026-07-07",
+      "notes": "Phase B — reads the last of the hidden channels. On top of v0.4.3's unlocked set, the sensor now also decodes measured (wideband) air-fuel ratio, absolute engine load, accelerator-pedal position, fuel-rail pressure, relative throttle, and the stored fault-code count. Pair with display v0.7.2 to show them; pick any as a gauge in the app. No pause at startup (the diagnostic scan stays off).",
+      "url": "firmware/axis_can_node-v0.4.4.bin",
+      "size_bytes": 924752
+    },
     {
       "version": "0.4.3",
       "date": "2026-07-07",
