@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.7.1",
+      "date": "2026-07-07",
+      "notes": "Drive-recap tidy-up: on cars whose OBD port doesn't report fuel flow (like this V60 T8, where fuel data is gated off), the recap card no longer claims 'EV drive' — it just shows your battery swing. Everything else from v0.7.0 (the Last-drive card) unchanged.",
+      "url": "firmware/axis_can_monitor-v0.7.1.bin",
+      "size_bytes": 1437248
+    },
+    {
       "version": "0.7.0",
       "date": "2026-07-07",
       "notes": "Drive recap. When you switch off, the gauge remembers your drive; the next time you start the car it greets you with a 'Last drive' card — distance, time, top speed, max RPM, peak boost, peak water temp, plus your battery swing and fuel used. It shows for a few seconds (tap to skip) then the gauge takes over. A real overheat/low-fuel alarm still comes through instantly, even over the recap. Includes v0.6.2's rim-halo shift-light and v0.6.1's faster updates + v0.6.0 alerts.",
