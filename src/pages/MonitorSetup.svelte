@@ -19,7 +19,7 @@
     CHANNELS, CHANNEL_GROUPS, Ch, Layout, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE,
     hexToRgb565, rgb565ToHex, verStr, verCmp,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
-    type GaugeCfg, type DeviceVersions,
+    type GaugeCfg, type DeviceVersions, type FwVersion,
   } from '../lib/founderGaugeCfg';
   import {
     fetchCanManifest, latest, downloadFirmware, parseVer,
@@ -120,6 +120,22 @@
   let otaBusy  = $state(false);                     // fetching manifest / versions
   let otaNote  = $state('');
   let otaLoaded = false;                            // fetched once (lazy on expand)
+
+  // ---- Version-gate the channel picker ----------------------------------
+  // The Phase-B channels (id >= Ch.LAMBDA_M) only exist in monitor firmware
+  // >= v0.7.2. An older gauge's cfgValid() REJECTS any config carrying a
+  // channel id >= its CH_COUNT, so offering these on a v0.7.1 gauge produces a
+  // cryptic "Rejected — check values". Hide them until the gauge is updated;
+  // they reappear the moment devVers refreshes after an OTA. Unknown version
+  // (demo / not yet read) shows everything.
+  const PHASE_B_MIN: FwVersion = { major: 0, minor: 7, patch: 2 };
+  const monHasPhaseB = $derived(!devVers?.monitor || verCmp(devVers.monitor, PHASE_B_MIN) >= 0);
+  const availChannels = $derived(
+    monHasPhaseB ? CHANNELS : CHANNELS.filter(c => c.id < Ch.LAMBDA_M));
+  // A stale config still carrying a gated channel would reject on save — flag it
+  // so the reject message can point the user at the firmware update.
+  const cfgNeedsNewerMon = $derived(!monHasPhaseB &&
+    cfg.pages.some(p => p.ch.some(ch => ch >= Ch.LAMBDA_M)));
 
   let flashing = $state<'' | 'monitor' | 'node'>(''); // which target is flashing
   let flashPct = $state(0);
@@ -291,6 +307,10 @@
       note  = String((e as Error)?.message ?? e);
       phase = 'ready';           // still let them edit + push (device may be blank)
     }
+    // Eagerly read the monitor firmware version so the channel picker can
+    // version-gate Phase-B channels from the FIRST render (loadOta is lazy —
+    // only fires when the OTA card is expanded, which is too late for the gate).
+    c.readVersions().then(v => { if (v) devVers = v; }).catch(() => {});
   }
 
   async function disconnect() {
@@ -429,7 +449,7 @@
                 <option value={Ch.NONE}>— empty —</option>
                 {#each CHANNEL_GROUPS as g (g)}
                   <optgroup label={g}>
-                    {#each CHANNELS.filter(c => c.group === g) as c (c.id)}
+                    {#each availChannels.filter(c => c.group === g) as c (c.id)}
                       <option value={c.id}>{c.label}{c.unit ? ` (${c.unit})` : ''}</option>
                     {/each}
                   </optgroup>
@@ -442,7 +462,7 @@
                 <option value={Ch.NONE}>— empty —</option>
                 {#each CHANNEL_GROUPS as g (g)}
                   <optgroup label={g}>
-                    {#each CHANNELS.filter(c => c.group === g) as c (c.id)}
+                    {#each availChannels.filter(c => c.group === g) as c (c.id)}
                       <option value={c.id}>{c.label}{c.unit ? ` (${c.unit})` : ''}</option>
                     {/each}
                   </optgroup>
@@ -599,7 +619,11 @@
     {:else if saveResult === 'ok'}
       <span class="save-msg ok">✓ Saved to monitor</span>
     {:else if saveResult === 'rejected'}
-      <span class="save-msg bad">✕ Rejected — check values</span>
+      {#if cfgNeedsNewerMon}
+        <span class="save-msg bad">✕ Update the gauge to v0.7.2 to use these channels</span>
+      {:else}
+        <span class="save-msg bad">✕ Rejected — check values</span>
+      {/if}
     {:else if dirty}
       <span class="save-msg dim">Unsaved changes</span>
     {:else}
