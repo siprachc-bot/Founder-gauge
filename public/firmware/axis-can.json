@@ -53,6 +53,13 @@
   ],
   "node": [
     {
+      "version": "0.4.3",
+      "date": "2026-07-07",
+      "notes": "Unlocks the hidden readings. Your car's OBD port quietly answers far more sensors than it officially lists — its support list admitted only 3, but a full probe found 40 readable. This build stops trusting that under-reported list and reads the whole verified set directly, so channels that were silently blank now come alive: fuel level, fuel rate (used for the drive recap), catalyst temperature, intake & ambient air temp, airflow (MAF), engine load, throttle, spark timing, fuel trims, run time and trip distance — pick any of them for a gauge page in the app. Oil temperature genuinely isn't offered by this car, so it stays hidden. The one-time diagnostic scan from v0.4.2 is now switched off (no more ~10 s pause at each start).",
+      "url": "firmware/axis_can_node-v0.4.3.bin",
+      "size_bytes": 924368
+    },
+    {
       "version": "0.4.2",
       "date": "2026-07-07",
       "notes": "DIAGNOSTIC build: on the first engine-on after installing, the sensor probes every OBD reading and reports which ones your car actually answers — usually more than the car admits to supporting. Look at the gauge's diagnostic log (press and hold the screen) a few seconds after starting the engine to see the list. This build pauses telemetry ~10 s at each start while it scans; switch back to a normal build once you've captured the list.",
