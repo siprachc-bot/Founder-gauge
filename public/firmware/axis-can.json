@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.9.2",
+      "date": "2026-07-08",
+      "notes": "Car HEALTH check + PHEV energy split. New HEALTH item in the on-gauge menu (five quick taps → HEALTH) shows a one-glance verdict — ALL GOOD / WATCH / ATTENTION — with a checklist: engine temps, 12V battery, fuel level, stored fault codes, and fuel trim, each marked OK / WATCH / CHECK (or '--' when the car isn't reporting that reading yet). And the Last-drive recap now shows how much of the drive was electric vs engine — an 'EV 62%  ICE 38%' line — for the plug-in hybrid. Both reuse data already on the link; no new setup. Everything from v0.9.1 (drive-log export) included.",
+      "url": "firmware/axis_can_monitor-v0.9.2.bin",
+      "size_bytes": 1493840
+    },
+    {
       "version": "0.9.1",
       "date": "2026-07-08",
       "notes": "Drive log export. When you record a drive on the gauge (tap RECORD in its menu), you can now pull that recording into the app and save it as a spreadsheet (CSV) — every reading (RPM, speed, boost, coolant, battery, gear, throttle, and more) sampled five times a second, with a timestamp. Open the new 'Drive log' card in the app, tap Download CSV, then open it in Excel / Numbers / Google Sheets or any data tool. An Erase button clears the gauge's stored log. Nothing else changes — everything from v0.9.0 (knob-gear ecosystem, sensor pairing, RPM-arc-red, gear/arc refinements, gamma dimming, engine-off fuel fix) is included.",
