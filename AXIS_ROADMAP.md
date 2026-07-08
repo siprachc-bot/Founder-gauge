@@ -57,7 +57,7 @@ True engaged gear is NOT on the V60 OBD (gateway-blocked, not broadcast). Ship c
 
 | # | Feature | Leverage | Notes |
 |---|---|---|---|
-| **1** | **Datalogging + CSV/GPX export** | ⭐⭐⭐ | Ring buffer on the gauge (SPIFFS/PSRAM) → BLE dump → app export. Data already flows through the frame. **Biggest spec-sheet gap closed.** Uses existing hardware. |
+| **1** | **Datalogging + CSV/GPX export** | ⭐⭐⭐ | 🟢 **Device-side SHIPPED (mon v0.8.0).** `Datalogger` → LittleFS `/drivelog.bin` (`AXL1` header + 24-byte, 5 Hz samples), armed from the on-gauge menu → RECORD, red dot on the gauge, auto-saves + finalises count on key-off. One-file-per-drive (newest wins). 🔵 **NEXT: BLE pull (char `7e1c0207`, chunked GET_INFO/GET_CHUNK/ERASE) + app `driveLog.ts` (parse→CSV/GPX) + MonitorSetup "Drive log" card** → v0.8.1. Data already flows through the frame. **Biggest spec-sheet gap closed.** |
 | **2** | **0-100 / 0-60 timing (OBD-speed)** | ⭐⭐⭐ | Auto-arm at standstill → detect launch → time to target → store best. Uses speed we already read (0x1FFF0120). Attacks Dragy. "OBD-timed" (≈200-500 ms latency, honest). |
 | **3** | **Multi-car profile DB** | ⭐⭐ | Save each brute-scan/VIN profile → app "your car" picker. Turns the "one car" weakness into a moat. Foundational for §1/§4. |
 | 4 | Wired-power option for the gauge | ⭐⭐ | 12V/USB-C harness or piggyback the OBD node. Removes the "2 devices need power" friction; keeps wireless DATA. |
