@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.9.0",
+      "date": "2026-07-08",
+      "notes": "AXIS Knob ecosystem + gear upgrades. If you have an AXIS shift knob, the gauge now shows its real engaged gear wherever you placed a gear reading on a page — including P/R/N/D, which the calculated gear can't show. No setup: the gauge finds the knob on its own and only your gear slot changes; every page you built stays exactly as you set it (if a page has no gear reading, the knob simply isn't shown). New PAIR option in the menu locks the gauge to your own sensor (and knob) with a 6-digit confirmation code, so it reads only your car and ignores another AXIS nearby. The RPM arc now fades toward red as the revs climb, whatever colour you picked. If a page's main value is the gear, its arc follows the second value instead of the meaningless gear digit. When you're stopped the calculated gear always resets to 1, so wheelspin or traction control can't leave it stuck in a high gear. Screen colours no longer shift when the display dims, and a low-fuel warning can't linger after you switch the car off. Includes everything from v0.8.1 (touch overhaul, on-gauge menu + drive recorder, brightness).",
+      "url": "firmware/axis_can_monitor-v0.9.0.bin",
+      "size_bytes": 1479632
+    },
+    {
       "version": "0.8.1",
       "date": "2026-07-08",
       "notes": "Touch overhaul + menu polish. Fixes the big one: the gauge's touch controller was decoding finger coordinates from the wrong register bytes, so every swipe was garbage — taps worked but swipes flip-flopped. Now swipes are clean and gestures are split up: swipe LEFT/RIGHT changes the gauge page, five quick taps open the menu, swipe UP/DOWN moves one item at a time with a smooth AXIS-knob slide, tap selects, press-and-hold exits. Choosing RECORD starts logging and drops you back to the gauge with the red dot. Brightness now caps at a safe level (no more tearing at max) and draws a clean solid arc. A brief settle after opening the menu stops a stray tap from selecting. Everything from v0.8.0 (menu + drive recorder) included.",
