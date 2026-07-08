@@ -74,6 +74,13 @@
   ],
   "node": [
     {
+      "version": "0.4.6",
+      "date": "2026-07-07",
+      "notes": "The real fix for the false LOW FUEL after you switch off. When the engine stops answering (car off / parked) the sensor now marks its fuel/coolant/etc. readings as 'no data' instead of holding the last value while it keeps broadcasting \u2014 so the gauge can't raise a false LOW FUEL (or other) warning on the stale reading during the ~90 s before the sensor sleeps. Works with any display version. Supersedes v0.4.5 (whose 'sleeping' notice fired too late, only at sleep).",
+      "url": "firmware/axis_can_node-v0.4.6.bin",
+      "size_bytes": 924944
+    },
+    {
       "version": "0.4.5",
       "date": "2026-07-07",
       "notes": "Tells the gauge the moment the engine goes off. Just before the sensor goes to sleep (engine off / car parked) it now sends a quick 'sleeping' notice so the gauge closes instantly and drops any warning \u2014 no more false LOW FUEL lingering on the last reading after you switch off. Pair with display v0.7.3. Everything from v0.4.4 (Phase-B channels) unchanged.",
