@@ -26,6 +26,11 @@
     type CanManifest, type CanReleaseEntry,
   } from '../lib/axisCanOta';
   import { parseDriveLog, toCsv, driveLogName, saveTextFile } from '../lib/driveLog';
+  import {
+    type CarProfile, loadProfiles, addProfile, renameProfile,
+    updateProfileCfg, deleteProfile, loadActiveId, saveActiveId,
+  } from '../lib/carProfiles';
+  import { explainDtc, type DtcInfo } from '../lib/dtcDict';
 
   type Phase = 'unavailable' | 'idle' | 'scanning' | 'connecting' | 'loading' | 'ready';
 
@@ -264,6 +269,69 @@
     } finally {
       logBusy = false;
     }
+  }
+
+  // ---- Multi-car profiles (app-side; a profile = a saved GaugeCfg + name) ----
+  let profiles    = $state<CarProfile[]>(loadProfiles());
+  let activeCarId = $state<string>(loadActiveId());
+  let carBusy     = $state(false);
+  let carNote     = $state('');
+
+  /** Load a profile into the editor and (if connected) push it to the gauge. */
+  async function applyCar(id: string) {
+    const p = profiles.find(x => x.id === id);
+    if (!p || carBusy) return;
+    const nc = normalize(clone(p.cfg));
+    cfg = nc;                                   // editor reflects the chosen car
+    activeCarId = id; saveActiveId(id);
+    carNote = '';
+    if (demo || !store.monClient) { carNote = `Loaded "${p.name}" (connect a gauge to apply)`; return; }
+    carBusy = true;
+    try {
+      await store.monClient.setConfig(nc);      // device validates + persists
+      saved = clone(nc);                        // now in sync with the gauge
+      carNote = `✓ Applied "${p.name}"`;
+    } catch (e) {
+      carNote = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      carBusy = false;
+    }
+  }
+
+  function saveCurrentAsCar() {
+    const name = (prompt('Name this car (e.g. "V60 T8", "My BMW")') ?? '').trim();
+    if (!name) return;
+    const r = addProfile(profiles, name, normalize(cfg));
+    profiles = r.list; activeCarId = r.id; saveActiveId(r.id);
+    carNote = `✓ Saved "${name}"`;
+  }
+  function renameCar(id: string) {
+    const p = profiles.find(x => x.id === id); if (!p) return;
+    const name = (prompt('Rename car', p.name) ?? '').trim();
+    if (!name) return;
+    profiles = renameProfile(profiles, id, name);
+  }
+  function updateCar(id: string) {
+    const p = profiles.find(x => x.id === id); if (!p) return;
+    if (!confirm(`Overwrite "${p.name}" with the current settings?`)) return;
+    profiles = updateProfileCfg(profiles, id, normalize(cfg));
+    carNote = `✓ Updated "${p.name}"`;
+  }
+  function deleteCar(id: string) {
+    const p = profiles.find(x => x.id === id); if (!p) return;
+    if (!confirm(`Delete "${p.name}"?`)) return;
+    profiles = deleteProfile(profiles, id);
+    if (activeCarId === id) { activeCarId = ''; saveActiveId(''); }
+  }
+
+  // ---- Fault-code (DTC) lookup — offline dictionary, no backend ----
+  let dtcInput  = $state('');
+  let dtcResult = $state<DtcInfo | null>(null);
+  let dtcErr    = $state('');
+  function lookupDtc() {
+    const r = explainDtc(dtcInput);
+    if (!r) { dtcErr = 'Enter a code like P0301, P0420, U0100…'; dtcResult = null; return; }
+    dtcErr = ''; dtcResult = r;
   }
 
   onMount(async () => {
@@ -668,6 +736,59 @@
     </details>
   {/if}
 
+  <!-- Cars — save a full gauge setup per car and switch between them (app-side) -->
+  <div class="card">
+    <h3>Cars</h3>
+    <p class="sub dim">Save this whole setup (gearbox, tyres, pages, colours) as a named car, then switch between cars in one tap.</p>
+    {#if profiles.length}
+      <select class="car-select" bind:value={activeCarId} disabled={carBusy}>
+        <option value="">Choose a car…</option>
+        {#each profiles as p (p.id)}
+          <option value={p.id}>{p.name}</option>
+        {/each}
+      </select>
+      {#if activeCarId}
+        <div class="fw-actions">
+          <button class="fw-install up" onclick={() => applyCar(activeCarId)} disabled={carBusy}>
+            {carBusy ? 'Applying…' : 'Apply to gauge'}
+          </button>
+          <button class="ghost" onclick={() => updateCar(activeCarId)} disabled={carBusy}>Save changes here</button>
+          <button class="ghost" onclick={() => renameCar(activeCarId)} disabled={carBusy}>Rename</button>
+          <button class="ghost" onclick={() => deleteCar(activeCarId)} disabled={carBusy}>Delete</button>
+        </div>
+      {/if}
+    {:else}
+      <p class="sub dim">No cars saved yet — set up the gauge below, then save it as your first car.</p>
+    {/if}
+    <div class="fw-actions">
+      <button class="primary" onclick={saveCurrentAsCar} disabled={carBusy}>Save current as a new car</button>
+    </div>
+    {#if carNote}<p class="note">{carNote}</p>{/if}
+  </div>
+
+  <!-- Fault-code lookup — offline OBD-II dictionary (no backend) -->
+  <details class="card fw-card">
+    <summary>Fault-code lookup</summary>
+    <p class="sub dim">Type an OBD-II trouble code (from a scan or your dash) to see what it means. Offline; generic codes.</p>
+    <div class="dtc-row">
+      <input class="fw-input dtc-input" type="text" placeholder="e.g. P0301" bind:value={dtcInput}
+             maxlength="5" onkeydown={(e) => { if (e.key === 'Enter') lookupDtc(); }} />
+      <button class="ghost" onclick={lookupDtc}>Look up</button>
+    </div>
+    {#if dtcErr}<p class="note">{dtcErr}</p>{/if}
+    {#if dtcResult}
+      <div class="dtc-result">
+        <div class="dtc-head">
+          <span class="dtc-code">{dtcResult.code}</span>
+          <span class="dtc-sys">{dtcResult.system}</span>
+        </div>
+        <p class="dtc-title">{dtcResult.title}</p>
+        <p class="sub">{dtcResult.detail}</p>
+        {#if !dtcResult.known}<p class="sub dim">Category shown from the code structure — not in the built-in list.</p>{/if}
+      </div>
+    {/if}
+  </details>
+
   <!-- Drive log — pull the on-gauge recorder file over BLE + export CSV -->
   {#if !demo}
     <details class="card fw-card" ontoggle={onLogToggle}>
@@ -737,6 +858,24 @@
     border-radius: var(--r-2);
     padding: var(--s-4);
   }
+
+  /* Cars + fault-code lookup */
+  .car-select {
+    width: 100%; margin: var(--s-2) 0;
+    padding: 8px 10px; border-radius: var(--r-1);
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+    font-size: 15px;
+  }
+  .dtc-row { display: flex; gap: var(--s-2); margin: var(--s-2) 0; }
+  .dtc-input { flex: 1; text-transform: uppercase; }
+  .dtc-result {
+    margin-top: var(--s-2); padding: var(--s-3);
+    border: 1px solid var(--border); border-radius: var(--r-1); background: var(--bg);
+  }
+  .dtc-head { display: flex; align-items: baseline; gap: var(--s-2); flex-wrap: wrap; }
+  .dtc-code { font-family: var(--font-mono); font-size: 18px; color: var(--accent); font-weight: 700; }
+  .dtc-sys  { font-size: 11px; color: var(--muted); }
+  .dtc-title { margin: 4px 0 2px; font-size: 15px; font-weight: 600; }
   h3 { margin: 0 0 var(--s-2); font-size: 18px; }
   .sub { color: var(--muted); font-size: 13px; margin: 0 0 var(--s-3); }
   .sub.dim { opacity: 0.7; }
