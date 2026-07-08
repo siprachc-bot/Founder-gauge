@@ -25,6 +25,7 @@
     fetchCanManifest, latest, downloadFirmware, parseVer,
     type CanManifest, type CanReleaseEntry,
   } from '../lib/axisCanOta';
+  import { parseDriveLog, toCsv, driveLogName, saveTextFile } from '../lib/driveLog';
 
   type Phase = 'unavailable' | 'idle' | 'scanning' | 'connecting' | 'loading' | 'ready';
 
@@ -208,6 +209,60 @@
       flashMsg = '✗ ' + String((e as Error)?.message ?? e);
     } finally {
       flashing = '';
+    }
+  }
+
+  // ---- Drive log: pull the on-device recorder file over BLE + export CSV ----
+  let logBusy = $state(false);      // pulling / erasing
+  let logPct  = $state(0);
+  let logMsg  = $state('');
+  let logStat = $state('');         // "N samples · X KB" once GET_INFO ran
+  let logLoaded = false;
+
+  async function loadLogInfo() {
+    if (demo || !store.monClient || logBusy) return;
+    try {
+      const i = await store.monClient.logInfo();
+      logLoaded = true;
+      logStat = i.count > 0
+        ? `${i.count.toLocaleString()} samples · ${Math.round(i.size / 1024)} KB · ~${Math.round(i.count / 5)}s`
+        : 'No drive recorded yet';
+    } catch (e) {
+      logStat = ''; logMsg = 'Couldn’t read log: ' + String((e as Error)?.message ?? e);
+    }
+  }
+  function onLogToggle(e: Event) {
+    if ((e.currentTarget as HTMLDetailsElement).open && !logLoaded) loadLogInfo();
+  }
+
+  async function pullDriveLog() {
+    if (!store.monClient || logBusy) return;
+    logBusy = true; logPct = 0; logMsg = 'Pulling log…';
+    try {
+      const raw = await store.monClient.pullLog((p) => (logPct = p));
+      const log = parseDriveLog(raw);
+      if (!log.samples.length) { logMsg = 'The log is empty.'; return; }
+      await saveTextFile(driveLogName(log), 'text/csv', toCsv(log));
+      logMsg = `✓ Exported ${log.samples.length.toLocaleString()} samples`;
+    } catch (e) {
+      logMsg = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      logBusy = false;
+    }
+  }
+
+  async function eraseDriveLog() {
+    if (!store.monClient || logBusy) return;
+    if (!confirm('Erase the drive log stored on the gauge? This cannot be undone.')) return;
+    logBusy = true; logMsg = 'Erasing…';
+    try {
+      const ok = await store.monClient.eraseLog();
+      logMsg = ok ? '✓ Log erased' : '✗ Couldn’t erase (is it recording?)';
+      logStat = ok ? 'No drive recorded yet' : logStat;
+    } catch (e) {
+      logMsg = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      logBusy = false;
     }
   }
 
@@ -610,6 +665,28 @@
           {flashing ? `Flashing… ${flashPct}%` : 'Flash this file'}
         </button>
       </details>
+    </details>
+  {/if}
+
+  <!-- Drive log — pull the on-gauge recorder file over BLE + export CSV -->
+  {#if !demo}
+    <details class="card fw-card" ontoggle={onLogToggle}>
+      <summary>Drive log</summary>
+      <p class="sub dim">
+        Records your drive on the gauge when you tap <b>RECORD</b> in its menu.
+        Pull it here to save a spreadsheet (CSV) of every reading over time.
+      </p>
+      {#if logStat}<p class="fw-row-ver">{logStat}</p>{/if}
+      {#if logBusy && logPct > 0}
+        <div class="fw-bar"><div class="fw-fill" style="width:{logPct}%"></div></div>
+      {/if}
+      {#if logMsg}<p class="note">{logMsg}</p>{/if}
+      <div class="fw-actions">
+        <button class="fw-install up" onclick={pullDriveLog} disabled={logBusy}>
+          {logBusy ? `Pulling… ${logPct}%` : 'Download CSV'}
+        </button>
+        <button class="ghost" onclick={eraseDriveLog} disabled={logBusy}>Erase</button>
+      </div>
     </details>
   {/if}
 

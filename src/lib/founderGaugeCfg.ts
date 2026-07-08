@@ -22,6 +22,7 @@ const ACK_CHAR        = '7e1c0203-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // notify, 1 byt
 const BRIGHT_CHAR     = '7e1c0204-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // write, 1 byte live brightness
 const OTA_CHAR        = '7e1c0205-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // firmware OTA (write chunks + notify)
 const VER_CHAR        = '7e1c0206-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // read, 8-byte version report
+const LOG_CHAR        = '7e1c0207-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // drive-log pull: WRITE cmd → READ reply
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -520,5 +521,64 @@ export class MonitorBleClient {
   /** Flash the monitor (gauge) itself over BLE self-OTA. */
   flashMonitor(bin: Uint8Array, onProgress?: (pct: number) => void): Promise<void> {
     return this.flash(OTA_TARGET_MONITOR, bin, onProgress);
+  }
+
+  // ---- Drive-log pull (char 7e1c0207) ----
+  // Request/response on one characteristic: WRITE a command, then READ the reply.
+  // Must match axis_can_monitor/src/BleGaugeCfg.cpp LogCb + system/Datalogger.*.
+  //   WRITE [0x00]              → READ [sizeLE(4)|countLE(4)|logVer|sampleBytes] (10 B)
+  //   WRITE [0x01, offsetLE(4)] → READ up to ~180 raw log bytes @offset (0 B past EOF)
+  //   WRITE [0x02]              → READ [status] (1=erased)
+
+  private logWrite(bytes: Uint8Array): Promise<void> {
+    return CapBle.write(this.deviceId, MON_SVC, LOG_CHAR, new DataView(bytes.buffer));
+  }
+  private logRead(): Promise<DataView> {
+    return CapBle.read(this.deviceId, MON_SVC, LOG_CHAR);
+  }
+
+  /** GET_INFO: stored-log size (bytes, incl. 20-B header), sample count, format. */
+  async logInfo(): Promise<{ size: number; count: number; ver: number; sampleBytes: number }> {
+    await this.logWrite(new Uint8Array([0x00]));
+    const v = await this.logRead();
+    if (v.byteLength < 10) throw new Error(`short log info: ${v.byteLength}B`);
+    return {
+      size: v.getUint32(0, true),
+      count: v.getUint32(4, true),
+      ver: v.getUint8(8),
+      sampleBytes: v.getUint8(9),
+    };
+  }
+
+  /** Pull the whole drive-log file off the device (header + all samples). Loops
+   *  GET_CHUNK, accumulating, driving onProgress (0..100). Throws if nothing recorded. */
+  async pullLog(onProgress?: (pct: number) => void): Promise<Uint8Array> {
+    const info = await this.logInfo();
+    if (info.size <= 20 || info.count === 0)
+      throw new Error('No drive recorded yet — tap RECORD on the gauge, take a drive, then pull the log.');
+
+    const out = new Uint8Array(info.size);
+    let off = 0, stall = 0;
+    while (off < info.size) {
+      const req = new Uint8Array(5);
+      req[0] = 0x01;
+      new DataView(req.buffer).setUint32(1, off, true);
+      await this.logWrite(req);
+      const chunk = await this.logRead();
+      const n = chunk.byteLength;
+      if (n === 0) { if (++stall > 3) break; continue; }   // EOF or a transient empty read
+      stall = 0;
+      out.set(new Uint8Array(chunk.buffer, chunk.byteOffset, n), off);
+      off += n;
+      onProgress?.(Math.min(100, Math.round((off / info.size) * 100)));
+    }
+    return out.subarray(0, off);
+  }
+
+  /** ERASE the stored drive-log on the device. Returns true if it was deleted. */
+  async eraseLog(): Promise<boolean> {
+    await this.logWrite(new Uint8Array([0x02]));
+    const v = await this.logRead();
+    return v.byteLength > 0 && v.getUint8(0) === 1;
   }
 }

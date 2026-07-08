@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.9.1",
+      "date": "2026-07-08",
+      "notes": "Drive log export. When you record a drive on the gauge (tap RECORD in its menu), you can now pull that recording into the app and save it as a spreadsheet (CSV) — every reading (RPM, speed, boost, coolant, battery, gear, throttle, and more) sampled five times a second, with a timestamp. Open the new 'Drive log' card in the app, tap Download CSV, then open it in Excel / Numbers / Google Sheets or any data tool. An Erase button clears the gauge's stored log. Nothing else changes — everything from v0.9.0 (knob-gear ecosystem, sensor pairing, RPM-arc-red, gear/arc refinements, gamma dimming, engine-off fuel fix) is included.",
+      "url": "firmware/axis_can_monitor-v0.9.1.bin",
+      "size_bytes": 1480464
+    },
+    {
       "version": "0.9.0",
       "date": "2026-07-08",
       "notes": "AXIS Knob ecosystem + gear upgrades. If you have an AXIS shift knob, the gauge now shows its real engaged gear wherever you placed a gear reading on a page — including P/R/N/D, which the calculated gear can't show. No setup: the gauge finds the knob on its own and only your gear slot changes; every page you built stays exactly as you set it (if a page has no gear reading, the knob simply isn't shown). New PAIR option in the menu locks the gauge to your own sensor (and knob) with a 6-digit confirmation code, so it reads only your car and ignores another AXIS nearby. The RPM arc now fades toward red as the revs climb, whatever colour you picked. If a page's main value is the gear, its arc follows the second value instead of the meaningless gear digit. When you're stopped the calculated gear always resets to 1, so wheelspin or traction control can't leave it stuck in a high gear. Screen colours no longer shift when the display dims, and a low-fuel warning can't linger after you switch the car off. Includes everything from v0.8.1 (touch overhaul, on-gauge menu + drive recorder, brightness).",
