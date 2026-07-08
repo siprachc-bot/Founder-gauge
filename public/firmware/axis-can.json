@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.8.0",
+      "date": "2026-07-08",
+      "notes": "On-gauge menu + drive recorder. Press and hold the screen to open a clean mono-line menu (swipe up/down to move, tap to choose): RECORD, DTC SCAN, SESSION, BRIGHTNESS. RECORD logs your whole drive to the gauge — a small red dot shows it's live; it saves automatically when you switch off (download & CSV/GPX export land in the next app update). DTC SCAN shows your car's stored fault-code count (green tick when clear). SESSION reopens your last-drive recap. BRIGHTNESS lets you dim/brighten right on the gauge. The old hold-to-log diagnostic screen is retired. Everything from v0.7.4 (accel timer, engine-off fix, Phase-B channels) unchanged.",
+      "url": "firmware/axis_can_monitor-v0.8.0.bin",
+      "size_bytes": 1472352
+    },
+    {
       "version": "0.7.4",
       "date": "2026-07-07",
       "notes": "Acceleration timer. From a standing start the gauge now times your run and flashes a 0-60 / 0-100 km/h result card, then remembers your best \u2014 a green 'NEW BEST!' when you beat it. No setup: it arms when you're stopped, starts when you launch, and shows the splits. Tap to dismiss. Uses the speed already on the sensor link, so nothing else changes. Everything from v0.7.3 (engine-off alert fix) unchanged.",
