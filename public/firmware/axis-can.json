@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.8.1",
+      "date": "2026-07-08",
+      "notes": "Touch overhaul + menu polish. Fixes the big one: the gauge's touch controller was decoding finger coordinates from the wrong register bytes, so every swipe was garbage — taps worked but swipes flip-flopped. Now swipes are clean and gestures are split up: swipe LEFT/RIGHT changes the gauge page, five quick taps open the menu, swipe UP/DOWN moves one item at a time with a smooth AXIS-knob slide, tap selects, press-and-hold exits. Choosing RECORD starts logging and drops you back to the gauge with the red dot. Brightness now caps at a safe level (no more tearing at max) and draws a clean solid arc. A brief settle after opening the menu stops a stray tap from selecting. Everything from v0.8.0 (menu + drive recorder) included.",
+      "url": "firmware/axis_can_monitor-v0.8.1.bin",
+      "size_bytes": 1473360
+    },
+    {
       "version": "0.8.0",
       "date": "2026-07-08",
       "notes": "On-gauge menu + drive recorder. Press and hold the screen to open a clean mono-line menu (swipe up/down to move, tap to choose): RECORD, DTC SCAN, SESSION, BRIGHTNESS. RECORD logs your whole drive to the gauge — a small red dot shows it's live; it saves automatically when you switch off (download & CSV/GPX export land in the next app update). DTC SCAN shows your car's stored fault-code count (green tick when clear). SESSION reopens your last-drive recap. BRIGHTNESS lets you dim/brighten right on the gauge. The old hold-to-log diagnostic screen is retired. Everything from v0.7.4 (accel timer, engine-off fix, Phase-B channels) unchanged.",
