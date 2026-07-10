@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.10.1",
+      "date": "2026-07-10",
+      "notes": "CHECK-ENGINE alarm meaning now shown in ENGLISH (short per-code label, e.g. 'Cylinder misfire', 'Catalyst efficiency low'), drawn with the built-in font. Same severity ring + per-code icon + code text as v0.10.0. Needs node v0.5.0 for the actual codes.",
+      "url": "firmware/axis_can_monitor-v0.10.1.bin",
+      "size_bytes": 1503712
+    },
+    {
       "version": "0.10.0",
       "date": "2026-07-10",
       "notes": "Enriched CHECK-ENGINE alarm: node now sends the REAL stored codes (0xAF) so the full-screen alarm shows a severity ring (red=serious / amber=emissions), a per-code icon (P0301 -> spark plug), the TRANSLATED Thai meaning, and the code text. Needs node v0.5.0 for the actual codes; falls back to count-only without it.",
