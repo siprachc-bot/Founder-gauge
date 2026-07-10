@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.10.2",
+      "date": "2026-07-10",
+      "notes": "Clear fault codes from the gauge: menu -> DTC, when codes are stored swipe up to arm, tap to confirm -> the car's codes + check-engine light are cleared (node Mode-04). Needs node v0.5.1.",
+      "url": "firmware/axis_can_monitor-v0.10.2.bin",
+      "size_bytes": 1507120
+    },
+    {
       "version": "0.10.1",
       "date": "2026-07-10",
       "notes": "CHECK-ENGINE alarm meaning now shown in ENGLISH (short per-code label, e.g. 'Cylinder misfire', 'Catalyst efficiency low'), drawn with the built-in font. Same severity ring + per-code icon + code text as v0.10.0. Needs node v0.5.0 for the actual codes.",
@@ -185,6 +192,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.1",
+      "date": "2026-07-10",
+      "notes": "Clear DTC support: on a 0xC1 command from the gauge, runs Mode-04 (wipes stored codes + turns the MIL off) then rescans. Also the v0.5.0 DTC broadcast. USB-flashed on min_spiffs (OTA-capable).",
+      "url": "firmware/axis_can_node-v0.5.1.bin",
+      "size_bytes": 929856
+    },
     {
       "version": "0.5.0",
       "date": "2026-07-10",
