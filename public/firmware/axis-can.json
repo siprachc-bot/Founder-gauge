@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.10.3",
+      "date": "2026-07-10",
+      "notes": "Bigger code-meaning text on the check-engine alarm (larger, easier to read at a glance).",
+      "url": "firmware/axis_can_monitor-v0.10.3.bin",
+      "size_bytes": 1507104
+    },
+    {
       "version": "0.10.2",
       "date": "2026-07-10",
       "notes": "Clear fault codes from the gauge: menu -> DTC, when codes are stored swipe up to arm, tap to confirm -> the car's codes + check-engine light are cleared (node Mode-04). Needs node v0.5.1.",
