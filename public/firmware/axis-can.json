@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.9.8",
+      "date": "2026-07-10",
+      "notes": "Last Drive fix. Your gauge is powered from the 12V accessory socket, so it switches off the instant the car does — before it could save the drive you just finished, which is why the Last Drive page was stuck at zero. It now saves your drive progress every minute while you drive, so the recap survives the power cut and shows your latest drive at the next key-on. Includes the live colour preview (v0.9.7) and CVT display (v0.9.6).",
+      "url": "firmware/axis_can_monitor-v0.9.8.bin",
+      "size_bytes": 1495392
+    },
+    {
       "version": "0.9.7",
       "date": "2026-07-10",
       "notes": "Live colour preview. When you change a page's arc colour in the app, the gauge now recolours that page instantly while you drag the picker — it jumps to the page you're editing and updates in real time, so you can dial in the exact colour on the screen itself. The colour saves normally when you tap Save. Includes the CVT display (v0.9.6) and the multi-car gear tools + 280+ car Drivetrain library (v0.9.5).",
