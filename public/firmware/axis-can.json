@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.9.7",
+      "date": "2026-07-10",
+      "notes": "Live colour preview. When you change a page's arc colour in the app, the gauge now recolours that page instantly while you drag the picker — it jumps to the page you're editing and updates in real time, so you can dial in the exact colour on the screen itself. The colour saves normally when you tap Save. Includes the CVT display (v0.9.6) and the multi-car gear tools + 280+ car Drivetrain library (v0.9.5).",
+      "url": "firmware/axis_can_monitor-v0.9.7.bin",
+      "size_bytes": 1495264
+    },
+    {
       "version": "0.9.6",
       "date": "2026-07-10",
       "notes": "CVT display. If you pick a CVT / eCVT car in the app's Drivetrain list, the gauge now shows \"CVT\" in the gear slot instead of a made-up number — a CVT has no fixed gears, so a calculated gear was meaningless. Your real P/R/N/D (from an AXIS sensor or knob) still takes priority when available; everything else works as before. Also adds the multi-car gear-profile push and the 180+ car Drivetrain preset library from v0.9.5.",
