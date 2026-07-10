@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.11.0",
+      "date": "2026-07-10",
+      "notes": "Fault codes in the app: the Fault-code card now reads your car's ACTUAL stored codes over BLE (new char 7e1c020a) and explains each one, with a Clear-codes button (runs Mode-04 on the car). Needs node v0.5.1.",
+      "url": "firmware/axis_can_monitor-v0.11.0.bin",
+      "size_bytes": 1507584
+    },
+    {
       "version": "0.10.3",
       "date": "2026-07-10",
       "notes": "Bigger code-meaning text on the check-engine alarm (larger, easier to read at a glance).",

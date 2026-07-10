@@ -13,6 +13,7 @@
 //    axis_can_monitor/src/ui/GaugeChannels.h (Channel enum values = wire IDs)
 // =====================================================================
 import { BleClient as CapBle, type ScanResult } from '@capacitor-community/bluetooth-le';
+import { rawToDtc } from './dtcDict';
 
 // New service base for the MONITOR — distinct from knob (7e1c000x) and
 // gauge_fw (7e1c010x). Must match axis_can_monitor/src/BleGaugeCfg.cpp.
@@ -20,9 +21,12 @@ export const MON_SVC  = '7e1c0201-9b3a-4f8e-8a5b-9d2e1f3a7c6d';
 const CFG_CHAR        = '7e1c0202-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // read+write, 46-byte struct
 const ACK_CHAR        = '7e1c0203-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // notify, 1 byte apply result
 const BRIGHT_CHAR     = '7e1c0204-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // write, 1 byte live brightness
+const COLOR_CHAR      = '7e1c0209-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // write, [page, RGB565 LE] live arc colour
 const OTA_CHAR        = '7e1c0205-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // firmware OTA (write chunks + notify)
 const VER_CHAR        = '7e1c0206-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // read, 8-byte version report
 const LOG_CHAR        = '7e1c0207-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // drive-log pull: WRITE cmd → READ reply
+const GEAR_CHAR       = '7e1c0208-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // Push-A: 38-byte GearProfile relay → node
+const DTC_CHAR        = '7e1c020a-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // DTC: READ live code list, WRITE[0x01] clear
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -32,6 +36,10 @@ export const OTA_TARGET_MONITOR = 1;   // the monitor self-flashes its own ota_1
 /** A firmware version triple {major,minor,patch} the monitor reports over BLE. */
 export interface FwVersion { major: number; minor: number; patch: number; }
 export interface DeviceVersions { monitor: FwVersion; node: FwVersion | null; }
+
+/** The car's live stored trouble codes, read from the monitor (char 7e1c020a).
+ *  `codes` are decoded to printed form ("P0301"); `mil` = check-engine lamp on. */
+export interface DtcSnapshot { count: number; mil: boolean; codes: string[]; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -274,7 +282,7 @@ export function cfgValid(c: GaugeCfg): boolean {
   }
   if (!(c.brightness >= 0 && c.brightness <= 255)) return false;
   if (!(c.rpmLimit >= 1000 && c.rpmLimit <= 12000)) return false;
-  if (!(c.gearCount >= 1 && c.gearCount <= 8)) return false;
+  if (!(c.gearCount >= 0 && c.gearCount <= 8)) return false;   // 0 = CVT/eCVT (gauge shows "CVT")
   if (!(c.shiftRpm === 0 || (c.shiftRpm >= 1000 && c.shiftRpm <= 12000))) return false;
   if (!(c.finalDrive > 0.5 && c.finalDrive < 10)) return false;
   if (!(c.tireWidth >= 100 && c.tireWidth <= 400)) return false;
@@ -402,11 +410,40 @@ export class MonitorBleClient {
     await CapBle.write(this.deviceId, MON_SVC, CFG_CHAR, new DataView(bytes.buffer));
   }
 
+  /** Push-A: send a car's 38-byte gear-decode GearProfile (char 7e1c0208). The
+   *  monitor forwards it VERBATIM to the CAN node over ESP-NOW (byte[0]==0xC0);
+   *  the node applies it + persists to NVS so the car's REAL gear decodes without
+   *  a firmware reflash. `bytes` MUST be exactly GEAR_PROFILE_BYTES (38) — build
+   *  it with encodeGearProfile() from gearProfiles.ts. Resolves once the monitor
+   *  NOTIFYs it relayed the blob (or after a short timeout — ESP-NOW is fire-and-
+   *  forget, so the node's on-screen "gear profile set" log is the real proof). */
+  async setGearProfile(bytes: Uint8Array): Promise<void> {
+    if (bytes.length !== 38) throw new Error(`gear profile must be 38 bytes, got ${bytes.length}`);
+    let relayed: (() => void) | null = null;
+    const done = new Promise<void>((res) => (relayed = res));
+    try {
+      await CapBle.startNotifications(this.deviceId, MON_SVC, GEAR_CHAR, (v: DataView) => {
+        if (v.byteLength > 0 && v.getUint8(0) === 1 && relayed) relayed();
+      });
+    } catch { /* NOTIFY optional — fall through to the write + timeout */ }
+    await CapBle.write(this.deviceId, MON_SVC, GEAR_CHAR, new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
+    await Promise.race([done, new Promise<void>((res) => setTimeout(res, 1500))]);
+    try { await CapBle.stopNotifications(this.deviceId, MON_SVC, GEAR_CHAR); } catch { /* ignore */ }
+  }
+
   /** Live-dim the AMOLED (1-byte write to 7e1c0204) as the slider drags —
    *  applied immediately on the device, persisted only when setConfig() saves. */
   async setBrightness(v: number): Promise<void> {
     const b = new Uint8Array([Math.max(0, Math.min(255, Math.round(v)))]);
     await CapBle.writeWithoutResponse(this.deviceId, MON_SVC, BRIGHT_CHAR, new DataView(b.buffer));
+  }
+
+  /** Live-recolour a page's arc (3-byte write to 7e1c0209: [page, RGB565 LE]) as the
+   *  owner drags the colour picker. The gauge jumps to `page` and repaints its arc
+   *  immediately; applied in RAM only, persisted when setConfig() Saves. */
+  async setPageColor(page: number, color565: number): Promise<void> {
+    const b = new Uint8Array([page & 0xff, color565 & 0xff, (color565 >> 8) & 0xff]);
+    await CapBle.writeWithoutResponse(this.deviceId, MON_SVC, COLOR_CHAR, new DataView(b.buffer));
   }
 
   /** Read the device firmware versions (char 7e1c0206, 8 bytes):
@@ -420,6 +457,31 @@ export class MonitorBleClient {
       monitor: { major: v.getUint8(0), minor: v.getUint8(1), patch: v.getUint8(2) },
       node: nodeSeen ? { major: v.getUint8(3), minor: v.getUint8(4), patch: v.getUint8(5) } : null,
     };
+  }
+
+  /** Read the car's live stored trouble codes (char 7e1c020a). The monitor packs
+   *  [count, mil, code0_hi, code0_lo, …] from the node's latest 0xAF list; we
+   *  decode each raw 2-byte code to its printed form ("P0301"). Empty (count 0)
+   *  means the car reported no codes; a short read means the monitor is on an
+   *  older firmware (no DTC char) → treat as "not supported". */
+  async readDtcCodes(): Promise<DtcSnapshot> {
+    const v = await CapBle.read(this.deviceId, MON_SVC, DTC_CHAR);
+    if (v.byteLength < 2) return { count: 0, mil: false, codes: [] };
+    const count = v.getUint8(0);
+    const mil = v.getUint8(1) === 1;
+    const codes: string[] = [];
+    for (let i = 0; i < count && 2 + i * 2 + 1 < v.byteLength; i++) {
+      codes.push(rawToDtc(v.getUint8(2 + i * 2), v.getUint8(3 + i * 2)));
+    }
+    return { count, mil, codes };
+  }
+
+  /** Clear the car's stored codes + check-engine light (char 7e1c020a WRITE[0x01]).
+   *  The monitor relays it to the node, which runs Mode-04. Fire-and-forget — poll
+   *  readDtcCodes() a few seconds later to confirm the codes dropped. */
+  async clearDtcCodes(): Promise<void> {
+    const b = new Uint8Array([0x01]);
+    await CapBle.write(this.deviceId, MON_SVC, DTC_CHAR, new DataView(b.buffer));
   }
 
   /** Flash a firmware image over BLE (char 7e1c0205). `target` selects where it

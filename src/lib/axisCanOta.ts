@@ -43,12 +43,45 @@ export interface CanManifest {
 // resolveCanUrl() strips back past /firmware/ so entry `url`s resolve under
 // .../public/firmware/. Owner `siprachc-bot`.
 //
-// FRESHNESS: jsDelivr edge-caches `@main` for ~12 h (s-maxage). After pushing a
-// new manifest/bin, purge it so the app sees it immediately:
-//   curl https://purge.jsdelivr.net/gh/siprachc-bot/Founder-gauge@main/public/firmware/axis-can.json
-// Versioned .bin filenames are immutable, so their cache is a feature, not a bug.
-export const CAN_MANIFEST_URL =
-  'https://cdn.jsdelivr.net/gh/siprachc-bot/Founder-gauge@main/public/firmware/axis-can.json';
+// FRESHNESS — WHY WE PIN A COMMIT SHA, NOT @main:
+// jsDelivr caches the branch→commit map for `@main` (~12 h s-maxage) and
+// purge.jsdelivr.net clears the FILE cache but NOT that stale branch-head
+// resolution. After a few rapid pushes the app kept reading an OLD axis-can.json
+// even though the versioned .bin files (new filenames) were fresh (2026-07-10).
+// FIX: resolve the latest commit SHA from the GitHub API and pull EVERYTHING from
+// the IMMUTABLE `@<sha>` path — always fresh, no branch cache. Falls back to `@main`
+// if the API is unreachable/rate-limited (api.github.com, not the 429-happy raw.*).
+const CAN_REPO = 'siprachc-bot/Founder-gauge';
+const CAN_SITE_ROOT_MAIN = `https://cdn.jsdelivr.net/gh/${CAN_REPO}@main/public/`;
+
+// Back-compat export (@main manifest URL). fetchCanManifest resolves a fresher
+// @<sha> URL at runtime; this constant stays for any external reference/logging.
+export const CAN_MANIFEST_URL = `${CAN_SITE_ROOT_MAIN}firmware/axis-can.json`;
+
+// Site root the current session resolves manifest + bins against. Set by
+// fetchCanManifest() to the @<sha> path once resolved so downloadFirmware() pulls
+// the matching commit's .bin. Defaults to @main until the first manifest fetch.
+let g_canSiteRoot = CAN_SITE_ROOT_MAIN;
+
+/** Latest commit SHA on main via the GitHub API (null on any failure → caller
+ *  falls back to @main). Tiny `application/vnd.github.sha` response. */
+async function ghLatestSha(timeoutMs = 6000): Promise<string | null> {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`https://api.github.com/repos/${CAN_REPO}/commits/main`, {
+      signal: ctrl.signal,
+      headers: { Accept: 'application/vnd.github.sha' },
+    });
+    if (!res.ok) return null;
+    const sha = (await res.text()).trim();
+    return /^[0-9a-f]{40}$/i.test(sha) ? sha : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(tid);
+  }
+}
 
 /** Parse a "0.2.0" version string into a comparable triple. */
 export function parseVer(s: string): FwVersion {
@@ -69,16 +102,24 @@ export function latest(entries: CanReleaseEntry[]): CanReleaseEntry | null {
  *  absolute URL — same rule as axis-companion: strip back past /firmware/. */
 export function resolveCanUrl(relativeOrAbsolute: string): string {
   if (/^https?:\/\//.test(relativeOrAbsolute)) return relativeOrAbsolute;
-  const siteRoot = CAN_MANIFEST_URL.replace(/\/firmware\/[^/]+$/, '/');
-  return new URL(relativeOrAbsolute, siteRoot).toString();
+  // Resolve against the SAME @<sha> (or @main) site root the manifest came from,
+  // so the .bin is pulled from the exact commit we read the manifest at.
+  return new URL(relativeOrAbsolute, g_canSiteRoot).toString();
 }
 
 /** Fetch the CAN firmware manifest (cache-busted so a fresh publish is seen). */
 export async function fetchCanManifest(timeoutMs = 8000): Promise<CanManifest> {
+  // Resolve the newest commit first and pin the immutable @<sha> path (no branch
+  // cache lag); fall back to @main if the GitHub API can't be reached.
+  const sha = await ghLatestSha();
+  g_canSiteRoot = sha
+    ? `https://cdn.jsdelivr.net/gh/${CAN_REPO}@${sha}/public/`
+    : CAN_SITE_ROOT_MAIN;
+  const manifestUrl = `${g_canSiteRoot}firmware/axis-can.json`;
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(`${CAN_MANIFEST_URL}?t=${Date.now()}`, {
+    const res = await fetch(`${manifestUrl}?t=${Date.now()}`, {
       signal: ctrl.signal,
       headers: { Accept: 'application/json' },
     });

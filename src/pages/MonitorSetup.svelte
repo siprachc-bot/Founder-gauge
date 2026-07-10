@@ -30,7 +30,13 @@
     type CarProfile, loadProfiles, addProfile, renameProfile,
     updateProfileCfg, deleteProfile, loadActiveId, saveActiveId,
   } from '../lib/carProfiles';
-  import { explainDtc, type DtcInfo } from '../lib/dtcDict';
+  import { explainDtc, explainDtcList, type DtcInfo } from '../lib/dtcDict';
+  import {
+    GEAR_PROFILES, encodeGearProfile, gearProfileById, DEFAULT_GEAR_PROFILE_ID,
+  } from '../lib/gearProfiles';
+  import {
+    presetBrands, presetModels, presetsFor, presetById,
+  } from '../lib/drivetrainPresets';
 
   type Phase = 'unavailable' | 'idle' | 'scanning' | 'connecting' | 'loading' | 'ready';
 
@@ -82,7 +88,7 @@
       rpmLimit: Number.isFinite(c.rpmLimit)
         ? Math.max(1000, Math.min(12000, Math.round(c.rpmLimit))) : d.rpmLimit,
       gearCount: Number.isFinite(c.gearCount)
-        ? Math.max(1, Math.min(8, Math.round(c.gearCount))) : d.gearCount,
+        ? Math.max(0, Math.min(8, Math.round(c.gearCount))) : d.gearCount,   // 0 = CVT/eCVT
       // shiftRpm: 0 = off, else clamped to a sane RPM window.
       shiftRpm: Number.isFinite(c.shiftRpm)
         ? (c.shiftRpm <= 0 ? 0 : Math.max(1000, Math.min(12000, Math.round(c.shiftRpm)))) : d.shiftRpm,
@@ -102,7 +108,13 @@
 
   // ---- per-page arc colour (custom picker, no preset lock-in) ----
   const pageHex = (i: number) => rgb565ToHex(cfg.pages[i].arcColor ?? ARC_DEFAULT);
-  function setPageColor(i: number, hex: string) { cfg.pages[i].arcColor = hexToRgb565(hex); }
+  function setPageColor(i: number, hex: string) {
+    const c565 = hexToRgb565(hex);
+    cfg.pages[i].arcColor = c565;
+    // Live preview: push the colour to the gauge in real time as the picker drags
+    // (RAM-only on the device; the full cfg persists it when the owner taps Save).
+    if (!demo && store.monClient) store.monClient.setPageColor(i, c565).catch(() => {});
+  }
 
   // ---- per-page peak (native units of the big value) ----
   // Pre-fill the channel's sensible default when the big value changes.
@@ -298,6 +310,71 @@
     }
   }
 
+  // ---- Push-A: real-gear car profile (a 38-byte gear-decode spec pushed to
+  //      the node so the car's TRUE P/R/N/D gear decodes without a reflash) ----
+  const GEAR_LS_KEY = 'foundergauge.gearCar';
+  let gearCarId = $state<string>(
+    (() => { try { return localStorage.getItem(GEAR_LS_KEY) || DEFAULT_GEAR_PROFILE_ID; }
+             catch { return DEFAULT_GEAR_PROFILE_ID; } })(),
+  );
+  let gearBusy = $state(false);
+  let gearNote = $state('');
+  let gearCar  = $derived(gearProfileById(gearCarId));
+
+  /** Send the selected car's gear-decode profile to the node (via the monitor). */
+  async function sendGearProfile() {
+    const p = gearCar;
+    if (!p || gearBusy) return;
+    try { localStorage.setItem(GEAR_LS_KEY, p.id); } catch { /* private mode */ }
+    gearNote = '';
+    if (!p.pushable) { gearNote = 'This car needs an in-car gear scan before it can be sent.'; return; }
+    if (demo || !store.monClient) { gearNote = 'Connect a gauge first.'; return; }
+    gearBusy = true;
+    try {
+      await store.monClient.setGearProfile(encodeGearProfile(p));
+      gearNote = `✓ Sent "${p.name}" — the sensor now decodes its real gear.`;
+    } catch (e) {
+      gearNote = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      gearBusy = false;
+    }
+  }
+
+  // ---- Drivetrain preset (Brand → Model → Year fills the gear ratios etc.) ----
+  let presetBrand = $state('');
+  let presetModel = $state('');
+  let presetId    = $state('');
+  let presetModelList = $derived(presetBrand ? presetModels(presetBrand) : []);
+  let presetYearList  = $derived(presetBrand && presetModel ? presetsFor(presetBrand, presetModel) : []);
+  let chosenPreset    = $derived(presetId ? presetById(presetId) : undefined);
+
+  function onPresetBrand() { presetModel = ''; presetId = ''; }
+  function onPresetModel() {
+    presetId = '';
+    // Single year/trim variant → auto-apply so the user doesn't need a 3rd tap.
+    const list = presetsFor(presetBrand, presetModel);
+    if (list.length === 1) applyPreset(list[0].id);
+  }
+  /** Fill the drivetrain fields from a preset (tyre is left for the user).
+   *  CVT/eCVT presets (gearCount 0, no ratios) only set the redline — there is
+   *  no fixed gear to calculate, so gear ratios are left untouched. */
+  function applyPreset(id: string) {
+    const p = presetById(id);
+    if (!p) return;
+    presetId = id;
+    cfg.rpmLimit = p.redline;
+    if (p.shiftRpm) cfg.shiftRpm = p.shiftRpm;
+    if (p.gearCount >= 1 && p.ratios.length === p.gearCount) {
+      const r = [...p.ratios];
+      while (r.length < 8) r.push(0);
+      cfg.gearCount  = p.gearCount;
+      cfg.gearRatios = r.slice(0, 8);
+      cfg.finalDrive = p.finalDrive;
+    } else {
+      cfg.gearCount = 0;    // CVT/eCVT → gauge shows a constant "CVT" label
+    }
+  }
+
   function saveCurrentAsCar() {
     const name = (prompt('Name this car (e.g. "V60 T8", "My BMW")') ?? '').trim();
     if (!name) return;
@@ -332,6 +409,47 @@
     const r = explainDtc(dtcInput);
     if (!r) { dtcErr = 'Enter a code like P0301, P0420, U0100…'; dtcResult = null; return; }
     dtcErr = ''; dtcResult = r;
+  }
+
+  // ---- Read / clear the car's ACTUAL stored codes (char 7e1c020a) ----
+  let carCodes  = $state<DtcInfo[]>([]);
+  let carMil    = $state(false);
+  let carRead   = $state(false);     // a read has completed (so "none" is meaningful)
+  let dtcBusy   = $state(false);
+  let carMsg    = $state('');
+  async function readCarCodes() {
+    if (demo || !store.monClient || dtcBusy) return;
+    dtcBusy = true; carMsg = 'Reading the car…';
+    try {
+      const snap = await store.monClient.readDtcCodes();
+      carCodes = explainDtcList(snap.codes);
+      carMil = snap.mil; carRead = true;
+      carMsg = snap.count === 0
+        ? '' : `${snap.count} stored code${snap.count === 1 ? '' : 's'}`;
+    } catch (e) {
+      carMsg = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      dtcBusy = false;
+    }
+  }
+  async function clearCarCodes() {
+    if (demo || !store.monClient || dtcBusy) return;
+    if (!confirm('Clear all stored codes and turn off the check-engine light? The car must be running / in READY.')) return;
+    dtcBusy = true; carMsg = 'Clearing…';
+    try {
+      await store.monClient.clearDtcCodes();
+      await new Promise((r) => setTimeout(r, 2500));   // let the node run Mode-04 + rescan
+      const snap = await store.monClient.readDtcCodes();
+      carCodes = explainDtcList(snap.codes);
+      carMil = snap.mil; carRead = true;
+      carMsg = snap.count === 0
+        ? '✓ Cleared — no codes remain'
+        : `${snap.count} code${snap.count === 1 ? '' : 's'} still present (fault may be active, or the gateway blocked the clear)`;
+    } catch (e) {
+      carMsg = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      dtcBusy = false;
+    }
   }
 
   onMount(async () => {
@@ -619,39 +737,45 @@
   <!-- vehicle / drivetrain: feeds the monitor's calculated-gear rule -->
   <div class="card">
     <div class="bright-head"><span class="lbl">Drivetrain</span></div>
-    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
-      <span>Redline (RPM)</span>
-      <input type="number" min="1000" max="12000" step="100" bind:value={cfg.rpmLimit}
-             style="width:96px;text-align:right;" />
-    </label>
-    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
-      <span>Forward gears</span>
-      <select bind:value={cfg.gearCount} style="width:96px;">
-        {#each [4, 5, 6, 7, 8] as n}<option value={n}>{n}</option>{/each}
+    <p class="sub dim" style="margin-top:4px;">
+      Pick your car and enter your tyre size — the gear ratios are filled in for you.
+    </p>
+
+    <!-- 1) Pick the car: Brand → Model → Year -->
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;">
+      <span>Brand</span>
+      <select bind:value={presetBrand} onchange={onPresetBrand} style="width:64%;">
+        <option value="">Choose…</option>
+        {#each presetBrands() as b}<option value={b}>{b}</option>{/each}
       </select>
     </label>
-    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
-      <span>Shift light (RPM)</span>
-      <input type="number" min="0" max="12000" step="100" bind:value={cfg.shiftRpm}
-             style="width:96px;text-align:right;" />
-    </label>
+    {#if presetBrand}
+      <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+        <span>Model</span>
+        <select bind:value={presetModel} onchange={onPresetModel} style="width:64%;">
+          <option value="">Choose…</option>
+          {#each presetModelList as m}<option value={m}>{m}</option>{/each}
+        </select>
+      </label>
+    {/if}
+    {#if presetModel && presetYearList.length > 1}
+      <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+        <span>Year</span>
+        <select value={presetId} onchange={(e) => applyPreset((e.currentTarget as HTMLSelectElement).value)} style="width:64%;">
+          <option value="">Choose…</option>
+          {#each presetYearList as p (p.id)}<option value={p.id}>{p.years}</option>{/each}
+        </select>
+      </label>
+    {/if}
+    {#if chosenPreset}
+      <p class="sub dim" style="margin-top:6px;line-height:1.4;">
+        <b>{chosenPreset.trans}{chosenPreset.verified ? ' ✓' : ''}</b> ·
+        {chosenPreset.gearCount >= 1 ? `${chosenPreset.gearCount}-speed` : 'no fixed gears — the gauge shows “CVT”'}{#if chosenPreset.note} · {chosenPreset.note}{/if}
+      </p>
+    {/if}
 
-    <div style="margin-top:12px;opacity:.85;font-size:.85em;">Gear ratios (for accurate gear)</div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;margin-top:6px;">
-      {#each Array(cfg.gearCount) as _, i}
-        <label style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span style="opacity:.7;">G{i + 1}</span>
-          <input type="number" min="0" max="20" step="0.001" bind:value={cfg.gearRatios[i]}
-                 style="width:80px;text-align:right;" />
-        </label>
-      {/each}
-    </div>
-    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
-      <span>Final drive</span>
-      <input type="number" min="0.5" max="10" step="0.001" bind:value={cfg.finalDrive}
-             style="width:96px;text-align:right;" />
-    </label>
-    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+    <!-- 2) Tyre size — the one thing the user must enter -->
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;">
       <span>Tyre size</span>
       <span style="display:flex;align-items:center;gap:4px;">
         <input type="number" min="100" max="400" step="5" bind:value={cfg.tireWidth}  style="width:56px;text-align:right;" />/
@@ -659,11 +783,77 @@
         <input type="number" min="10"  max="26"  step="1" bind:value={cfg.tireRim}    style="width:44px;text-align:right;" />
       </span>
     </label>
+
+    <!-- Advanced: type the numbers by hand (car not listed / fine-tuning) -->
+    <details class="dt-adv">
+      <summary>Advanced — enter values manually</summary>
+      <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+        <span>Redline (RPM)</span>
+        <input type="number" min="1000" max="12000" step="100" bind:value={cfg.rpmLimit}
+               style="width:96px;text-align:right;" />
+      </label>
+      <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+        <span>Forward gears</span>
+        <select bind:value={cfg.gearCount} style="width:96px;">
+          {#each [4, 5, 6, 7, 8] as n}<option value={n}>{n}</option>{/each}
+        </select>
+      </label>
+      <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+        <span>Shift light (RPM)</span>
+        <input type="number" min="0" max="12000" step="100" bind:value={cfg.shiftRpm}
+               style="width:96px;text-align:right;" />
+      </label>
+      <div style="margin-top:12px;opacity:.85;font-size:.85em;">Gear ratios</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;margin-top:6px;">
+        {#each Array(cfg.gearCount) as _, i}
+          <label style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <span style="opacity:.7;">G{i + 1}</span>
+            <input type="number" min="0" max="20" step="0.001" bind:value={cfg.gearRatios[i]}
+                   style="width:80px;text-align:right;" />
+          </label>
+        {/each}
+      </div>
+      <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
+        <span>Final drive</span>
+        <input type="number" min="0.5" max="10" step="0.001" bind:value={cfg.finalDrive}
+               style="width:96px;text-align:right;" />
+      </label>
+    </details>
+
     <p style="opacity:.6;font-size:.8em;margin-top:8px;line-height:1.4;">
       The gear is calculated from RPM + speed using your gear ratios, final drive
-      and tyre size. Shift light flashes the screen red at the RPM above (0 = off).
+      and tyre size. If the gear reads a step high or low, nudge Final drive in
+      Advanced. Shift light flashes the screen red at the redline (0 = off).
     </p>
   </div>
+
+  <!-- Push-A: real gear — pick the car so the sensor reads the TRUE selector -->
+  {#if !demo}
+    <div class="card">
+      <div class="bright-head"><span class="lbl">Real gear (car model)</span></div>
+      <p class="sub dim" style="margin-top:4px;">
+        Pick your car so the sensor reads the <b>real</b> P/R/N/D straight off the
+        car's computer (not just the calculated gear). Sent to the sensor and remembered.
+      </p>
+      <select class="car-select" bind:value={gearCarId} disabled={gearBusy} style="margin-top:8px;">
+        {#each GEAR_PROFILES as p (p.id)}
+          <option value={p.id} disabled={!p.pushable}>
+            {p.name}{p.verified ? ' ✓' : p.pushable ? '' : ' (coming soon)'}
+          </option>
+        {/each}
+      </select>
+      {#if gearCar}
+        <p class="sub dim" style="margin-top:6px;line-height:1.4;">
+          <b>{gearCar.platform}</b>{#if gearCar.note} · {gearCar.note}{/if}
+        </p>
+      {/if}
+      <button class="ghost wide" style="margin-top:10px;"
+        onclick={sendGearProfile} disabled={gearBusy || !gearCar?.pushable}>
+        {gearBusy ? 'Sending…' : 'Send to sensor'}
+      </button>
+      {#if gearNote}<p class="note">{gearNote}</p>{/if}
+    </div>
+  {/if}
 
   <!-- SN-AXIS-style firmware updates (gauge + sensor, from GitHub releases) -->
   {#snippet fwRow(label: string, which: 'monitor' | 'node',
@@ -769,7 +959,38 @@
   <!-- Fault-code lookup — offline OBD-II dictionary (no backend) -->
   <details class="card fw-card">
     <summary>Fault-code lookup</summary>
-    <p class="sub dim">Type an OBD-II trouble code (from a scan or your dash) to see what it means. Offline; generic codes.</p>
+
+    {#if !demo}
+      <!-- Read the car's ACTUAL stored codes straight off the gauge (char 7e1c020a) -->
+      <p class="sub dim">Read the trouble codes your car has stored right now — the gauge pulls them from the car and this explains each one.</p>
+      <div class="dtc-row">
+        <button class="ghost" onclick={readCarCodes} disabled={dtcBusy}>
+          {carRead ? 'Re-read from car' : 'Read codes from car'}
+        </button>
+        {#if carRead && (carCodes.length > 0 || carMil)}
+          <button class="ghost" style="color:#e24b4a" onclick={clearCarCodes} disabled={dtcBusy}>Clear codes</button>
+        {/if}
+      </div>
+      {#if carMsg}<p class="note">{carMsg}</p>{/if}
+      {#if carRead && carCodes.length === 0 && !carMsg}
+        <p class="sub" style="color:#3b9c4f">✓ No stored codes — your car is clean.</p>
+      {/if}
+      {#each carCodes as info (info.code)}
+        <div class="dtc-result">
+          <div class="dtc-head">
+            <span class="dtc-code">{info.code}</span>
+            <span class="dtc-sys">{info.system}</span>
+          </div>
+          <p class="dtc-title">{info.title}</p>
+          <p class="sub">{info.detail}</p>
+          {#if !info.known}<p class="sub dim">Category from the code structure — not in the built-in list.</p>{/if}
+        </div>
+      {/each}
+      <p class="sub dim" style="margin-top:14px">Or look up any code by hand:</p>
+    {:else}
+      <p class="sub dim">Type an OBD-II trouble code (from a scan or your dash) to see what it means. Offline; generic codes.</p>
+    {/if}
+
     <div class="dtc-row">
       <input class="fw-input dtc-input" type="text" placeholder="e.g. P0301" bind:value={dtcInput}
              maxlength="5" onkeydown={(e) => { if (e.key === 'Enter') lookupDtc(); }} />
@@ -866,6 +1087,13 @@
     border: 1px solid var(--border); background: var(--bg); color: var(--fg);
     font-size: 15px;
   }
+  .dt-adv { margin-top: var(--s-3); border-top: 1px solid var(--border); padding-top: var(--s-2); }
+  .dt-adv > summary {
+    cursor: pointer; list-style: none; font-size: 13px; color: var(--muted);
+    padding: var(--s-1) 0;
+  }
+  .dt-adv > summary::-webkit-details-marker { display: none; }
+  .dt-adv > summary::before { content: '⌁ '; color: var(--accent); }
   .dtc-row { display: flex; gap: var(--s-2); margin: var(--s-2) 0; }
   .dtc-input { flex: 1; text-transform: uppercase; }
   .dtc-result {
