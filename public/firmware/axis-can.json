@@ -235,6 +235,13 @@
   ],
   "node": [
     {
+      "version": "0.5.2",
+      "date": "2026-07-10",
+      "notes": "In-car diagnostic probe (read-only, no security): after the engine answers, tries WWH-OBD (0x22 F4xx), Mode-02 freeze-frame, and 0x19 Read-DTC-Info, logging what the car's gateway passes. Results appear on the monitor's USB serial. One-time capture \u2014 turn off after.",
+      "url": "firmware/axis_can_node-v0.5.2.bin",
+      "size_bytes": 931312
+    },
+    {
       "version": "0.5.1",
       "date": "2026-07-10",
       "notes": "Clear DTC support: on a 0xC1 command from the gauge, runs Mode-04 (wipes stored codes + turns the MIL off) then rescans. Also the v0.5.0 DTC broadcast. USB-flashed on min_spiffs (OTA-capable).",
