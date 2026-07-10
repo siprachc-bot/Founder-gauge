@@ -30,7 +30,7 @@
     type CarProfile, loadProfiles, addProfile, renameProfile,
     updateProfileCfg, deleteProfile, loadActiveId, saveActiveId,
   } from '../lib/carProfiles';
-  import { explainDtc, explainDtcList, type DtcInfo } from '../lib/dtcDict';
+  import { richDtc, SEVERITY_META, type DtcRich } from '../lib/dtcRich';
   import {
     GEAR_PROFILES, encodeGearProfile, gearProfileById, DEFAULT_GEAR_PROFILE_ID,
   } from '../lib/gearProfiles';
@@ -401,20 +401,25 @@
     if (activeCarId === id) { activeCarId = ''; saveActiveId(''); }
   }
 
-  // ---- Fault-code (DTC) lookup — offline dictionary, no backend ----
+  // ---- Fault-code (DTC) lookup — offline rich explainer, no backend ----
   let dtcInput  = $state('');
-  let dtcResult = $state<DtcInfo | null>(null);
+  let dtcResult = $state<DtcRich | null>(null);
   let dtcErr    = $state('');
   function lookupDtc() {
-    const r = explainDtc(dtcInput);
+    const r = richDtc(dtcInput);
     if (!r) { dtcErr = 'Enter a code like P0301, P0420, U0100…'; dtcResult = null; return; }
     dtcErr = ''; dtcResult = r;
   }
 
+  function toRich(codes: string[]): DtcRich[] {
+    return codes.map((c) => richDtc(c)).filter((x): x is DtcRich => !!x);
+  }
+
   // ---- Read / clear the car's ACTUAL stored codes (char 7e1c020a) ----
-  let carCodes  = $state<DtcInfo[]>([]);
+  let carCodes  = $state<DtcRich[]>([]);
   let carMil    = $state(false);
   let carRead   = $state(false);     // a read has completed (so "none" is meaningful)
+  let carCond   = $state<{ rpm: number; coolant: number; load: number } | null>(null);
   let dtcBusy   = $state(false);
   let carMsg    = $state('');
   async function readCarCodes() {
@@ -422,8 +427,8 @@
     dtcBusy = true; carMsg = 'Reading the car…';
     try {
       const snap = await store.monClient.readDtcCodes();
-      carCodes = explainDtcList(snap.codes);
-      carMil = snap.mil; carRead = true;
+      carCodes = toRich(snap.codes);
+      carMil = snap.mil; carRead = true; carCond = snap.conditions ?? null;
       carMsg = snap.count === 0
         ? '' : `${snap.count} stored code${snap.count === 1 ? '' : 's'}`;
     } catch (e) {
@@ -440,8 +445,8 @@
       await store.monClient.clearDtcCodes();
       await new Promise((r) => setTimeout(r, 2500));   // let the node run Mode-04 + rescan
       const snap = await store.monClient.readDtcCodes();
-      carCodes = explainDtcList(snap.codes);
-      carMil = snap.mil; carRead = true;
+      carCodes = toRich(snap.codes);
+      carMil = snap.mil; carRead = true; carCond = snap.conditions ?? null;
       carMsg = snap.count === 0
         ? '✓ Cleared — no codes remain'
         : `${snap.count} code${snap.count === 1 ? '' : 's'} still present (fault may be active, or the gateway blocked the clear)`;
@@ -450,6 +455,13 @@
     } finally {
       dtcBusy = false;
     }
+  }
+
+  // Compose a deep-dive prompt for the code and hand it to the chat (sendPrompt
+  // lives in the widget host; in the app we open a web search as the offline CTA).
+  function deepDive(r: DtcRich) {
+    const q = encodeURIComponent(`${r.code} ${r.headline} — causes and step-by-step DIY diagnosis`);
+    window.open(`https://www.google.com/search?q=${q}`, '_blank');
   }
 
   onMount(async () => {
@@ -960,9 +972,35 @@
   <details class="card fw-card">
     <summary>Fault-code lookup</summary>
 
+    {#snippet richCard(r: DtcRich)}
+      <div class="rc" style="--sev:{SEVERITY_META[r.severity].color}">
+        <div class="rc-top">
+          <span class="rc-code">{r.code}</span>
+          <span class="rc-badge">{SEVERITY_META[r.severity].label}</span>
+        </div>
+        <p class="rc-headline">{r.headline}</p>
+        <p class="rc-sys">{r.systemShort}</p>
+
+        <p class="rc-section">Symptoms you'll actually feel</p>
+        <ul class="rc-list">
+          {#each r.symptoms as s}<li>{s}</li>{/each}
+        </ul>
+
+        <div class="rc-drive">{r.drive}</div>
+
+        <p class="rc-section">Most likely causes</p>
+        <ol class="rc-causes">
+          {#each r.causes as c, i}<li><span class="rc-num">{i + 1}</span><span>{c}</span></li>{/each}
+        </ol>
+
+        {#if !r.known}<p class="sub dim">Shown from the code structure — not in the built-in list.</p>{/if}
+        <button class="rc-ai" onclick={() => deepDive(r)}>Search causes &amp; DIY steps ↗</button>
+      </div>
+    {/snippet}
+
     {#if !demo}
       <!-- Read the car's ACTUAL stored codes straight off the gauge (char 7e1c020a) -->
-      <p class="sub dim">Read the trouble codes your car has stored right now — the gauge pulls them from the car and this explains each one.</p>
+      <p class="sub dim">Read the trouble codes your car has stored right now — the gauge pulls them from the car and explains each one in plain English.</p>
       <div class="dtc-row">
         <button class="ghost" onclick={readCarCodes} disabled={dtcBusy}>
           {carRead ? 'Re-read from car' : 'Read codes from car'}
@@ -975,20 +1013,19 @@
       {#if carRead && carCodes.length === 0 && !carMsg}
         <p class="sub" style="color:#3b9c4f">✓ No stored codes — your car is clean.</p>
       {/if}
-      {#each carCodes as info (info.code)}
-        <div class="dtc-result">
-          <div class="dtc-head">
-            <span class="dtc-code">{info.code}</span>
-            <span class="dtc-sys">{info.system}</span>
-          </div>
-          <p class="dtc-title">{info.title}</p>
-          <p class="sub">{info.detail}</p>
-          {#if !info.known}<p class="sub dim">Category from the code structure — not in the built-in list.</p>{/if}
+      {#if carCond && carCodes.length > 0}
+        <div class="rc-chips">
+          <span class="rc-chip">Now · RPM {carCond.rpm}</span>
+          <span class="rc-chip">Coolant {carCond.coolant}°C</span>
+          <span class="rc-chip">Load {carCond.load}%</span>
         </div>
+      {/if}
+      {#each carCodes as r (r.code)}
+        {@render richCard(r)}
       {/each}
-      <p class="sub dim" style="margin-top:14px">Or look up any code by hand:</p>
+      <p class="sub dim" style="margin-top:16px">Or look up any code by hand:</p>
     {:else}
-      <p class="sub dim">Type an OBD-II trouble code (from a scan or your dash) to see what it means. Offline; generic codes.</p>
+      <p class="sub dim">Type an OBD-II trouble code (from a scan or your dash) to see what it means. Offline; plain English.</p>
     {/if}
 
     <div class="dtc-row">
@@ -997,17 +1034,7 @@
       <button class="ghost" onclick={lookupDtc}>Look up</button>
     </div>
     {#if dtcErr}<p class="note">{dtcErr}</p>{/if}
-    {#if dtcResult}
-      <div class="dtc-result">
-        <div class="dtc-head">
-          <span class="dtc-code">{dtcResult.code}</span>
-          <span class="dtc-sys">{dtcResult.system}</span>
-        </div>
-        <p class="dtc-title">{dtcResult.title}</p>
-        <p class="sub">{dtcResult.detail}</p>
-        {#if !dtcResult.known}<p class="sub dim">Category shown from the code structure — not in the built-in list.</p>{/if}
-      </div>
-    {/if}
+    {#if dtcResult}{@render richCard(dtcResult)}{/if}
   </details>
 
   <!-- Drive log — pull the on-gauge recorder file over BLE + export CSV -->
@@ -1096,14 +1123,45 @@
   .dt-adv > summary::before { content: '⌁ '; color: var(--accent); }
   .dtc-row { display: flex; gap: var(--s-2); margin: var(--s-2) 0; }
   .dtc-input { flex: 1; text-transform: uppercase; }
-  .dtc-result {
-    margin-top: var(--s-2); padding: var(--s-3);
-    border: 1px solid var(--border); border-radius: var(--r-1); background: var(--bg);
+
+  /* Rich fault-code card */
+  .rc {
+    margin-top: var(--s-2); padding: var(--s-3) 14px;
+    border: 1px solid var(--border); border-left: 3px solid var(--sev);
+    border-radius: var(--r-1); background: var(--bg);
   }
-  .dtc-head { display: flex; align-items: baseline; gap: var(--s-2); flex-wrap: wrap; }
-  .dtc-code { font-family: var(--font-mono); font-size: 18px; color: var(--accent); font-weight: 700; }
-  .dtc-sys  { font-size: 11px; color: var(--muted); }
-  .dtc-title { margin: 4px 0 2px; font-size: 15px; font-weight: 600; }
+  .rc-top { display: flex; align-items: center; gap: var(--s-2); }
+  .rc-code { font-family: var(--font-mono); font-size: 19px; font-weight: 700; color: var(--fg); }
+  .rc-badge {
+    font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+    color: var(--sev); border: 1px solid var(--sev);
+  }
+  .rc-headline { margin: 7px 0 2px; font-size: 16px; font-weight: 600; line-height: 1.35; }
+  .rc-sys { margin: 0; font-size: 12px; color: var(--muted); }
+  .rc-section { margin: 13px 0 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .rc-list { margin: 0; padding-left: 18px; }
+  .rc-list li { font-size: 14px; line-height: 1.55; margin: 3px 0; }
+  .rc-drive {
+    margin: 12px 0 2px; padding: 10px 12px; font-size: 13.5px; line-height: 1.5;
+    border-radius: var(--r-1); border: 1px solid var(--sev); background: var(--surface-2); color: var(--fg);
+  }
+  .rc-causes { list-style: none; margin: 0; padding: 0; }
+  .rc-causes li { display: flex; align-items: center; gap: 10px; font-size: 14px; margin: 6px 0; }
+  .rc-num {
+    flex: none; width: 20px; height: 20px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #fff; background: var(--accent);
+  }
+  .rc-ai {
+    width: 100%; margin-top: 14px; padding: 10px; font-size: 14px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: var(--r-1);
+    background: var(--surface-2); color: var(--fg);
+  }
+  .rc-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-2) 0; }
+  .rc-chip {
+    font-size: 12px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted); background: var(--bg);
+  }
   h3 { margin: 0 0 var(--s-2); font-size: 18px; }
   .sub { color: var(--muted); font-size: 13px; margin: 0 0 var(--s-3); }
   .sub.dim { opacity: 0.7; }

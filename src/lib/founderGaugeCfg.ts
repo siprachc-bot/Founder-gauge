@@ -38,8 +38,14 @@ export interface FwVersion { major: number; minor: number; patch: number; }
 export interface DeviceVersions { monitor: FwVersion; node: FwVersion | null; }
 
 /** The car's live stored trouble codes, read from the monitor (char 7e1c020a).
- *  `codes` are decoded to printed form ("P0301"); `mil` = check-engine lamp on. */
-export interface DtcSnapshot { count: number; mil: boolean; codes: string[]; }
+ *  `codes` are decoded to printed form ("P0301"); `mil` = check-engine lamp on.
+ *  `conditions` = current RPM/coolant/load, if the monitor appended them. */
+export interface DtcSnapshot {
+  count: number;
+  mil: boolean;
+  codes: string[];
+  conditions?: { rpm: number; coolant: number; load: number };
+}
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -473,7 +479,17 @@ export class MonitorBleClient {
     for (let i = 0; i < count && 2 + i * 2 + 1 < v.byteLength; i++) {
       codes.push(rawToDtc(v.getUint8(2 + i * 2), v.getUint8(3 + i * 2)));
     }
-    return { count, mil, codes };
+    // Optional trailing current-conditions block (RPM u16 LE, coolant i16 LE, load u8).
+    const condOff = 2 + count * 2;
+    let conditions: DtcSnapshot['conditions'];
+    if (v.byteLength >= condOff + 5) {
+      conditions = {
+        rpm: v.getUint16(condOff, true),
+        coolant: v.getInt16(condOff + 2, true),
+        load: v.getUint8(condOff + 4),
+      };
+    }
+    return { count, mil, codes, conditions };
   }
 
   /** Clear the car's stored codes + check-engine light (char 7e1c020a WRITE[0x01]).
