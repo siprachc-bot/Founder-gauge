@@ -19,7 +19,7 @@
     CHANNELS, CHANNEL_GROUPS, Ch, Layout, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE,
     hexToRgb565, rgb565ToHex, verStr, verCmp,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
-    type GaugeCfg, type DeviceVersions, type FwVersion,
+    type GaugeCfg, type DeviceVersions, type FwVersion, type AccelTimes,
   } from '../lib/founderGaugeCfg';
   import {
     fetchCanManifest, latest, downloadFirmware, parseVer,
@@ -462,6 +462,40 @@
   function deepDive(r: DtcRich) {
     const q = encodeURIComponent(`${r.code} ${r.headline} — causes and step-by-step DIY diagnosis`);
     window.open(`https://www.google.com/search?q=${q}`, '_blank');
+  }
+
+  // ---- Acceleration best times (char 7e1c020b) ----
+  const SPEED_LABELS = ['0-100 km/h', '100-200 km/h', '200-300 km/h'];
+  const DIST_LABELS  = ['60 ft', '201 m (1/8 mi)', '402 m (1/4 mi)'];
+  let accelTimes = $state<AccelTimes | null>(null);
+  let accelBusy  = $state(false);
+  let accelMsg   = $state('');
+  const fmtT = (ms: number | null) => (ms == null ? '—' : (ms / 1000).toFixed(2) + ' s');
+  async function readAccelTimes() {
+    if (demo || !store.monClient || accelBusy) return;
+    accelBusy = true; accelMsg = 'Reading…';
+    try {
+      accelTimes = await store.monClient.readAccelTimes();
+      accelMsg = '';
+    } catch (e) {
+      accelMsg = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      accelBusy = false;
+    }
+  }
+  function accelHasAny(t: AccelTimes | null): boolean {
+    return !!t && [...t.speed, ...t.dist].some((e) => e.ms != null);
+  }
+  async function downloadAccelCsv() {
+    if (!accelTimes) return;
+    const rows = ['category,target,time_s,trap_kmh'];
+    accelTimes.speed.forEach((e, i) => {
+      if (e.ms != null) rows.push(`speed,${SPEED_LABELS[i]},${(e.ms / 1000).toFixed(2)},`);
+    });
+    accelTimes.dist.forEach((e, i) => {
+      if (e.ms != null) rows.push(`distance,${DIST_LABELS[i]},${(e.ms / 1000).toFixed(2)},${e.trapKmh ?? ''}`);
+    });
+    await saveTextFile('axis-accel-times.csv', 'text/csv', rows.join('\n'));
   }
 
   onMount(async () => {
@@ -1042,6 +1076,41 @@
     {#if dtcResult}{@render richCard(dtcResult)}{/if}
   </details>
 
+  <!-- Acceleration best times — the gauge's ACCEL TIMER results over BLE -->
+  {#if !demo}
+    <details class="card fw-card">
+      <summary>Acceleration times</summary>
+      <p class="sub dim">Your best runs from the gauge's <b>ACCEL TIMER</b> menu — saved on the gauge and read here.</p>
+      <div class="dtc-row">
+        <button class="ghost" onclick={readAccelTimes} disabled={accelBusy}>
+          {accelTimes ? 'Refresh' : 'Read best times'}
+        </button>
+        {#if accelHasAny(accelTimes)}
+          <button class="ghost" onclick={downloadAccelCsv}>Download CSV</button>
+        {/if}
+      </div>
+      {#if accelMsg}<p class="note">{accelMsg}</p>{/if}
+      {#if accelTimes}
+        <table class="acc-tbl">
+          <tbody>
+            <tr><td class="acc-h" colspan="2">By speed</td></tr>
+            {#each accelTimes.speed as e, i}
+              <tr><td>{SPEED_LABELS[i]}</td><td class="acc-v">{fmtT(e.ms)}</td></tr>
+            {/each}
+            <tr><td class="acc-h" colspan="2">By distance</td></tr>
+            {#each accelTimes.dist as e, i}
+              <tr><td>{DIST_LABELS[i]}</td>
+                <td class="acc-v">{fmtT(e.ms)}{#if e.ms != null && e.trapKmh} · {e.trapKmh} km/h{/if}</td></tr>
+            {/each}
+          </tbody>
+        </table>
+        {#if !accelHasAny(accelTimes)}
+          <p class="sub dim">No runs saved yet — arm a run from the gauge's ACCEL TIMER menu.</p>
+        {/if}
+      {/if}
+    </details>
+  {/if}
+
   <!-- Drive log — pull the on-gauge recorder file over BLE + export CSV -->
   {#if !demo}
     <details class="card fw-card" ontoggle={onLogToggle}>
@@ -1170,6 +1239,10 @@
     border: 1px solid var(--border); border-radius: var(--r-1);
     background: var(--surface-2); color: var(--fg);
   }
+  .acc-tbl { width: 100%; border-collapse: collapse; margin-top: var(--s-2); }
+  .acc-tbl td { padding: 7px 2px; font-size: 14px; border-bottom: 0.5px solid var(--border); }
+  .acc-tbl .acc-h { font-size: 12px; color: var(--muted); font-weight: 500; padding-top: 12px; border-bottom: none; }
+  .acc-tbl .acc-v { text-align: right; font-family: var(--font-mono); color: var(--fg); }
   .rc-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-2) 0; }
   .rc-chip {
     font-size: 12px; padding: 4px 10px; border-radius: 999px;

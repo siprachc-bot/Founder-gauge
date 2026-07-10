@@ -27,6 +27,7 @@ const VER_CHAR        = '7e1c0206-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // read, 8-byte 
 const LOG_CHAR        = '7e1c0207-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // drive-log pull: WRITE cmd → READ reply
 const GEAR_CHAR       = '7e1c0208-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // Push-A: 38-byte GearProfile relay → node
 const DTC_CHAR        = '7e1c020a-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // DTC: READ live code list, WRITE[0x01] clear
+const ACCEL_CHAR      = '7e1c020b-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // accel best-times blob (READ, ui::AccelTimes)
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -46,6 +47,11 @@ export interface DtcSnapshot {
   codes: string[];
   conditions?: { rpm: number; coolant: number; load: number };
 }
+
+/** Best acceleration times, read from the monitor (char 7e1c020b). `ms` is null
+ *  when that target has no recorded run yet. `trapKmh` = finish speed (drag only). */
+export interface AccelTimeEntry { ms: number | null; trapKmh?: number; }
+export interface AccelTimes { speed: AccelTimeEntry[]; dist: AccelTimeEntry[]; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -498,6 +504,28 @@ export class MonitorBleClient {
   async clearDtcCodes(): Promise<void> {
     const b = new Uint8Array([0x01]);
     await CapBle.write(this.deviceId, MON_SVC, DTC_CHAR, new DataView(b.buffer));
+  }
+
+  /** Read the saved best acceleration times (char 7e1c020b). Raw ui::AccelTimes:
+   *  [version, pad, speedMs[3] u32 LE, distMs[3] u32 LE, distTrap[3] u16 LE].
+   *  0xFFFFFFFF ms = no run yet. */
+  async readAccelTimes(): Promise<AccelTimes> {
+    const v = await CapBle.read(this.deviceId, MON_SVC, ACCEL_CHAR);
+    const NONE = 0xffffffff;
+    const speed: AccelTimeEntry[] = [];
+    const dist: AccelTimeEntry[] = [];
+    if (v.byteLength >= 32) {
+      for (let i = 0; i < 3; i++) {
+        const ms = v.getUint32(2 + i * 4, true);
+        speed.push({ ms: ms === NONE ? null : ms });
+      }
+      for (let i = 0; i < 3; i++) {
+        const ms = v.getUint32(14 + i * 4, true);
+        const trap = v.getUint16(26 + i * 2, true);
+        dist.push({ ms: ms === NONE ? null : ms, trapKmh: trap || undefined });
+      }
+    }
+    return { speed, dist };
   }
 
   /** Flash a firmware image over BLE (char 7e1c0205). `target` selects where it

@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.12.2",
+      "date": "2026-07-10",
+      "notes": "Accel timer results are now SAVED: best time per target persists on the gauge (survives power-off), a 'BEST TIMES' board in the ACCEL menu, and the app's new 'Acceleration times' card reads them over BLE + exports CSV. Result card shows NEW BEST.",
+      "url": "firmware/axis_can_monitor-v0.12.2.bin",
+      "size_bytes": 1635168
+    },
+    {
       "version": "0.12.1",
       "date": "2026-07-10",
       "notes": "Accel timer: both modes now do a 5-second launch countdown (5..1 -> GO) so you can stage launch control, then timing triggers on speed as before; hold to cancel. Gear: the moment the car moves (speed > 0) it shows 1st gear right away.",
