@@ -993,8 +993,13 @@
           {#each r.causes as c, i}<li><span class="rc-num">{i + 1}</span><span>{c}</span></li>{/each}
         </ol>
 
+        <p class="rc-section">What to check / try first</p>
+        <ul class="rc-fixes">
+          {#each r.fixes as f}<li>{f}</li>{/each}
+        </ul>
+
         {#if !r.known}<p class="sub dim">Shown from the code structure — not in the built-in list.</p>{/if}
-        <button class="rc-ai" onclick={() => deepDive(r)}>Search causes &amp; DIY steps ↗</button>
+        <button class="rc-ai" onclick={() => deepDive(r)}>Search more detail &amp; videos ↗</button>
       </div>
     {/snippet}
 
@@ -1147,6 +1152,14 @@
   }
   .rc-causes { list-style: none; margin: 0; padding: 0; }
   .rc-causes li { display: flex; align-items: center; gap: 10px; font-size: 14px; margin: 6px 0; }
+  .rc-fixes { list-style: none; margin: 0; padding: 0; }
+  .rc-fixes li {
+    position: relative; padding-left: 24px; font-size: 14px; line-height: 1.5; margin: 7px 0;
+  }
+  .rc-fixes li::before {
+    content: '✓'; position: absolute; left: 0; top: 0;
+    color: var(--sev); font-weight: 700;
+  }
   .rc-num {
     flex: none; width: 20px; height: 20px; border-radius: 999px;
     display: inline-flex; align-items: center; justify-content: center;

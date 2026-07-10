@@ -1,11 +1,12 @@
 // =====================================================================
 //  dtcRich.ts — richer, plain-language explanations for the Fault-code
-//  card: severity, real-world symptoms, drive-ability advice, and the
-//  most likely causes ranked by probability.
+//  card: severity, real-world symptoms, drive-ability advice, the most
+//  likely causes ranked by probability, and basic first-step fixes.
 //
 //  A generic OBD scanner shows "P0301" and a dry one-liner. This turns a
 //  code into what the OWNER actually needs: is it safe to drive? what will
-//  it feel like? what's usually wrong? — English, offline, no backend.
+//  it feel like? what's usually wrong? what can I check first? — English,
+//  offline, no backend.
 //
 //  Layered like dtcDict: a CATEGORY table (by SAE J2012 range, mirrors the
 //  gauge's DtcCatalog.cpp) gives every well-formed code sensible content,
@@ -23,6 +24,7 @@ export interface DtcRich {
   symptoms: string[];         // what you'll actually feel behind the wheel
   drive: string;              // drive-ability advice (the banner text)
   causes: string[];           // most likely causes, ranked most→least common
+  fixes: string[];            // basic things to check / try first (owner-doable → when to see a shop)
   known: boolean;             // true if from the curated dictionary (vs category fallback)
 }
 
@@ -82,144 +84,168 @@ const CAT: Record<Cat, Omit<DtcRich, 'code' | 'headline' | 'systemShort' | 'know
     symptoms: ['Rough, shaky idle — jerks at a stop light', 'Hesitation and weak pull, worst on take-off', 'The check-engine light may flash under throttle'],
     drive: 'OK to drive gently for a short trip — but if the light is FLASHING, stop: raw fuel is washing into the catalytic converter (an expensive part).',
     causes: ['Ignition coil worn', 'Spark plug worn out', 'Clogged injector or a compression leak'],
+    fixes: ['Swap the misfiring cylinder’s coil with a neighbour and re-scan — if the misfire follows the coil, replace it', 'Check / replace that cylinder’s spark plug', 'If it persists, have a shop test injectors and compression'],
   },
   coil: {
     severity: 'soon',
     symptoms: ['Rough idle and a stumble under load', 'Occasional loss of power', 'Check-engine light on'],
     drive: 'Drive gently and get it looked at soon — a dead coil causes a misfire that can harm the catalyst over time.',
     causes: ['Failed ignition coil', 'Coil wiring / connector fault', 'Worn spark plug'],
+    fixes: ['Swap the suspect coil with an adjacent one and re-scan — if the fault moves, that coil is bad', 'Unplug and inspect the coil connector for corrosion / looseness', 'Replace the coil (and its plug) once confirmed'],
   },
   cat: {
     severity: 'minor',
     symptoms: ['Usually nothing you can feel', 'Maybe slightly weaker economy', 'May fail an emissions test'],
     drive: 'Safe to keep driving. Fix it before an emissions test — but first rule out a lazy oxygen sensor, which fakes this code.',
     causes: ['Aging / failing catalytic converter', 'Rear oxygen sensor drifting', 'An unfixed exhaust or fuel-trim fault upstream'],
+    fixes: ['Fix any misfire or fuel-trim fault first — they’re what kill catalytic converters', 'Try replacing the rear (post-cat) oxygen sensor — it often fakes this code', 'If it returns after that, the catalytic converter itself needs replacing (a shop job)'],
   },
   o2: {
     severity: 'soon',
     symptoms: ['Rougher running and worse fuel economy', 'Sometimes a faint smell of fuel', 'Check-engine light on'],
     drive: 'Fine to drive. Worth fixing soon — a bad oxygen sensor makes the engine burn richer and can slowly damage the catalyst.',
     causes: ['Worn oxygen (lambda) sensor', 'Sensor wiring / connector', 'Exhaust leak near the sensor'],
+    fixes: ['Unplug and inspect the sensor connector and wiring for damage', 'Check for an exhaust leak near the sensor', 'Replace the oxygen sensor if it stays lazy'],
   },
   lean: {
     severity: 'soon',
     symptoms: ['Hesitation and surging, especially light throttle', 'Rough idle, sometimes stalling', 'Weak power'],
     drive: 'Drive gently. A lean mixture (too much air) run hard can overheat and damage the engine — get it checked soon.',
     causes: ['Vacuum / intake air leak', 'Weak fuel pump or clogged filter', 'Dirty MAF sensor or leaking injector'],
+    fixes: ['Look and listen for a vacuum leak around the intake hoses and gaskets', 'Clean the MAF sensor with MAF-safe cleaner', 'Have fuel pressure and the fuel filter checked if it persists'],
   },
   rich: {
     severity: 'soon',
     symptoms: ['Strong fuel smell, black smoke', 'Poor fuel economy', 'Rough idle, fouled plugs'],
     drive: 'Drive gently and fix soon — a rich mixture (too much fuel) can wash oil off the bores and clog the catalyst.',
     causes: ['Leaking fuel injector', 'Faulty MAF or MAP sensor', 'High fuel pressure / bad regulator'],
+    fixes: ['Check the air filter — a clogged one richens the mix', 'Clean / test the MAF or MAP sensor', 'Have injectors and fuel pressure checked if it persists'],
   },
   fuel: {
     severity: 'soon',
     symptoms: ['Hesitation, misfire-like stumble', 'Hard starting', 'Loss of power under load'],
     drive: 'Drive gently and address soon — fuel-delivery faults tend to get worse and can strand you.',
     causes: ['Clogged or leaking injector', 'Fuel pump / filter restriction', 'Wiring to the fuel system'],
+    fixes: ['Check the injector wiring / connector for the affected cylinder', 'Have fuel pressure and the filter checked', 'Have injectors tested / cleaned if it persists'],
   },
   evap: {
     severity: 'minor',
     symptoms: ['Nothing you can feel', 'Occasionally a faint fuel smell', 'May fail an emissions test'],
     drive: 'Safe to drive. Often just a loose or worn fuel cap — try re-tightening the cap first.',
     causes: ['Loose / faulty fuel cap', 'Cracked EVAP hose', 'Purge or vent valve stuck'],
+    fixes: ['Re-tighten the fuel cap until it clicks, then clear the code and drive', 'If it returns, replace the fuel cap (cheap first step)', 'Still there? Have the EVAP hoses / valves smoke-tested'],
   },
   egr: {
     severity: 'minor',
     symptoms: ['Rough idle or light knock/ping', 'Slight power loss', 'May fail an emissions test'],
     drive: 'Safe to keep driving. Fix at your convenience — a clogged EGR raises emissions and can ping under load.',
     causes: ['Carbon-clogged EGR valve or passages', 'Stuck EGR valve', 'EGR sensor / wiring'],
+    fixes: ['Remove and clean the EGR valve and its passages of carbon', 'Check the EGR vacuum line / electrical connector', 'Replace the valve if it’s stuck'],
   },
   maf: {
     severity: 'soon',
     symptoms: ['Hesitation and surging', 'Rough idle, sometimes stalling', 'Noticeably worse economy'],
     drive: 'Drive gently. A dirty air-flow sensor confuses fuelling — cleaning it often fixes this.',
     causes: ['Dirty mass-air-flow (MAF) sensor', 'Intake air leak after the sensor', 'MAF wiring / connector'],
+    fixes: ['Clean the MAF sensor with MAF-safe cleaner (never touch the wire)', 'Check the intake pipe / clamps for a leak after the sensor', 'Replace the MAF if cleaning doesn’t fix it'],
   },
   iat: {
     severity: 'minor',
     symptoms: ['Usually nothing noticeable', 'Occasional hard cold-start', 'Slightly off economy'],
     drive: 'Safe to drive. An intake-air-temp sensor fault mildly affects fuelling — fix at your convenience.',
-    causes: ['Faulty intake-air-temp sensor', 'Sensor wiring / connector', 'Sensor reads with the MAF (check both)'],
+    causes: ['Faulty intake-air-temp sensor', 'Sensor wiring / connector', 'Often built into the MAF sensor'],
+    fixes: ['Unplug and inspect the IAT (or MAF) connector', 'Clean or replace the sensor', 'Check for a chafed wire near the intake'],
   },
   ect: {
     severity: 'soon',
     symptoms: ['Hard cold-starts, rough warm-up', 'Cooling fans running oddly', 'Higher fuel use when cold'],
     drive: 'Watch the temperature gauge. Fix soon — a bad coolant-temp sensor can mask real overheating.',
     causes: ['Faulty engine-coolant-temp sensor', 'Sensor wiring / connector', 'Low coolant / thermostat'],
+    fixes: ['Check the coolant level first (cold engine only)', 'Inspect the coolant-temp sensor connector', 'Replace the sensor (or thermostat) if faulty'],
   },
   throttle: {
     severity: 'soon',
     symptoms: ['Surging or uneven idle', 'Delayed or jumpy throttle response', 'Sometimes limp mode (reduced power)'],
     drive: 'Drive carefully — the car may drop into reduced-power mode. Get it checked soon.',
     causes: ['Dirty / worn throttle body', 'Throttle or pedal position sensor', 'Throttle actuator wiring'],
+    fixes: ['Clean the throttle body with throttle-body cleaner', 'Check the throttle / pedal connectors', 'A throttle relearn or sensor replacement may be needed (shop)'],
   },
   knock: {
     severity: 'minor',
     symptoms: ['Slight power / economy loss', 'Rarely felt', 'Timing pulled for safety'],
     drive: 'Safe to drive. The engine protects itself by retarding timing — fix at your convenience.',
     causes: ['Faulty knock sensor', 'Sensor wiring / connector', 'Actual engine knock (fuel / carbon)'],
+    fixes: ['Fill with the correct octane fuel and clear the code', 'Inspect the knock-sensor connector', 'Replace the sensor if the code returns'],
   },
   position: {
     severity: 'stop',
     symptoms: ['Stalling or a no-start', 'Sudden cut-outs while driving', 'Hard starting'],
     drive: 'Get this checked before a long trip — a crank/cam position fault can stall the engine without warning.',
     causes: ['Crankshaft / camshaft position sensor', 'Sensor wiring / connector', 'Timing / reluctor-wheel issue'],
+    fixes: ['Don’t ignore this — stalling risk. Inspect the sensor connector / wiring', 'Have the crank / cam sensor tested', 'Replace the sensor (a shop should confirm timing)'],
   },
   vss: {
     severity: 'minor',
     symptoms: ['Speedometer glitches', 'Odd or harsh shifting', 'Cruise control may not work'],
     drive: 'Safe to drive. A speed-sensor fault mainly upsets the gauges and shifting — fix at your convenience.',
     causes: ['Vehicle-speed sensor', 'Sensor wiring / connector', 'Related ABS / wheel-speed fault'],
+    fixes: ['Check the speed-sensor connector', 'Inspect the related wheel-speed / ABS sensors', 'Replace the sensor if faulty'],
   },
   trans: {
     severity: 'soon',
     symptoms: ['Harsh, slipping, or delayed shifts', 'May enter limp mode (one gear only)', 'Warning light on'],
     drive: 'Drive gently and get it checked soon — transmission faults can worsen quickly and are costly.',
     causes: ['Low / old transmission fluid', 'Shift solenoid or sensor', 'Transmission wiring / valve body'],
+    fixes: ['Check the transmission fluid level and condition first', 'Note the exact solenoid / sensor sub-code', 'See a transmission specialist if it persists'],
   },
   volt: {
     severity: 'soon',
     symptoms: ['Flickering lights, odd electronics', 'Hard starting', 'Battery / charge warnings'],
     drive: 'Get it checked soon — a charging-system fault can leave you with a flat battery.',
     causes: ['Alternator / charging fault', 'Weak battery or bad ground', 'Wiring / connector corrosion'],
+    fixes: ['Measure battery voltage: ~12.6V off, ~13.5–14.5V running', 'Clean the battery terminals and ground straps', 'Have the alternator load-tested'],
   },
   ecu: {
     severity: 'soon',
     symptoms: ['Various odd behaviour', 'Warning lights', 'Sometimes a no-start'],
     drive: 'Have it scanned properly soon — internal control-module faults need a technician.',
     causes: ['Control-module internal fault', 'Power / ground to the module', 'Software / update needed'],
+    fixes: ['Check the module’s power and ground connections', 'Ask a dealer whether a software update applies', 'Usually needs a technician to diagnose'],
   },
   hybrid: {
     severity: 'stop',
     symptoms: ['Reduced power / EV mode limited', 'Warning lights', 'Charging behaviour changes'],
     drive: 'Get a hybrid-capable shop to check it soon — high-voltage faults should not be ignored.',
     causes: ['HV battery / cell issue', 'HV cooling or sensor', 'Inverter / converter fault'],
+    fixes: ['Do NOT open anything orange — HV is dangerous', 'Have a hybrid-capable shop read the specific sub-code', 'This is not a DIY repair'],
   },
   abs: {
     severity: 'soon',
     symptoms: ['ABS / traction light on', 'Normal brakes, but no ABS assist', 'Stability control may be off'],
     drive: 'Your normal brakes still work, but ABS/stability may be disabled — drive with extra care and fix soon.',
     causes: ['Wheel-speed sensor', 'Sensor wiring / connector', 'ABS module fault'],
+    fixes: ['Note which wheel the sub-code points to', 'Inspect that wheel-speed sensor and connector for dirt / damage', 'Replace the sensor, or have the ABS module scanned'],
   },
   body: {
     severity: 'minor',
     symptoms: ['A comfort / accessory feature misbehaves', 'A warning light', 'Often no drive effect'],
     drive: 'Usually safe to drive. If it involves airbags or lighting, get it checked promptly.',
     causes: ['Faulty body-control sensor / actuator', 'Wiring / connector', 'Module fault'],
+    fixes: ['Check the fuse for the affected feature', 'Inspect the relevant connector', 'For airbag / SRS faults, see a technician — don’t DIY'],
   },
   network: {
     severity: 'soon',
     symptoms: ['Multiple warning lights at once', 'Gauges or features dropping out', 'Intermittent glitches'],
     drive: 'Have it scanned soon — a communication fault can make several systems act up at once.',
     causes: ['Wiring / connector on the CAN bus', 'A failing module dragging the bus', 'Ground / power fault'],
+    fixes: ['Check for a loose battery or ground connection first', 'Think of any recently added accessory / dashcam and unplug it', 'A shop can find the module dragging the CAN bus'],
   },
   generic: {
     severity: 'soon',
     symptoms: ['Behaviour depends on the exact system', 'Often a warning light', 'May affect running or economy'],
     drive: 'Have it diagnosed to be sure. If the car drives normally and the light is steady, it is usually not an emergency.',
     causes: ['A sensor or actuator in this system', 'Wiring / connector', 'The component itself'],
+    fixes: ['Inspect the related sensor’s connector and wiring', 'Clear the code and see if it returns', 'If it comes back, have the specific code diagnosed'],
   },
 };
 
@@ -229,7 +255,8 @@ type Curated = { headline: string } & Partial<Omit<DtcRich, 'code' | 'known'>>;
 const CURATED: Record<string, Curated> = {
   P0300: { headline: 'Random / multiple-cylinder misfire', systemShort: 'Ignition · random misfire',
     symptoms: ['Shaky idle, jerks at a stop', 'Weak, stumbling acceleration', 'The check-engine light may flash'],
-    causes: ['Worn plugs or coils (several)', 'Vacuum / intake leak', 'Weak fuel delivery or low compression'] },
+    causes: ['Worn plugs or coils (several)', 'Vacuum / intake leak', 'Weak fuel delivery or low compression'],
+    fixes: ['Because it’s not one cylinder, check shared items: plugs, a vacuum leak, fuel pressure', 'Replace plugs if they’re old / due', 'Have a shop check for a vacuum leak and fuel-trim data'] },
   P0420: { headline: 'Catalytic converter efficiency low (Bank 1)', systemShort: 'Emissions · catalyst bank 1' },
   P0430: { headline: 'Catalytic converter efficiency low (Bank 2)', systemShort: 'Emissions · catalyst bank 2' },
   P0171: { headline: 'Fuel mixture too lean (Bank 1)', systemShort: 'Fuel trim · lean bank 1' },
@@ -239,19 +266,24 @@ const CURATED: Record<string, Curated> = {
   P0128: { headline: 'Engine runs too cool (thermostat)', systemShort: 'Cooling · thermostat', severity: 'minor',
     symptoms: ['Heater slow to warm up', 'Temp gauge sits low', 'Slightly worse economy'],
     drive: 'Safe to drive. Usually a thermostat stuck open — fix at your convenience.',
-    causes: ['Thermostat stuck open', 'Coolant-temp sensor', 'Low coolant level'] },
+    causes: ['Thermostat stuck open', 'Coolant-temp sensor', 'Low coolant level'],
+    fixes: ['Check the coolant level (cold engine)', 'Watch warm-up: if it never reaches normal temp, the thermostat is stuck open', 'Replace the thermostat (a common, moderate DIY / cheap shop job)'] },
   P0442: { headline: 'Small EVAP system leak', systemShort: 'Emissions · EVAP small leak' },
   P0455: { headline: 'Large EVAP system leak', systemShort: 'Emissions · EVAP large leak' },
   P0456: { headline: 'Very small EVAP leak', systemShort: 'Emissions · EVAP tiny leak' },
   P0401: { headline: 'EGR flow insufficient', systemShort: 'Emissions · EGR flow low' },
   P0102: { headline: 'Mass air-flow sensor reads low', systemShort: 'Air metering · MAF low' },
   P0101: { headline: 'Mass air-flow sensor out of range', systemShort: 'Air metering · MAF range' },
-  P0135: { headline: 'O2 sensor heater fault (Bank 1 Sensor 1)', systemShort: 'Oxygen sensor · heater B1S1' },
-  P0700: { headline: 'Transmission control system fault', systemShort: 'Transmission · control request' },
+  P0135: { headline: 'O2 sensor heater fault (Bank 1 Sensor 1)', systemShort: 'Oxygen sensor · heater B1S1',
+    fixes: ['Check the O2 sensor connector and its heater fuse', 'Inspect the wiring for damage / melting near the exhaust', 'Replace the oxygen sensor if the heater circuit is open'] },
+  P0700: { headline: 'Transmission control system fault', systemShort: 'Transmission · control request',
+    fixes: ['P0700 is a “see the transmission” flag — read the transmission sub-code (Pxxxx) too', 'Check the transmission fluid level / condition', 'Have a transmission scan for the specific solenoid / sensor'] },
   P0507: { headline: 'Idle speed higher than expected', systemShort: 'Idle control · RPM high', severity: 'minor',
     symptoms: ['Idle sits high', 'Slight lurch when stopping', 'Usually drives fine'],
-    causes: ['Vacuum leak', 'Dirty throttle body / idle valve', 'Throttle body needs relearn'] },
-  U0100: { headline: 'Lost communication with the engine computer', systemShort: 'Network · lost comms ECM' },
+    causes: ['Vacuum leak', 'Dirty throttle body / idle valve', 'Throttle body needs relearn'],
+    fixes: ['Clean the throttle body', 'Check for a vacuum leak (hiss around intake hoses)', 'Do a throttle-body idle relearn if your car supports it'] },
+  U0100: { headline: 'Lost communication with the engine computer', systemShort: 'Network · lost comms ECM',
+    fixes: ['Check the battery terminals and main grounds first', 'Look for water / corrosion in ECM connectors', 'If it persists, a shop must check the CAN wiring / ECM'] },
 };
 
 // Cylinder-specific misfire headlines (P0301..P0312 → cylinder 1..12).
@@ -263,6 +295,7 @@ function misfireCurated(code: string): Curated | null {
       headline: `Cylinder ${cyl} misfires intermittently`,
       systemShort: `Ignition · misfire cylinder ${cyl}`,
       causes: [`Cylinder ${cyl} ignition coil worn`, `Cylinder ${cyl} spark plug worn out`, `Clogged injector or compression leak on cylinder ${cyl}`],
+      fixes: [`Swap cylinder ${cyl}’s coil with a neighbour and re-scan — if the misfire moves, replace that coil`, `Check / replace cylinder ${cyl}’s spark plug`, `If it persists, have that cylinder’s injector and compression checked`],
     };
   }
   return null;
@@ -285,6 +318,7 @@ export function richDtc(rawCode: string): DtcRich | null {
     symptoms: curated?.symptoms ?? base.symptoms,
     drive: curated?.drive ?? base.drive,
     causes: curated?.causes ?? base.causes,
+    fixes: curated?.fixes ?? base.fixes,
     known: !!curated || info.known,
   };
 }
