@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.9.9",
+      "date": "2026-07-10",
+      "notes": "Smoother gear readout. The calculated gear could flicker (1-2-1-2 at low speed while the torque converter slips, or sweep 3-4-5 when you lift off after a kickdown) because it picks the gear purely from RPM vs speed. It now waits for a gear to settle before showing the change - downshifts stay quick, upshifts are held slightly longer so a throttle lift no longer makes the number jump around. Includes the Last Drive fix (v0.9.8).",
+      "url": "firmware/axis_can_monitor-v0.9.9.bin",
+      "size_bytes": 1495472
+    },
+    {
       "version": "0.9.8",
       "date": "2026-07-10",
       "notes": "Last Drive fix. Your gauge is powered from the 12V accessory socket, so it switches off the instant the car does — before it could save the drive you just finished, which is why the Last Drive page was stuck at zero. It now saves your drive progress every minute while you drive, so the recap survives the power cut and shows your latest drive at the next key-on. Includes the live colour preview (v0.9.7) and CVT display (v0.9.6).",
