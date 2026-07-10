@@ -498,6 +498,34 @@
     await saveTextFile('axis-accel-times.csv', 'text/csv', rows.join('\n'));
   }
 
+  // ---- Node log (char 7e1c020c) — the CAN node's captured diagnostic log ----
+  let nlogBusy = $state(false);
+  let nlogPct  = $state(0);
+  let nlogMsg  = $state('');
+  async function downloadNodeLog() {
+    if (demo || !store.monClient || nlogBusy) return;
+    nlogBusy = true; nlogPct = 0; nlogMsg = 'Reading node log…';
+    try {
+      const text = await store.monClient.pullNodeLog((p) => (nlogPct = p));
+      if (!text.trim()) { nlogMsg = 'Node log is empty — drive so the node logs, then pull.'; return; }
+      await saveTextFile('axis-node-log.txt', 'text/plain', text);
+      const lines = text.trim().split('\n').length;
+      nlogMsg = `✓ Saved ${lines} lines`;
+    } catch (e) {
+      nlogMsg = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      nlogBusy = false;
+    }
+  }
+  async function eraseNodeLog() {
+    if (demo || !store.monClient || nlogBusy) return;
+    if (!confirm('Clear the captured node log?')) return;
+    nlogBusy = true;
+    try { nlogMsg = (await store.monClient.eraseNodeLog()) ? '✓ Cleared' : 'Could not clear'; }
+    catch (e) { nlogMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { nlogBusy = false; }
+  }
+
   onMount(async () => {
     if (!(await MonitorBleClient.isAvailable())) { phase = 'unavailable'; return; }
     // Re-use a live link if we still hold one (survived a re-render).
@@ -1129,6 +1157,25 @@
           {logBusy ? `Pulling… ${logPct}%` : 'Download CSV'}
         </button>
         <button class="ghost" onclick={eraseDriveLog} disabled={logBusy}>Erase</button>
+      </div>
+    </details>
+
+    <!-- Node log — the CAN node's captured diagnostic log (RE probes etc.) -->
+    <details class="card fw-card">
+      <summary>Node log (diagnostics)</summary>
+      <p class="sub dim">
+        The gauge saves the sensor's diagnostic log (PID / DTC / gateway probes).
+        Pull it as a text file to read in-car RE results offline.
+      </p>
+      {#if nlogBusy && nlogPct > 0}
+        <div class="fw-bar"><div class="fw-fill" style="width:{nlogPct}%"></div></div>
+      {/if}
+      {#if nlogMsg}<p class="note">{nlogMsg}</p>{/if}
+      <div class="fw-actions">
+        <button class="fw-install up" onclick={downloadNodeLog} disabled={nlogBusy}>
+          {nlogBusy ? `Pulling… ${nlogPct}%` : 'Download log (.txt)'}
+        </button>
+        <button class="ghost" onclick={eraseNodeLog} disabled={nlogBusy}>Erase</button>
       </div>
     </details>
   {/if}

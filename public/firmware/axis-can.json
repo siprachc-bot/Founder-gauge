@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.12.3",
+      "date": "2026-07-10",
+      "notes": "Node log capture: the gauge now saves the sensor's diagnostic log (PID/DTC/gateway probes) to a file you can pull in the app's new 'Node log' card as a .txt \u2014 read in-car RE results offline, no laptop. Pairs with node v0.5.2's legislated probe.",
+      "url": "firmware/axis_can_monitor-v0.12.3.bin",
+      "size_bytes": 1636656
+    },
+    {
       "version": "0.12.2",
       "date": "2026-07-10",
       "notes": "Accel timer results are now SAVED: best time per target persists on the gauge (survives power-off), a 'BEST TIMES' board in the ACCEL menu, and the app's new 'Acceleration times' card reads them over BLE + exports CSV. Result card shows NEW BEST.",

@@ -28,6 +28,7 @@ const LOG_CHAR        = '7e1c0207-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // drive-log pul
 const GEAR_CHAR       = '7e1c0208-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // Push-A: 38-byte GearProfile relay → node
 const DTC_CHAR        = '7e1c020a-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // DTC: READ live code list, WRITE[0x01] clear
 const ACCEL_CHAR      = '7e1c020b-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // accel best-times blob (READ, ui::AccelTimes)
+const NLOG_CHAR       = '7e1c020c-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // node-log text pull (WRITE cmd → READ reply)
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -685,6 +686,51 @@ export class MonitorBleClient {
   async eraseLog(): Promise<boolean> {
     await this.logWrite(new Uint8Array([0x02]));
     const v = await this.logRead();
+    return v.byteLength > 0 && v.getUint8(0) === 1;
+  }
+
+  // ---- Node log (char 7e1c020c) — the CAN node's captured ESP-NOW log text ----
+  // Same request/response protocol as the drive log: WRITE cmd → READ reply.
+  private nlogWrite(bytes: Uint8Array): Promise<void> {
+    return CapBle.write(this.deviceId, MON_SVC, NLOG_CHAR, new DataView(bytes.buffer));
+  }
+  private nlogRead(): Promise<DataView> {
+    return CapBle.read(this.deviceId, MON_SVC, NLOG_CHAR);
+  }
+
+  /** Size (bytes) of the captured node-log text file. */
+  async nodeLogInfo(): Promise<number> {
+    await this.nlogWrite(new Uint8Array([0x00]));
+    const v = await this.nlogRead();
+    return v.byteLength >= 4 ? v.getUint32(0, true) : 0;
+  }
+
+  /** Pull the whole node-log file as text (loops GET_CHUNK). Empty string if none. */
+  async pullNodeLog(onProgress?: (pct: number) => void): Promise<string> {
+    const size = await this.nodeLogInfo();
+    if (size === 0) return '';
+    const out = new Uint8Array(size);
+    let off = 0, stall = 0;
+    while (off < size) {
+      const req = new Uint8Array(5);
+      req[0] = 0x01;
+      new DataView(req.buffer).setUint32(1, off, true);
+      await this.nlogWrite(req);
+      const chunk = await this.nlogRead();
+      const n = chunk.byteLength;
+      if (n === 0) { if (++stall > 3) break; continue; }
+      stall = 0;
+      out.set(new Uint8Array(chunk.buffer, chunk.byteOffset, n), off);
+      off += n;
+      onProgress?.(Math.min(100, Math.round((off / size) * 100)));
+    }
+    return new TextDecoder().decode(out.subarray(0, off));
+  }
+
+  /** ERASE the captured node log. Returns true if deleted. */
+  async eraseNodeLog(): Promise<boolean> {
+    await this.nlogWrite(new Uint8Array([0x02]));
+    const v = await this.nlogRead();
     return v.byteLength > 0 && v.getUint8(0) === 1;
   }
 }
