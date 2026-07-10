@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.9.14",
+      "date": "2026-07-10",
+      "notes": "Check-engine full-screen alert. A stored fault code now raises the same full-screen amber alarm as the coolant/fuel warnings (CHECK ENGINE + the code count + TAP TO DISMISS), so you can't miss it. Dismiss it and it stays quiet until the code is actually cleared; a small badge still marks it on the gauge. Includes the low-speed gear fix.",
+      "url": "firmware/axis_can_monitor-v0.9.14.bin",
+      "size_bytes": 1496368
+    },
+    {
       "version": "0.9.13",
       "date": "2026-07-10",
       "notes": "Low-speed gear tuning. The speed below which the gauge simply holds 1st gear (while the torque converter is slipping) is now 8 km/h. This build also includes the full gear-flicker fix (debounce + low-speed hold) and the on-gauge CHECK ENGINE badge, in case your gauge had not received those yet.",
