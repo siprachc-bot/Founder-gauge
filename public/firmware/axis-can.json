@@ -165,6 +165,13 @@
   ],
   "node": [
     {
+      "version": "0.4.11",
+      "date": "2026-07-10",
+      "notes": "Sensor firmware catch-up. Brings the published sensor firmware in line with what is installed (true gear selector, multi-car gear profiles, timer-only deep-sleep, and the anti-flood polling backoff). Built on a dual-OTA partition so future sensor updates can go wireless.",
+      "url": "firmware/axis_can_node-v0.4.11.bin",
+      "size_bytes": 928448
+    },
+    {
       "version": "0.4.6",
       "date": "2026-07-07",
       "notes": "The real fix for the false LOW FUEL after you switch off. When the engine stops answering (car off / parked) the sensor now marks its fuel/coolant/etc. readings as 'no data' instead of holding the last value while it keeps broadcasting — so the gauge can't raise a false LOW FUEL (or other) warning on the stale reading during the ~90 s before the sensor sleeps. Works with any display version. Supersedes v0.4.5 (whose 'sleeping' notice fired too late, only at sleep).",
