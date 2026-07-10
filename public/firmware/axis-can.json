@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.9.12",
+      "date": "2026-07-10",
+      "notes": "Check-engine warning on the gauge. When your car reports a stored fault code, the gauge now shows a small amber CHECK ENGINE badge (with the code count) at the bottom automatically - you no longer have to open the menu to notice. Five taps still opens the CODES list, which now explains 1800+ generic codes in plain language. Includes the low-speed gear fix (v0.9.11).",
+      "url": "firmware/axis_can_monitor-v0.9.12.bin",
+      "size_bytes": 1496144
+    },
+    {
       "version": "0.9.11",
       "date": "2026-07-10",
       "notes": "Gear at low speed. Below ~20 km/h the torque converter slips, so the calculated gear couldn't reliably tell 1st from 2nd. It now simply holds 1st at low speed (where you're launching anyway) and resolves the real gear once the converter locks up above that — no more 1-2 flicker off the line. Includes the smoother-gear debounce (v0.9.10) and Last Drive fix (v0.9.8).",
