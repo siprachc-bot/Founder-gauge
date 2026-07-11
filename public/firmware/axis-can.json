@@ -256,6 +256,13 @@
   ],
   "node": [
     {
+      "version": "0.5.5",
+      "date": "2026-07-11",
+      "notes": "Universal decode \u2014 works on ANY OBD-II car, not just the Volvo. Fixes RPM/speed reading 0 after moving the node to a Mazda2 (they were sourced only from Volvo-specific CAN broadcasts): now falls back to standard OBD PIDs when those broadcasts are absent, and trusts the car's own PID support list so the scan is fast + clean on every car. No change on the V60.",
+      "url": "firmware/axis_can_node-v0.5.5.bin",
+      "size_bytes": 932448
+    },
+    {
       "version": "0.5.4",
       "date": "2026-07-11",
       "notes": "Raw CAN capture: on a 0xC3 command the sensor switches to listen-only and forwards every CAN frame (0xCA) to the gauge for the bus-capture RE feature. Off by default; normal telemetry untouched.",
