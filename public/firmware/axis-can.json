@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.12.4",
+      "date": "2026-07-11",
+      "notes": "Fresh diagnostic-probe capture each key-on: the gauge now nudges the sensor to re-run its WWH/freeze/0x19 gateway probe after boot, so the Node log captures it live (it used to run only once at the sensor's own boot, which rarely happens). Needs node v0.5.3.",
+      "url": "firmware/axis_can_monitor-v0.12.4.bin",
+      "size_bytes": 1636704
+    },
+    {
       "version": "0.12.3",
       "date": "2026-07-10",
       "notes": "Node log capture: the gauge now saves the sensor's diagnostic log (PID/DTC/gateway probes) to a file you can pull in the app's new 'Node log' card as a .txt \u2014 read in-car RE results offline, no laptop. Pairs with node v0.5.2's legislated probe.",
@@ -241,6 +248,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.3",
+      "date": "2026-07-11",
+      "notes": "On-demand diagnostic probe (0xC2): re-runs the WWH/freeze/0x19 + DTC scan when the gauge asks (it was one-shot at boot; the sensor runs on constant OBD power so it rarely reboots). Pairs with monitor v0.12.4 for a fresh capture each drive.",
+      "url": "firmware/axis_can_node-v0.5.3.bin",
+      "size_bytes": 931472
+    },
     {
       "version": "0.5.2",
       "date": "2026-07-10",
