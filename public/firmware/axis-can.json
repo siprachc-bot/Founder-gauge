@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.12.6",
+      "date": "2026-07-11",
+      "notes": "Per-car gear: the gauge now works out the gear from YOUR car's gearbox (the drivetrain you pick in the app), not a Volvo-only table \u2014 so gear is right on a Mazda2 and every other car. Pairs with node v0.5.5 + the new Mazda2/Demio presets. No change on the V60.",
+      "url": "firmware/axis_can_monitor-v0.12.6.bin",
+      "size_bytes": 1639584
+    },
+    {
       "version": "0.12.5",
       "date": "2026-07-11",
       "notes": "Bus capture (RE): a BUS LOG menu item + app 'Bus capture' card record EVERY CAN frame on the OBD port to a file you can download as a SavvyCAN CSV for offline reverse-engineering. Needs node v0.5.4.",
