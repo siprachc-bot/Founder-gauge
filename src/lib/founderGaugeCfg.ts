@@ -29,6 +29,7 @@ const GEAR_CHAR       = '7e1c0208-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // Push-A: 38-by
 const DTC_CHAR        = '7e1c020a-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // DTC: READ live code list, WRITE[0x01] clear
 const ACCEL_CHAR      = '7e1c020b-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // accel best-times blob (READ, ui::AccelTimes)
 const NLOG_CHAR       = '7e1c020c-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // node-log text pull (WRITE cmd → READ reply)
+const CAN_CHAR        = '7e1c020d-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // raw CAN-log pull + capture start/stop
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -732,5 +733,56 @@ export class MonitorBleClient {
     await this.nlogWrite(new Uint8Array([0x02]));
     const v = await this.nlogRead();
     return v.byteLength > 0 && v.getUint8(0) === 1;
+  }
+
+  // ---- Raw CAN capture (char 7e1c020d) — bus RE ----
+  // WRITE[0x00]=GET_INFO / [0x01,off]=GET_CHUNK / [0x02]=ERASE / [0x03]=START / [0x04]=STOP.
+  private canWrite(bytes: Uint8Array): Promise<void> {
+    return CapBle.write(this.deviceId, MON_SVC, CAN_CHAR, new DataView(bytes.buffer));
+  }
+  private canRead(): Promise<DataView> {
+    return CapBle.read(this.deviceId, MON_SVC, CAN_CHAR);
+  }
+  /** GET_INFO: {size bytes (incl. 16-B header), frame count, record bytes, capturing}. */
+  async canLogInfo(): Promise<{ size: number; count: number; recBytes: number; capturing: boolean }> {
+    await this.canWrite(new Uint8Array([0x00]));
+    const v = await this.canRead();
+    if (v.byteLength < 10) return { size: 0, count: 0, recBytes: 20, capturing: false };
+    return {
+      size: v.getUint32(0, true),
+      count: v.getUint32(4, true),
+      recBytes: v.getUint8(8),
+      capturing: v.getUint8(9) === 1,
+    };
+  }
+  /** Pull the whole /canlog.bin (header + records) as bytes. */
+  async pullCanLog(onProgress?: (pct: number) => void): Promise<Uint8Array> {
+    const info = await this.canLogInfo();
+    if (info.size <= 16) throw new Error('No CAN capture yet — start BUS LOG, drive, then pull.');
+    const out = new Uint8Array(info.size);
+    let off = 0, stall = 0;
+    while (off < info.size) {
+      const req = new Uint8Array(5);
+      req[0] = 0x01;
+      new DataView(req.buffer).setUint32(1, off, true);
+      await this.canWrite(req);
+      const chunk = await this.canRead();
+      const n = chunk.byteLength;
+      if (n === 0) { if (++stall > 3) break; continue; }
+      stall = 0;
+      out.set(new Uint8Array(chunk.buffer, chunk.byteOffset, n), off);
+      off += n;
+      onProgress?.(Math.min(100, Math.round((off / info.size) * 100)));
+    }
+    return out.subarray(0, off);
+  }
+  async eraseCanLog(): Promise<boolean> {
+    await this.canWrite(new Uint8Array([0x02]));
+    const v = await this.canRead();
+    return v.byteLength > 0 && v.getUint8(0) === 1;
+  }
+  /** Start/stop capture remotely (monitor relays 0xC3 to the node). */
+  async setCanCapture(on: boolean): Promise<void> {
+    await this.canWrite(new Uint8Array([on ? 0x03 : 0x04]));
   }
 }

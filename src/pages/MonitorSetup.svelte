@@ -26,6 +26,7 @@
     type CanManifest, type CanReleaseEntry,
   } from '../lib/axisCanOta';
   import { parseDriveLog, toCsv, driveLogName, saveTextFile } from '../lib/driveLog';
+  import { parseCanLog, toSavvyCanCsv, canLogStats } from '../lib/canLog';
   import {
     type CarProfile, loadProfiles, addProfile, renameProfile,
     updateProfileCfg, deleteProfile, loadActiveId, saveActiveId,
@@ -524,6 +525,47 @@
     try { nlogMsg = (await store.monClient.eraseNodeLog()) ? '✓ Cleared' : 'Could not clear'; }
     catch (e) { nlogMsg = '✗ ' + String((e as Error)?.message ?? e); }
     finally { nlogBusy = false; }
+  }
+
+  // ---- Raw CAN capture (char 7e1c020d) — bus RE ----
+  let canCapturing = $state(false);
+  let canBusy      = $state(false);
+  let canPct       = $state(0);
+  let canMsg       = $state('');
+  async function refreshCanState() {
+    if (demo || !store.monClient) return;
+    try { canCapturing = (await store.monClient.canLogInfo()).capturing; } catch { /* ignore */ }
+  }
+  async function toggleCanCapture() {
+    if (demo || !store.monClient || canBusy) return;
+    canBusy = true;
+    try {
+      await store.monClient.setCanCapture(!canCapturing);
+      canCapturing = !canCapturing;
+      canMsg = canCapturing ? 'Capturing — drive, then Download CSV' : 'Stopped';
+    } catch (e) { canMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { canBusy = false; }
+  }
+  async function downloadCanCsv() {
+    if (demo || !store.monClient || canBusy) return;
+    canBusy = true; canPct = 0; canMsg = 'Pulling capture…';
+    try {
+      const raw = await store.monClient.pullCanLog((p) => (canPct = p));
+      const frames = parseCanLog(raw);
+      if (!frames.length) { canMsg = 'Capture is empty.'; return; }
+      const st = canLogStats(frames);
+      await saveTextFile('axis-canbus-savvycan.csv', 'text/csv', toSavvyCanCsv(frames));
+      canMsg = `✓ ${st.frames.toLocaleString()} frames · ${st.ids} IDs · ~${st.spanS}s → SavvyCAN CSV`;
+    } catch (e) { canMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { canBusy = false; }
+  }
+  async function eraseCanLog() {
+    if (demo || !store.monClient || canBusy) return;
+    if (!confirm('Clear the raw CAN capture?')) return;
+    canBusy = true;
+    try { canMsg = (await store.monClient.eraseCanLog()) ? '✓ Cleared' : 'Could not clear'; }
+    catch (e) { canMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { canBusy = false; }
   }
 
   onMount(async () => {
@@ -1177,6 +1219,25 @@
         </button>
         <button class="ghost" onclick={eraseNodeLog} disabled={nlogBusy}>Erase</button>
       </div>
+    </details>
+
+    <!-- Bus capture — raw CAN logger over BLE → SavvyCAN CSV for RE -->
+    <details class="card fw-card" ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) refreshCanState(); }}>
+      <summary>Bus capture (RE)</summary>
+      <p class="sub dim">
+        Records <b>every CAN frame</b> on the car's OBD port to reverse-engineer signals.
+        Start, drive, then download a <b>SavvyCAN CSV</b>. (Only OBD-port traffic — internal
+        buses are gateway-isolated.)
+      </p>
+      <div class="dtc-row">
+        <button class="ghost" style={canCapturing ? 'color:#e24b4a' : ''} onclick={toggleCanCapture} disabled={canBusy}>
+          {canCapturing ? '● Stop capture' : 'Start capture'}
+        </button>
+        <button class="ghost" onclick={downloadCanCsv} disabled={canBusy}>Download CSV</button>
+      </div>
+      {#if canBusy && canPct > 0}<div class="fw-bar"><div class="fw-fill" style="width:{canPct}%"></div></div>{/if}
+      {#if canMsg}<p class="note">{canMsg}</p>{/if}
+      <div class="dtc-row"><button class="ghost" onclick={eraseCanLog} disabled={canBusy}>Erase capture</button></div>
     </details>
   {/if}
 

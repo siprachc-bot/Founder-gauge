@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.12.5",
+      "date": "2026-07-11",
+      "notes": "Bus capture (RE): a BUS LOG menu item + app 'Bus capture' card record EVERY CAN frame on the OBD port to a file you can download as a SavvyCAN CSV for offline reverse-engineering. Needs node v0.5.4.",
+      "url": "firmware/axis_can_monitor-v0.12.5.bin",
+      "size_bytes": 1639456
+    },
+    {
       "version": "0.12.4",
       "date": "2026-07-11",
       "notes": "Fresh diagnostic-probe capture each key-on: the gauge now nudges the sensor to re-run its WWH/freeze/0x19 gateway probe after boot, so the Node log captures it live (it used to run only once at the sensor's own boot, which rarely happens). Needs node v0.5.3.",
@@ -248,6 +255,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.4",
+      "date": "2026-07-11",
+      "notes": "Raw CAN capture: on a 0xC3 command the sensor switches to listen-only and forwards every CAN frame (0xCA) to the gauge for the bus-capture RE feature. Off by default; normal telemetry untouched.",
+      "url": "firmware/axis_can_node-v0.5.4.bin",
+      "size_bytes": 932096
+    },
     {
       "version": "0.5.3",
       "date": "2026-07-11",
