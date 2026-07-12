@@ -30,6 +30,7 @@ const DTC_CHAR        = '7e1c020a-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // DTC: READ liv
 const ACCEL_CHAR      = '7e1c020b-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // accel best-times blob (READ, ui::AccelTimes)
 const NLOG_CHAR       = '7e1c020c-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // node-log text pull (WRITE cmd → READ reply)
 const CAN_CHAR        = '7e1c020d-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // raw CAN-log pull + capture start/stop
+const EXH_CHAR        = '7e1c020e-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // exhaust valve control (READ status | WRITE cmd)
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -54,6 +55,14 @@ export interface DtcSnapshot {
  *  when that target has no recorded run yet. `trapKmh` = finish speed (drag only). */
 export interface AccelTimeEntry { ms: number | null; trapKmh?: number; }
 export interface AccelTimes { speed: AccelTimeEntry[]; dist: AccelTimeEntry[]; }
+
+/** Exhaust valve control (char 7e1c020e). The monitor replays the fob's cloned RF
+ *  codes over a 433 TX — no separate exhaust node. mode 0=QUIET 1=AUTO 2=LOUD;
+ *  valve 0=closed 1=open 2=unknown. */
+export interface ExhaustStatus { mode: number; valve: number; hasCodes: boolean; openRpm: number; closeRpm: number; openThr: number; }
+/** Cloned fob codes from the RF sniffer (axis_exhaust_node/tools/rf_sniffer). */
+export interface ExhaustCodes { open: number; close: number; bits: number; proto: number; pulse: number; repeat: number; single: boolean; }
+export interface ExhaustAuto { openRpm: number; closeRpm: number; openThr: number; dwellMs?: number; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -784,5 +793,47 @@ export class MonitorBleClient {
   /** Start/stop capture remotely (monitor relays 0xC3 to the node). */
   async setCanCapture(on: boolean): Promise<void> {
     await this.canWrite(new Uint8Array([on ? 0x03 : 0x04]));
+  }
+
+  // ---- Exhaust valve control (char 7e1c020e) — the monitor drives a 433 RF TX ----
+  /** Read exhaust status: mode 0=QUIET 1=AUTO 2=LOUD, valve 0=closed 1=open 2=unknown. */
+  async readExhaust(): Promise<ExhaustStatus> {
+    const v = await CapBle.read(this.deviceId, MON_SVC, EXH_CHAR);
+    if (v.byteLength < 3) return { mode: 0, valve: 2, hasCodes: false, openRpm: 3500, closeRpm: 2500, openThr: 60 };
+    return {
+      mode: v.getUint8(0), valve: v.getUint8(1), hasCodes: v.getUint8(2) === 1,
+      openRpm:  v.byteLength >= 5 ? v.getUint16(3, true) : 3500,
+      closeRpm: v.byteLength >= 7 ? v.getUint16(5, true) : 2500,
+      openThr:  v.byteLength >= 8 ? v.getUint8(7) : 60,
+    };
+  }
+  /** Set mode: 0=QUIET (forced closed), 1=AUTO (rpm/throttle rule), 2=LOUD (forced open). */
+  async setExhaustMode(mode: number): Promise<void> {
+    await CapBle.write(this.deviceId, MON_SVC, EXH_CHAR, new DataView(new Uint8Array([0x01, mode & 0xff]).buffer));
+  }
+  /** Push the cloned fob codes (from the RF sniffer) so the monitor can replay them. */
+  async setExhaustCodes(c: ExhaustCodes): Promise<void> {
+    const b = new Uint8Array(16); const dv = new DataView(b.buffer);
+    b[0] = 0x02;
+    dv.setUint32(1, c.open >>> 0, true);
+    dv.setUint32(5, c.close >>> 0, true);
+    b[9] = c.bits & 0xff; b[10] = c.proto & 0xff;
+    dv.setUint16(11, c.pulse & 0xffff, true);
+    b[13] = c.repeat & 0xff; b[14] = c.single ? 1 : 0;
+    await CapBle.write(this.deviceId, MON_SVC, EXH_CHAR, new DataView(b.buffer));
+  }
+  /** Set the AUTO rule thresholds. */
+  async setExhaustAuto(a: ExhaustAuto): Promise<void> {
+    const b = new Uint8Array(8); const dv = new DataView(b.buffer);
+    b[0] = 0x03;
+    dv.setUint16(1, a.openRpm & 0xffff, true);
+    dv.setUint16(3, a.closeRpm & 0xffff, true);
+    b[5] = a.openThr & 0xff;
+    dv.setUint16(6, (a.dwellMs ?? 1500) & 0xffff, true);
+    await CapBle.write(this.deviceId, MON_SVC, EXH_CHAR, new DataView(b.buffer));
+  }
+  /** Manual one-shot test pulse (fires the code, doesn't change mode). */
+  async exhaustPulse(open: boolean): Promise<void> {
+    await CapBle.write(this.deviceId, MON_SVC, EXH_CHAR, new DataView(new Uint8Array([0x04, open ? 1 : 0]).buffer));
   }
 }

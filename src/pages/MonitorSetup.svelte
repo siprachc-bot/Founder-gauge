@@ -20,6 +20,7 @@
     hexToRgb565, rgb565ToHex, verStr, verCmp,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
     type GaugeCfg, type DeviceVersions, type FwVersion, type AccelTimes,
+    type ExhaustStatus,
   } from '../lib/founderGaugeCfg';
   import {
     fetchCanManifest, latest, downloadFirmware, parseVer,
@@ -374,6 +375,53 @@
     } else {
       cfg.gearCount = 0;    // CVT/eCVT → gauge shows a constant "CVT" label
     }
+  }
+
+  // ---- Exhaust valve control (char 7e1c020e; monitor drives a 433 RF TX) ----
+  let exh       = $state<ExhaustStatus | null>(null);
+  let exhBusy   = $state(false);
+  let exhMsg    = $state('');
+  // RF codes from the sniffer (axis_exhaust_node/tools/rf_sniffer)
+  let rfOpen    = $state(0);
+  let rfClose   = $state(0);
+  let rfBits    = $state(24);
+  let rfProto   = $state(1);
+  let rfPulse   = $state(350);
+  let rfSingle  = $state(false);
+  const MODE_LABELS = ['Quiet', 'Auto', 'Loud'];
+  const VALVE_LABELS = ['closed', 'open', '—'];
+
+  async function readExhaust() {
+    if (demo || !store.monClient || exhBusy) return;
+    exhBusy = true;
+    try { exh = await store.monClient.readExhaust(); exhMsg = ''; }
+    catch (e) { exhMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { exhBusy = false; }
+  }
+  async function setExhaustMode(mode: number) {
+    if (demo || !store.monClient || exhBusy) return;
+    exhBusy = true; exhMsg = 'Setting…';
+    try { await store.monClient.setExhaustMode(mode); await new Promise(r => setTimeout(r, 250)); await readExhaust(); exhMsg = ''; }
+    catch (e) { exhMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { exhBusy = false; }
+  }
+  async function pushRfCodes() {
+    if (demo || !store.monClient || exhBusy) return;
+    if (!rfOpen) { exhMsg = 'Enter the OPEN code from the sniffer first.'; return; }
+    exhBusy = true; exhMsg = 'Sending codes…';
+    try {
+      await store.monClient.setExhaustCodes({ open: rfOpen, close: rfClose, bits: rfBits, proto: rfProto, pulse: rfPulse, repeat: 8, single: rfSingle });
+      await new Promise(r => setTimeout(r, 200)); await readExhaust();
+      exhMsg = '✓ Codes saved to the gauge.';
+    } catch (e) { exhMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { exhBusy = false; }
+  }
+  async function exhaustTest(open: boolean) {
+    if (demo || !store.monClient || exhBusy) return;
+    exhBusy = true; exhMsg = `Testing ${open ? 'OPEN' : 'CLOSE'}…`;
+    try { await store.monClient.exhaustPulse(open); exhMsg = `Sent ${open ? 'OPEN' : 'CLOSE'} pulse.`; }
+    catch (e) { exhMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { exhBusy = false; }
   }
 
   function saveCurrentAsCar() {
@@ -943,6 +991,66 @@
     </p>
   </div>
 
+  <!-- Exhaust valve — the gauge replays the fob's cloned 433 MHz codes over a TX module -->
+  {#if !demo}
+    <details class="card fw-card" ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open && !exh) readExhaust(); }}>
+      <summary>Exhaust valve</summary>
+      <p class="sub dim">
+        The gauge opens/closes your exhaust valve by replaying your remote's codes over a
+        433&nbsp;MHz transmitter — no extra box. <b>Quiet</b> = closed, <b>Auto</b> = opens when
+        driven hard, <b>Loud</b> = open.
+      </p>
+
+      {#if exh && !exh.hasCodes}
+        <p class="note">⚠ No remote codes yet — clone them below first (bottom of this card).</p>
+      {/if}
+
+      <!-- mode selector -->
+      <div class="exh-modes">
+        {#each MODE_LABELS as m, i}
+          <button class="exh-mode" class:on={exh?.mode === i} disabled={exhBusy}
+                  onclick={() => setExhaustMode(i)}>{m}</button>
+        {/each}
+      </div>
+      {#if exh}
+        <p class="sub dim" style="margin-top:6px;">
+          Valve now: <b>{VALVE_LABELS[exh.valve] ?? '—'}</b>{#if exh.mode === 1} · auto opens ≥ {exh.openRpm} rpm or ≥ {exh.openThr}% throttle{/if}
+        </p>
+      {/if}
+      {#if exhMsg}<p class="note">{exhMsg}</p>{/if}
+
+      <!-- test pulses -->
+      <div class="dtc-row">
+        <button class="ghost" onclick={() => exhaustTest(true)}  disabled={exhBusy}>Test OPEN</button>
+        <button class="ghost" onclick={() => exhaustTest(false)} disabled={exhBusy}>Test CLOSE</button>
+      </div>
+
+      <!-- clone the remote (advanced) -->
+      <details class="dt-adv">
+        <summary>Clone the remote (one-time setup)</summary>
+        <p class="sub dim" style="margin-top:6px;line-height:1.4;">
+          Run the RF sniffer (<code>axis_exhaust_node/tools/rf_sniffer</code>), press OPEN &amp; CLOSE
+          on your fob, and type the printed <code>value</code>s here.
+        </p>
+        <label class="exh-row"><span>OPEN code</span>
+          <input type="number" min="0" bind:value={rfOpen} /></label>
+        <label class="exh-row"><span>CLOSE code</span>
+          <input type="number" min="0" bind:value={rfClose} /></label>
+        <label class="exh-row"><span>Bits</span>
+          <input type="number" min="8" max="64" bind:value={rfBits} /></label>
+        <label class="exh-row"><span>Protocol</span>
+          <input type="number" min="1" max="12" bind:value={rfProto} /></label>
+        <label class="exh-row"><span>Pulse (µs)</span>
+          <input type="number" min="50" max="2000" bind:value={rfPulse} /></label>
+        <label class="exh-row"><span>One toggle button</span>
+          <input type="checkbox" bind:checked={rfSingle} /></label>
+        <button class="fw-install up" style="margin-top:10px;" onclick={pushRfCodes} disabled={exhBusy}>
+          Save codes to gauge
+        </button>
+      </details>
+    </details>
+  {/if}
+
   <!-- Push-A: real gear — pick the car so the sensor reads the TRUE selector -->
   {#if !demo}
     <div class="card">
@@ -1303,6 +1411,14 @@
   }
   .dt-adv > summary::-webkit-details-marker { display: none; }
   .dt-adv > summary::before { content: '⌁ '; color: var(--accent); }
+  .exh-modes { display: flex; gap: var(--s-2); margin: var(--s-3) 0 var(--s-2); }
+  .exh-mode { flex: 1; padding: 10px 0; font-size: 14px; font-weight: 600; cursor: pointer;
+              background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; }
+  .exh-mode.on { background: var(--accent); color: #000; border-color: var(--accent); }
+  .exh-mode:disabled { opacity: .5; cursor: default; }
+  .exh-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; font-size: 14px; }
+  .exh-row input[type=number] { width: 40%; text-align: right; }
+
   .dtc-row { display: flex; gap: var(--s-2); margin: var(--s-2) 0; }
   .dtc-input { flex: 1; text-transform: uppercase; }
 

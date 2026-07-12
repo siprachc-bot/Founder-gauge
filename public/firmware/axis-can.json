@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.12.7",
+      "date": "2026-07-12",
+      "notes": "Exhaust valve control \u2014 the gauge opens/closes your electric exhaust valve by replaying your remote's 433 MHz codes over a small TX module (wire it to GP5); no extra box. New Exhaust card in the app: Quiet/Auto/Loud + clone-the-remote setup. Auto opens when driven hard. Needs a 433 TX module + a one-time code sniff.",
+      "url": "firmware/axis_can_monitor-v0.12.7.bin",
+      "size_bytes": 1646800
+    },
+    {
       "version": "0.12.6",
       "date": "2026-07-11",
       "notes": "Per-car gear: the gauge now works out the gear from YOUR car's gearbox (the drivetrain you pick in the app), not a Volvo-only table \u2014 so gear is right on a Mazda2 and every other car. Pairs with node v0.5.5 + the new Mazda2/Demio presets. No change on the V60.",
