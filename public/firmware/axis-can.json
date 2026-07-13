@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.13.0",
+      "date": "2026-07-13",
+      "notes": "Power gauges (estimated) — three new channels you can put on any gauge: WHP (total wheel power), Engine (ICE) and Electric (EV). It works out power from the airflow and motor torque the car already reports, and adds them up. On a petrol-only car the electric part is simply 0, so WHP shows engine power. Pick them under 'Power' in the Gauge display. Numbers are estimates — fine-tune later against a known figure.",
+      "url": "firmware/axis_can_monitor-v0.13.0.bin",
+      "size_bytes": 1647584
+    },
+    {
       "version": "0.12.9",
       "date": "2026-07-12",
       "notes": "Arc zero divider \u2014 any gauge that can go negative (Motor torque, Boost, Timing, fuel trims) now shows a small tick on the arc at the zero point, so you can see the split between + and \u2212 (e.g. accelerating vs regen) at a glance.",

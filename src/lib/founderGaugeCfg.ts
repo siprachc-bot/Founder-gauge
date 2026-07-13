@@ -81,6 +81,10 @@ export enum Ch {
   // ---- Phase B (append-only; MUST match GaugeChannels.h) ----
   LAMBDA_M, AFR_M, ABSLOAD, PEDAL, FRP, RELTHR, DTC,  // 28..34
   MOTOR_TQ,                                           // 35 electric-drive torque Nm (signed)
+  // ---- derived power (firmware computes; app just lets you place it) ----
+  ICE_HP,                                             // 36 estimated engine power hp (airflow)
+  EV_HP,                                              // 37 estimated electric power hp (signed)
+  WHP,                                                // 38 estimated total wheel power hp = ICE+EV
   COUNT,
 }
 export enum Layout { HERO = 0, BARS = 1 }
@@ -161,6 +165,10 @@ export const CHANNELS: ChannelDef[] = [
   { id: Ch.VOLT,     label: 'Voltage',    short: 'VOLTS', unit: 'V',    min: 10,  max: 16,    group: 'Electric' },
   { id: Ch.SOC,      label: 'Battery SOC',short: 'SOC',   unit: '%',    min: 0,   max: 100,   group: 'Electric' },
   { id: Ch.MOTOR_TQ, label: 'Motor torque',short:'M.TQ', unit: 'Nm',   min: -500,max: 500,   group: 'Electric' },
+  // Power (estimated — firmware derives from airflow + motor torque; tune in firmware)
+  { id: Ch.WHP,      label: 'Wheel power (est.)',short:'WHP',unit:'hp', min: -100,max: 500,   group: 'Power' },
+  { id: Ch.ICE_HP,   label: 'Engine power (est.)',short:'ICE',unit:'hp',min: 0,   max: 400,   group: 'Power' },
+  { id: Ch.EV_HP,    label: 'Electric power (est.)',short:'EV',unit:'hp',min:-150, max: 150,   group: 'Power' },
   // Trip / diagnostic
   { id: Ch.BARO,     label: 'Barometric', short: 'BARO',  unit: 'kPa',  min: 0,   max: 130,   group: 'Trip' },
   { id: Ch.RUNTIME,  label: 'Run time',   short: 'RUN',   unit: 's',    min: 0,   max: 65535, group: 'Trip' },
@@ -175,7 +183,7 @@ export function channelLabel(id: number): string { return channelDef(id)?.label 
 // Short device-style heading for the preview (e.g. SOC, WTEMP, THR).
 export function channelShort(id: number): string { return channelDef(id)?.short ?? '--'; }
 // Ordered optgroup names for the picker.
-export const CHANNEL_GROUPS = ['Engine', 'Temps', 'Fuel', 'Electric', 'Trip'];
+export const CHANNEL_GROUPS = ['Engine', 'Temps', 'Fuel', 'Electric', 'Power', 'Trip'];
 
 export interface PageCfg {
   layout: Layout;
