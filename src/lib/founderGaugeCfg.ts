@@ -80,6 +80,7 @@ export enum Ch {
   AFR, LAMBDA,                                   // 26..27 air-fuel ratio (same data)
   // ---- Phase B (append-only; MUST match GaugeChannels.h) ----
   LAMBDA_M, AFR_M, ABSLOAD, PEDAL, FRP, RELTHR, DTC,  // 28..34
+  MOTOR_TQ,                                           // 35 electric-drive torque Nm (signed)
   COUNT,
 }
 export enum Layout { HERO = 0, BARS = 1 }
@@ -159,6 +160,7 @@ export const CHANNELS: ChannelDef[] = [
   // Electric
   { id: Ch.VOLT,     label: 'Voltage',    short: 'VOLTS', unit: 'V',    min: 10,  max: 16,    group: 'Electric' },
   { id: Ch.SOC,      label: 'Battery SOC',short: 'SOC',   unit: '%',    min: 0,   max: 100,   group: 'Electric' },
+  { id: Ch.MOTOR_TQ, label: 'Motor torque',short:'M.TQ', unit: 'Nm',   min: -500,max: 500,   group: 'Electric' },
   // Trip / diagnostic
   { id: Ch.BARO,     label: 'Barometric', short: 'BARO',  unit: 'kPa',  min: 0,   max: 130,   group: 'Trip' },
   { id: Ch.RUNTIME,  label: 'Run time',   short: 'RUN',   unit: 's',    min: 0,   max: 65535, group: 'Trip' },
