@@ -89,7 +89,7 @@ export enum Ch {
 }
 export enum Layout { HERO = 0, BARS = 1 }
 
-export const CFG_VERSION   = 6;         // MUST equal GaugeCfg.version in the firmware's defaultCfg() (v6 = ch[5] per page: HERO/BARS + a reserved 5th slot). Was 5/ch[4]=91B → the v6 firmware (95B) rejected every write.
+export const CFG_VERSION   = 7;         // v7 = + units[UC_COUNT] (per-quantity display units) → 104 B. MUST equal firmware GaugeCfg.version. (v6 = ch[5] per page, 95 B.)
 export const GAUGE_PAGES   = 4;
 export const SLOTS_PER_PAGE = 5;        // HERO:[0]=primary [1..3]=support ; BARS:[0..3] ; slot[4] reserved — matches firmware GaugeConfig.h
 export const BRIGHT_DEFAULT = 200;      // matches firmware GAUGE_BRIGHT_DEFAULT
@@ -185,6 +185,30 @@ export function channelShort(id: number): string { return channelDef(id)?.short 
 // Ordered optgroup names for the picker.
 export const CHANNEL_GROUPS = ['Engine', 'Temps', 'Fuel', 'Electric', 'Power', 'Trip'];
 
+// ---- Per-quantity display units (mirror Units.h UnitClass; index 0 = native) ----
+export enum Uc { NONE = 0, SPEED, TEMP, PRESS, DIST, ECON, POWER, TORQUE, FLOW, COUNT }
+export const UC_COUNT = Uc.COUNT;   // 9 — MUST equal firmware UC_COUNT (GaugeCfg.units length)
+export interface UnitOption { cls: Uc; label: string; opts: string[] }
+// The user-facing picker rows. `opts[i]` label MUST line up with Units.h unitLabelFor.
+export const UNIT_OPTIONS: UnitOption[] = [
+  { cls: Uc.SPEED,  label: 'Speed',        opts: ['km/h', 'mph'] },
+  { cls: Uc.TEMP,   label: 'Temperature',  opts: ['°C', '°F'] },
+  { cls: Uc.PRESS,  label: 'Pressure',     opts: ['bar', 'psi', 'kPa'] },
+  { cls: Uc.DIST,   label: 'Distance',     opts: ['km', 'mi'] },
+  { cls: Uc.ECON,   label: 'Fuel economy', opts: ['km/L', 'mpg', 'L/100km'] },
+  { cls: Uc.POWER,  label: 'Power',        opts: ['hp', 'kW', 'PS'] },
+  { cls: Uc.TORQUE, label: 'Torque',       opts: ['Nm', 'lb-ft'] },
+  { cls: Uc.FLOW,   label: 'Fuel rate',    opts: ['L/h', 'gal/h'] },
+];
+// A one-tap master: metric = all native (0); imperial = the US/UK column.
+export const UNITS_METRIC: number[] = Array(UC_COUNT).fill(0);
+export const UNITS_IMPERIAL: number[] = (() => {
+  const u = Array(UC_COUNT).fill(0);
+  u[Uc.SPEED] = 1; u[Uc.TEMP] = 1; u[Uc.PRESS] = 1; u[Uc.DIST] = 1;
+  u[Uc.ECON] = 1;  u[Uc.POWER] = 0; u[Uc.TORQUE] = 1; u[Uc.FLOW] = 1;   // power stays hp (imperial already)
+  return u;
+})();
+
 export interface PageCfg {
   layout: Layout;
   ch: number[];           // ch.length == SLOTS_PER_PAGE
@@ -203,6 +227,7 @@ export interface GaugeCfg {
   tireWidth: number;      // tyre section width mm, e.g. 235 (v5)
   tireAspect: number;     // aspect ratio %, e.g. 40 (v5)
   tireRim: number;        // rim diameter inches, e.g. 19 (v5)
+  units: number[];        // per-quantity display unit, length UC_COUNT, index by Uc (v7)
 }
 
 // Factory default — mirrors GaugeConfig.h defaultCfg() so the app "New" state
@@ -226,6 +251,7 @@ export function defaultCfg(): GaugeCfg {
     tireWidth: TIRE_DEFAULT.width,
     tireAspect: TIRE_DEFAULT.aspect,
     tireRim: TIRE_DEFAULT.rim,
+    units: [...UNITS_METRIC],
   };
 }
 
@@ -235,7 +261,7 @@ export function defaultCfg(): GaugeCfg {
 //  shiftRpm u16 LE(2) | gearRatios 8×f32 LE(32) | finalDrive f32 LE(4) |
 //  tireWidth u16 LE(2) | tireAspect(1) | tireRim(1)
 export const CFG_BYTES = 1 + GAUGE_PAGES * (1 + SLOTS_PER_PAGE + 2 + 4) + 1 + 2 + 1 + 2
-                           + 8 * 4 + 4 + 2 + 1 + 1; // 95 (SLOTS_PER_PAGE=5 → PageCfg 12)
+                           + 8 * 4 + 4 + 2 + 1 + 1 + UC_COUNT; // 104 (v7: + units[UC_COUNT])
 
 export function encodeCfg(c: GaugeCfg): Uint8Array {
   const b  = new Uint8Array(CFG_BYTES);
@@ -258,6 +284,7 @@ export function encodeCfg(c: GaugeCfg): Uint8Array {
   dv.setUint16(o, (c.tireWidth ?? TIRE_DEFAULT.width) & 0xffff, true); o += 2;
   b[o++] = (c.tireAspect ?? TIRE_DEFAULT.aspect) & 0xff;
   b[o++] = (c.tireRim ?? TIRE_DEFAULT.rim) & 0xff;
+  for (let i = 0; i < UC_COUNT; i++) b[o++] = (c.units?.[i] ?? 0) & 0xff;   // v7 per-quantity units
   return b;
 }
 
@@ -297,9 +324,12 @@ export function decodeCfg(v: DataView): GaugeCfg {
   const finalDrive = (o + 3 < v.byteLength) ? r3(v.getFloat32(o, true)) : FINAL_DRIVE_DEFAULT; o += 4;
   const tireWidth  = (o + 1 < v.byteLength) ? v.getUint16(o, true) : TIRE_DEFAULT.width; o += 2;
   const tireAspect = (o < v.byteLength) ? v.getUint8(o) : TIRE_DEFAULT.aspect; o += 1;
-  const tireRim    = (o < v.byteLength) ? v.getUint8(o) : TIRE_DEFAULT.rim;
+  const tireRim    = (o < v.byteLength) ? v.getUint8(o) : TIRE_DEFAULT.rim;    o += 1;
+  // v7 per-quantity units — length-guarded so an older (pre-v7) blob defaults to metric.
+  const units: number[] = [];
+  for (let i = 0; i < UC_COUNT; i++) units.push((o < v.byteLength) ? v.getUint8(o++) : 0);
   return { version, pages, brightness, rpmLimit, gearCount, shiftRpm,
-           gearRatios, finalDrive, tireWidth, tireAspect, tireRim };
+           gearRatios, finalDrive, tireWidth, tireAspect, tireRim, units };
 }
 
 // Client-side mirror of firmware cfgValid() — block a bad SAVE before it goes.

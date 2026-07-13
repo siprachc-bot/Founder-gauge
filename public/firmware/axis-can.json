@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.14.0",
+      "date": "2026-07-13",
+      "notes": "Choose your units — a new Units section in the app lets you pick km/h or mph, °C or °F, bar / psi / kPa, km or mi, km/L / mpg / L/100km, hp / kW / PS, Nm or lb-ft, L/h or gal/h. One tap for all-Metric or all-Imperial, or set each on its own. Also a new Fuel-economy gauge (instant km/L). The gauge converts on screen; your saved layout is kept. (Updating resets the display config to defaults once — just re-pick your pages.)",
+      "url": "firmware/axis_can_monitor-v0.14.0.bin",
+      "size_bytes": 1648656
+    },
+    {
       "version": "0.13.0",
       "date": "2026-07-13",
       "notes": "Power gauges (estimated) — three new channels you can put on any gauge: WHP (total wheel power), Engine (ICE) and Electric (EV). It works out power from the airflow and motor torque the car already reports, and adds them up. On a petrol-only car the electric part is simply 0, so WHP shows engine power. Pick them under 'Power' in the Gauge display. Numbers are estimates — fine-tune later against a known figure.",

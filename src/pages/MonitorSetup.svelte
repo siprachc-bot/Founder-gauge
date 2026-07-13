@@ -18,6 +18,7 @@
     MonitorBleClient, defaultCfg, cfgValid, channelShort, channelDef,
     CHANNELS, CHANNEL_GROUPS, Ch, Layout, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE,
     hexToRgb565, rgb565ToHex, verStr, verCmp,
+    UC_COUNT, UNIT_OPTIONS, UNITS_METRIC, UNITS_IMPERIAL,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
     type GaugeCfg, type DeviceVersions, type FwVersion, type AccelTimes,
     type ExhaustStatus,
@@ -105,8 +106,20 @@
       tireWidth:  Number.isFinite(c.tireWidth)  ? Math.max(100, Math.min(400, Math.round(c.tireWidth)))  : d.tireWidth,
       tireAspect: Number.isFinite(c.tireAspect) ? Math.max(20,  Math.min(90,  Math.round(c.tireAspect))) : d.tireAspect,
       tireRim:    Number.isFinite(c.tireRim)    ? Math.max(10,  Math.min(26,  Math.round(c.tireRim)))    : d.tireRim,
+      // Per-quantity display units — always length UC_COUNT; clamp each to its
+      // class's option count (else the firmware clamps to native anyway).
+      units: Array.from({ length: UC_COUNT }, (_, i) => {
+        const nOpt = UNIT_OPTIONS.find(u => u.cls === i)?.opts.length ?? 1;
+        const u = c.units?.[i];
+        return (Number.isFinite(u)) ? Math.max(0, Math.min(nOpt - 1, Math.round(u as number))) : 0;
+      }),
     };
   }
+  // ---- unit pickers ----
+  function setUnit(cls: number, sel: number) { cfg.units = cfg.units.map((u, i) => i === cls ? sel : u); }
+  function setUnitSystem(imperial: boolean) { cfg.units = [...(imperial ? UNITS_IMPERIAL : UNITS_METRIC)]; }
+  const isImperial = () => JSON.stringify(cfg.units) === JSON.stringify(UNITS_IMPERIAL);
+  const isMetric   = () => JSON.stringify(cfg.units) === JSON.stringify(UNITS_METRIC);
 
   // ---- per-page arc colour (custom picker, no preset lock-in) ----
   const pageHex = (i: number) => rgb565ToHex(cfg.pages[i].arcColor ?? ARC_DEFAULT);
@@ -898,6 +911,26 @@
     <input type="range" min="8" max="255" value={cfg.brightness} oninput={onBrightness} />
   </div>
 
+  <!-- units: per-quantity display unit; the gauge converts at render time -->
+  <div class="card units-card">
+    <div class="bright-head"><span class="lbl">Units</span></div>
+    <div class="unit-system">
+      <button type="button" class="chip" class:on={isMetric()}   onclick={() => setUnitSystem(false)}>Metric</button>
+      <button type="button" class="chip" class:on={isImperial()} onclick={() => setUnitSystem(true)}>Imperial</button>
+    </div>
+    {#each UNIT_OPTIONS as row}
+      <div class="unit-row">
+        <span class="unit-lbl">{row.label}</span>
+        <div class="unit-opts">
+          {#each row.opts as opt, i}
+            <button type="button" class="chip sm" class:on={(cfg.units?.[row.cls] ?? 0) === i}
+                    onclick={() => setUnit(row.cls, i)}>{opt}</button>
+          {/each}
+        </div>
+      </div>
+    {/each}
+  </div>
+
   <!-- vehicle / drivetrain: feeds the monitor's calculated-gear rule -->
   <div class="card">
     <div class="bright-head"><span class="lbl">Drivetrain</span></div>
@@ -1475,6 +1508,19 @@
   h3 { margin: 0 0 var(--s-2); font-size: 18px; }
   .sub { color: var(--muted); font-size: 13px; margin: 0 0 var(--s-3); }
   .sub.dim { opacity: 0.7; }
+
+  /* ---- unit pickers ---- */
+  .unit-system { display: flex; gap: 8px; margin: 10px 0 4px; }
+  .unit-row { display: flex; align-items: center; justify-content: space-between;
+              gap: 10px; padding: 7px 0; border-top: 0.5px solid var(--border); }
+  .unit-lbl { font-size: 14px; color: var(--fg); }
+  .unit-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
+          background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
+          cursor: pointer; white-space: nowrap; }
+  .chip.sm { padding: 5px 11px; font-size: 12px; }
+  .chip.on { background: var(--accent); color: #000; border-color: var(--accent); }
+  .unit-system .chip { flex: 1; }
   .msg p { color: var(--muted); font-size: 14px; line-height: 1.5; }
   .msg strong { color: var(--fg); }
   .note {
