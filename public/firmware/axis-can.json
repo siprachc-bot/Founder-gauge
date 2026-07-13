@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.12.8",
+      "date": "2026-07-12",
+      "notes": "New Motor torque channel \u2014 pick it in the app's Gauge display to see the electric motor's push/regen live in Nm. Needs node v0.5.6 (flash the sensor first).",
+      "url": "firmware/axis_can_monitor-v0.12.8.bin",
+      "size_bytes": 1646912
+    },
+    {
       "version": "0.12.7",
       "date": "2026-07-12",
       "notes": "Exhaust valve control \u2014 the gauge opens/closes your electric exhaust valve by replaying your remote's 433 MHz codes over a small TX module (wire it to GP5); no extra box. New Exhaust card in the app: Quiet/Auto/Loud + clone-the-remote setup. Auto opens when driven hard. Needs a 433 TX module + a one-time code sniff.",
@@ -269,6 +276,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.6",
+      "date": "2026-07-12",
+      "notes": "Motor torque: reads the electric-drive torque off the car's CAN bus (RE'd) and sends it so the gauge can show a live Motor torque readout (positive when accelerating, negative during regen braking). No change to anything else.",
+      "url": "firmware/axis_can_node-v0.5.6.bin",
+      "size_bytes": 932720
+    },
     {
       "version": "0.5.5",
       "date": "2026-07-11",
