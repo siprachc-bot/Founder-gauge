@@ -85,6 +85,8 @@ export enum Ch {
   ICE_HP,                                             // 36 estimated engine power hp (airflow)
   EV_HP,                                              // 37 estimated electric power hp (signed)
   WHP,                                                // 38 estimated total wheel power hp = ICE+EV
+  ECON,                                               // 39 instantaneous fuel economy km/L
+  ACCEL,                                              // 40 accelerator / driver demand % (passive 0x1FFF0140)
   COUNT,
 }
 export enum Layout { HERO = 0, BARS = 1 }
@@ -167,6 +169,8 @@ export const CHANNELS: ChannelDef[] = [
   { id: Ch.MOTOR_TQ, label: 'Motor torque',short:'M.TQ', unit: 'Nm',   min: -500,max: 500,   group: 'Electric' },
   // Power (estimated — firmware derives from airflow + motor torque; tune in firmware)
   { id: Ch.WHP,      label: 'Wheel power (est.)',short:'WHP',unit:'hp', min: -100,max: 500,   group: 'Power' },
+  { id: Ch.ACCEL,    label: 'Accelerator (passive)',short:'GAS',unit:'%',min: 0, max: 100,   group: 'Engine' },
+  { id: Ch.ECON,     label: 'Fuel economy (inst.)',short:'ECON',unit:'km/L',min:0,max: 30,   group: 'Fuel' },
   { id: Ch.ICE_HP,   label: 'Engine power (est.)',short:'ICE',unit:'hp',min: 0,   max: 400,   group: 'Power' },
   { id: Ch.EV_HP,    label: 'Electric power (est.)',short:'EV',unit:'hp',min:-150, max: 150,   group: 'Power' },
   // Trip / diagnostic

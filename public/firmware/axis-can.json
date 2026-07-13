@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.15.0",
+      "date": "2026-07-13",
+      "notes": "Accelerator gauge + smarter 0-100 timer. New 'Accelerator (passive)' readout shows how hard the pedal is pressed (%), read straight off the car — no extra sensor. And the hidden 0-100 km/h timer now only starts on a real full-throttle launch (pedal ≥ 80%), so crawling in traffic won't trigger it. Update the sensor to v0.5.7 FIRST, then the gauge.",
+      "url": "firmware/axis_can_monitor-v0.15.0.bin",
+      "size_bytes": 1648896
+    },
+    {
       "version": "0.14.0",
       "date": "2026-07-13",
       "notes": "Choose your units — a new Units section in the app lets you pick km/h or mph, °C or °F, bar / psi / kPa, km or mi, km/L / mpg / L/100km, hp / kW / PS, Nm or lb-ft, L/h or gal/h. One tap for all-Metric or all-Imperial, or set each on its own. Also a new Fuel-economy gauge (instant km/L). The gauge converts on screen; your saved layout is kept. (Updating resets the display config to defaults once — just re-pick your pages.)",
@@ -297,6 +304,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.7",
+      "date": "2026-07-13",
+      "notes": "Reads the accelerator pedal straight off the car's bus (a free passive signal) and sends it to the gauge — powers the new Accelerator readout and the full-throttle launch detection for the 0-100 timer. Flash this BEFORE the gauge v0.15.0.",
+      "url": "firmware/axis_can_node-v0.5.7.bin",
+      "size_bytes": 932880
+    },
     {
       "version": "0.5.6",
       "date": "2026-07-12",
