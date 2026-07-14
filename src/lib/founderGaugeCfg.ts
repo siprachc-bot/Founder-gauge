@@ -91,7 +91,10 @@ export enum Ch {
   TQ,                                                 // 42 VirtualDyno crank torque Nm
   COUNT,
 }
-export enum Layout { HERO = 0, BARS = 1 }
+export enum Layout { HERO = 0, BARS = 1, NEEDLE = 2, TICKS = 3 }
+export const LAYOUT_NAMES: Record<Layout, string> = {
+  [Layout.HERO]: "Hero", [Layout.BARS]: "Bars", [Layout.NEEDLE]: "Needle", [Layout.TICKS]: "Ticks",
+};
 
 export const CFG_VERSION   = 9;         // v9 = pages 4→6 + pageCount → 131 B. MUST equal firmware GaugeCfg.version. (v8 = +massKg 106 B.)
 export const GAUGE_PAGES   = 6;         // MAX pages (array size); active count = cfg.pageCount
@@ -322,7 +325,7 @@ export function decodeCfg(v: DataView): GaugeCfg {
     const arcColor = v.getUint16(o, true); o += 2;
     const peak     = v.getFloat32(o, true); o += 4;
     pages.push({
-      layout: layout > Layout.BARS ? Layout.HERO : layout,
+      layout: layout > Layout.TICKS ? Layout.HERO : layout,
       ch,
       arcColor: arcColor || ARC_DEFAULT,
       // round off float32 storage noise (1.6f -> 1.6000000238) so the peak
@@ -364,7 +367,7 @@ export function cfgValid(c: GaugeCfg): boolean {
   if (c.pages.length !== GAUGE_PAGES) return false;
   if (!(c.pageCount >= 1 && c.pageCount <= GAUGE_PAGES)) return false;
   for (const pg of c.pages) {
-    if (pg.layout > Layout.BARS) return false;
+    if (pg.layout > Layout.TICKS) return false;
     if (pg.ch.length !== SLOTS_PER_PAGE) return false;
     for (const ch of pg.ch) if (ch < 0 || ch >= Ch.COUNT) return false;
     if (!Number.isFinite(pg.peak) || pg.peak < 0) return false;

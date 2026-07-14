@@ -16,7 +16,7 @@
   import { store } from '../lib/store.svelte';
   import {
     MonitorBleClient, defaultCfg, cfgValid, channelShort, channelDef,
-    CHANNELS, CHANNEL_GROUPS, Ch, Layout, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE, GAUGE_PAGES,
+    CHANNELS, CHANNEL_GROUPS, Ch, Layout, LAYOUT_NAMES, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE, GAUGE_PAGES,
     hexToRgb565, rgb565ToHex, verStr, verCmp,
     UC_COUNT, UNIT_OPTIONS, UNITS_METRIC, UNITS_IMPERIAL,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
@@ -81,7 +81,9 @@
         const mx = channelDef(ch[0])?.max ?? 0;
         let peak = (Number.isFinite(src?.peak) && (src!.peak as number) > 0) ? (src!.peak as number) : 0;
         if (mx > 0 && peak > mx) peak = mx;
-        return { layout: Layout.HERO, ch, arcColor: src?.arcColor || ARC_DEFAULT, peak };
+        const lay = (Number.isFinite(src?.layout) && (src!.layout as number) >= 0 && (src!.layout as number) <= Layout.TICKS)
+          ? (src!.layout as Layout) : Layout.HERO;
+        return { layout: lay, ch, arcColor: src?.arcColor || ARC_DEFAULT, peak };
       }),
       pageCount: Number.isFinite(c.pageCount)
         ? Math.max(1, Math.min(GAUGE_PAGES, Math.round(c.pageCount))) : d.pageCount,
@@ -854,6 +856,14 @@
           </label>
         </div>
 
+        <!-- layout: how this page is drawn on the gauge -->
+        <div class="lay-row">
+          {#each [Layout.HERO, Layout.BARS, Layout.NEEDLE, Layout.TICKS] as L}
+            <button type="button" class="chip sm" class:on={cfg.pages[i].layout === L}
+                    onclick={() => cfg.pages[i].layout = L}>{LAYOUT_NAMES[L]}</button>
+          {/each}
+        </div>
+
         <div class="page-body">
           <!-- structural preview: big primary + small support, per-page colour -->
           <svg class="prev" viewBox="0 0 100 100" aria-hidden="true">
@@ -1565,6 +1575,7 @@
 
   .pages { display: flex; flex-direction: column; gap: var(--s-3); }
   .page-card { padding: var(--s-3) var(--s-4); }
+  .lay-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 2px; }
   .page-controls { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 4px 0 2px; }
   .pg-btn { width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--border);
     background: var(--surface-2); color: var(--fg); font-size: 22px; font-weight: 700; cursor: pointer; line-height: 1; }
