@@ -96,7 +96,7 @@ export const LAYOUT_NAMES: Record<Layout, string> = {
   [Layout.HERO]: "Hero", [Layout.BARS]: "Bars", [Layout.NEEDLE]: "Needle", [Layout.TICKS]: "Ticks",
 };
 
-export const CFG_VERSION   = 10;        // v10 = pages 6→10 → 179 B. MUST equal firmware GaugeCfg.version.
+export const CFG_VERSION   = 11;        // v11 = PageCfg + color2 + textColor → 219 B. MUST equal firmware GaugeCfg.version.
 export const GAUGE_PAGES   = 10;        // MAX pages (array size); active count = cfg.pageCount
 export const GAUGE_PAGES_DEFAULT = 4;   // shown by default
 export const SLOTS_PER_PAGE = 5;        // HERO:[0]=primary [1..3]=support ; BARS:[0..3] ; slot[4] reserved — matches firmware GaugeConfig.h
@@ -223,8 +223,10 @@ export const UNITS_IMPERIAL: number[] = (() => {
 export interface PageCfg {
   layout: Layout;
   ch: number[];           // ch.length == SLOTS_PER_PAGE
-  arcColor: number;       // RGB565 arc/accent colour, PER PAGE
+  arcColor: number;       // RGB565 arc / needle-1 / accent colour, PER PAGE
   peak: number;           // primary redline in native units; 0 = off
+  color2?: number;        // v11: RGB565 of the 2nd NEEDLE hand; 0/undef = reuse arcColor
+  textColor?: number;     // v11: RGB565 of the VALUE text (any layout); 0/undef = white
 }
 export interface GaugeCfg {
   version: number;
@@ -281,8 +283,8 @@ export function defaultCfg(): GaugeCfg {
 //  f32 LE(4) } = 4×12 | brightness(1) | rpmLimit u16 LE(2) | gearCount(1) |
 //  shiftRpm u16 LE(2) | gearRatios 8×f32 LE(32) | finalDrive f32 LE(4) |
 //  tireWidth u16 LE(2) | tireAspect(1) | tireRim(1)
-export const CFG_BYTES = 1 + GAUGE_PAGES * (1 + SLOTS_PER_PAGE + 2 + 4) + 1 + 2 + 1 + 2
-                           + 8 * 4 + 4 + 2 + 1 + 1 + UC_COUNT + 2 + 1; // 131 (v9: pages 6 + massKg + pageCount)
+export const CFG_BYTES = 1 + GAUGE_PAGES * (1 + SLOTS_PER_PAGE + 2 + 4 + 2 + 2) + 1 + 2 + 1 + 2
+                           + 8 * 4 + 4 + 2 + 1 + 1 + UC_COUNT + 2 + 1; // 219 (v11: 10 pages x 16 B)
 
 export function encodeCfg(c: GaugeCfg): Uint8Array {
   const b  = new Uint8Array(CFG_BYTES);
@@ -295,6 +297,8 @@ export function encodeCfg(c: GaugeCfg): Uint8Array {
     for (let s = 0; s < SLOTS_PER_PAGE; s++) b[o++] = (pg.ch[s] ?? Ch.NONE) & 0xff;
     dv.setUint16(o, (pg.arcColor ?? ARC_DEFAULT) & 0xffff, true); o += 2;
     dv.setFloat32(o, pg.peak ?? 0, true);                        o += 4;
+    dv.setUint16(o, (pg.color2 ?? 0) & 0xffff, true);            o += 2;   // v11: 2nd needle hand
+    dv.setUint16(o, (pg.textColor ?? 0) & 0xffff, true);         o += 2;   // v11: value-text colour
   }
   b[o++] = (c.brightness ?? BRIGHT_DEFAULT) & 0xff;
   dv.setUint16(o, (c.rpmLimit ?? RPM_LIMIT_DEFAULT) & 0xffff, true); o += 2;
@@ -315,19 +319,21 @@ export function decodeCfg(v: DataView): GaugeCfg {
   const version = v.getUint8(0);
   const pages: PageCfg[] = [];
   let o = 1;
-  const PAGE_BYTES = 1 + SLOTS_PER_PAGE + 2 + 4;   // 12
+  const PAGE_BYTES = 1 + SLOTS_PER_PAGE + 2 + 4 + 2 + 2;   // 16 (v11)
   for (let p = 0; p < GAUGE_PAGES; p++) {
     // Length-guard so an older/shorter blob (pre-v9, 4 pages) still decodes — the
     // missing pages default to empty NONE pages.
     if (o + PAGE_BYTES > v.byteLength) {
-      pages.push({ layout: Layout.HERO, ch: Array(SLOTS_PER_PAGE).fill(Ch.NONE), arcColor: ARC_DEFAULT, peak: 0 });
+      pages.push({ layout: Layout.HERO, ch: Array(SLOTS_PER_PAGE).fill(Ch.NONE), arcColor: ARC_DEFAULT, peak: 0, color2: 0, textColor: 0 });
       continue;
     }
     const layout = v.getUint8(o++) as Layout;
     const ch: number[] = [];
     for (let s = 0; s < SLOTS_PER_PAGE; s++) ch.push(v.getUint8(o++));
     const arcColor = v.getUint16(o, true); o += 2;
-    const peak     = v.getFloat32(o, true); o += 4;
+    const peak      = v.getFloat32(o, true); o += 4;
+    const color2    = (o + 1 < v.byteLength) ? v.getUint16(o, true) : 0; o += 2;   // v11
+    const textColor = (o + 1 < v.byteLength) ? v.getUint16(o, true) : 0; o += 2;   // v11
     pages.push({
       layout: layout > Layout.TICKS ? Layout.HERO : layout,
       ch,
@@ -335,6 +341,8 @@ export function decodeCfg(v: DataView): GaugeCfg {
       // round off float32 storage noise (1.6f -> 1.6000000238) so the peak
       // input shows a clean number and the dirty-check stays stable.
       peak: (Number.isFinite(peak) && peak > 0) ? Math.round(peak * 100) / 100 : 0,
+      color2,
+      textColor,
     });
   }
   const brightness = (o < v.byteLength) ? v.getUint8(o) : BRIGHT_DEFAULT; o += 1;

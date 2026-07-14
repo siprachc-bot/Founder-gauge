@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.20.0",
+      "date": "2026-07-14",
+      "notes": "The Needle face can now show TWO values, like a clock — a long thin needle for the main one and a short one for the second, each with its own colour. And every page now lets you pick the colour of the number itself, on any of the four looks. Ticks stays one value. Note: this update resets your gauge layout once.",
+      "url": "firmware/axis_can_monitor-v0.20.0.bin",
+      "size_bytes": 1659184
+    },
+    {
       "version": "0.19.0",
       "date": "2026-07-14",
       "notes": "Everything glows now — the main arc and the bars get the same neon bloom as the Needle and Ticks faces, in your page colour (and red under the shift light). Plus you can now have up to 10 pages (was 6). Note: this update resets your gauge layout once.",

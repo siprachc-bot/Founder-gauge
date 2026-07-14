@@ -63,9 +63,10 @@
 
   const clone = (c: GaugeCfg): GaugeCfg => JSON.parse(JSON.stringify(c));
 
-  // Force every page to HERO with only slots 0 (primary) + 1 (support) live,
-  // carrying per-page colour + peak + global brightness. Sanitises anything
-  // read off the device (or a NaN from an emptied peak input) too.
+  // Keep the user's chosen layout + as many slots as that layout actually uses
+  // (BARS = 4, HERO/NEEDLE = 2, TICKS = 1), carrying per-page colours + peak +
+  // global brightness. Sanitises anything read off the device (or a NaN from an
+  // emptied peak input) too.
   function normalize(c: GaugeCfg): GaugeCfg {
     const d = defaultCfg();
     return {
@@ -74,16 +75,20 @@
       // pageCount decides how many are actually shown. Missing pages → empty NONE.
       pages: Array.from({ length: GAUGE_PAGES }, (_, p) => {
         const src = c.pages?.[p];
+        const lay = (Number.isFinite(src?.layout) && (src!.layout as number) >= 0 && (src!.layout as number) <= Layout.TICKS)
+          ? (src!.layout as Layout) : Layout.HERO;
+        const used = slotsUsed(lay);   // BARS 4 · HERO/NEEDLE 2 · TICKS 1
         const ch: Ch[] = Array.from({ length: SLOTS_PER_PAGE }, (_, s) =>
-          s === 0 ? (src?.ch?.[0] ?? Ch.NONE)
-        : s === 1 ? (src?.ch?.[1] ?? Ch.NONE)
-        : Ch.NONE);
+          s < used ? (src?.ch?.[s] ?? Ch.NONE) : Ch.NONE);
         const mx = channelDef(ch[0])?.max ?? 0;
         let peak = (Number.isFinite(src?.peak) && (src!.peak as number) > 0) ? (src!.peak as number) : 0;
         if (mx > 0 && peak > mx) peak = mx;
-        const lay = (Number.isFinite(src?.layout) && (src!.layout as number) >= 0 && (src!.layout as number) <= Layout.TICKS)
-          ? (src!.layout as Layout) : Layout.HERO;
-        return { layout: lay, ch, arcColor: src?.arcColor || ARC_DEFAULT, peak };
+        return {
+          layout: lay, ch, arcColor: src?.arcColor || ARC_DEFAULT, peak,
+          // v11: 0 = "reuse the arc colour" / "default white text" on the device.
+          color2:    (src?.color2    ?? 0) & 0xffff,
+          textColor: (src?.textColor ?? 0) & 0xffff,
+        };
       }),
       pageCount: Number.isFinite(c.pageCount)
         ? Math.max(1, Math.min(GAUGE_PAGES, Math.round(c.pageCount))) : d.pageCount,
@@ -125,6 +130,17 @@
   const isImperial = () => JSON.stringify(cfg.units) === JSON.stringify(UNITS_IMPERIAL);
   const isMetric   = () => JSON.stringify(cfg.units) === JSON.stringify(UNITS_METRIC);
 
+  // How many value slots a layout actually draws:
+  //   BARS   = 4 bars            NEEDLE = 2 hands (long primary + short 2nd)
+  //   HERO   = big + 1 support   TICKS  = 1 (single ring, owner's choice)
+  const slotsUsed = (l: Layout) => l === Layout.BARS ? 4 : l === Layout.TICKS ? 1 : 2;
+  const SLOT_NAMES: Record<number, string[]> = {
+    [Layout.HERO]:   ['Big value', 'Small value'],
+    [Layout.BARS]:   ['Bar 1', 'Bar 2', 'Bar 3', 'Bar 4'],
+    [Layout.NEEDLE]: ['Long needle', 'Short needle'],
+    [Layout.TICKS]:  ['Value'],
+  };
+
   // ---- per-page arc colour (custom picker, no preset lock-in) ----
   const pageHex = (i: number) => rgb565ToHex(cfg.pages[i].arcColor ?? ARC_DEFAULT);
   function setPageColor(i: number, hex: string) {
@@ -134,6 +150,12 @@
     // (RAM-only on the device; the full cfg persists it when the owner taps Save).
     if (!demo && store.monClient) store.monClient.setPageColor(i, c565).catch(() => {});
   }
+  // ---- v11: 2nd needle hand + value-text colour (0 on the wire = "use default",
+  //      so the swatch shows the arc colour / white until the owner picks one) ----
+  const hand2Hex = (i: number) => rgb565ToHex(cfg.pages[i].color2 || (cfg.pages[i].arcColor ?? ARC_DEFAULT));
+  const textHex  = (i: number) => rgb565ToHex(cfg.pages[i].textColor || 0xffff);
+  const setHand2Color = (i: number, hex: string) => { cfg.pages[i].color2    = hexToRgb565(hex); };
+  const setTextColor  = (i: number, hex: string) => { cfg.pages[i].textColor = hexToRgb565(hex); };
 
   // ---- per-page peak (native units of the big value) ----
   // Pre-fill the channel's sensible default when the big value changes.
@@ -849,11 +871,29 @@
       <div class="card page-card">
         <div class="page-head">
           <span class="page-tag">{PAGE_NAMES[i]}</span>
-          <label class="swatch" style="background: {pageHex(i)}" title="Arc colour">
-            <input type="color" value={pageHex(i)}
-              oninput={(e) => setPageColor(i, (e.currentTarget as HTMLInputElement).value)}
-              aria-label="Arc colour for {PAGE_NAMES[i]}" />
-          </label>
+          <div class="sw-row">
+            <!-- Arc / 1st-needle colour -->
+            <label class="swatch" style="background: {pageHex(i)}"
+                   title={page.layout === Layout.NEEDLE ? 'Long-needle colour' : 'Arc colour'}>
+              <input type="color" value={pageHex(i)}
+                oninput={(e) => setPageColor(i, (e.currentTarget as HTMLInputElement).value)}
+                aria-label="Arc colour for {PAGE_NAMES[i]}" />
+            </label>
+            <!-- NEEDLE only: the 2nd (short) hand gets its own colour -->
+            {#if page.layout === Layout.NEEDLE}
+              <label class="swatch" style="background: {hand2Hex(i)}" title="Short-needle colour">
+                <input type="color" value={hand2Hex(i)}
+                  oninput={(e) => setHand2Color(i, (e.currentTarget as HTMLInputElement).value)}
+                  aria-label="Second needle colour for {PAGE_NAMES[i]}" />
+              </label>
+            {/if}
+            <!-- Every layout: the value TEXT colour -->
+            <label class="swatch txt" style="background: {textHex(i)}" title="Text colour">
+              <input type="color" value={textHex(i)}
+                oninput={(e) => setTextColor(i, (e.currentTarget as HTMLInputElement).value)}
+                aria-label="Text colour for {PAGE_NAMES[i]}" />
+            </label>
+          </div>
         </div>
 
         <!-- layout: how this page is drawn on the gauge -->
@@ -874,32 +914,24 @@
           </svg>
 
           <div class="pickers">
-            <label>
-              <span class="lbl">Big value</span>
-              <select bind:value={cfg.pages[i].ch[0]} onchange={() => onPrimaryChange(i)}>
-                <option value={Ch.NONE}>— empty —</option>
-                {#each CHANNEL_GROUPS as g (g)}
-                  <optgroup label={g}>
-                    {#each CHANNELS.filter(c => c.group === g) as c (c.id)}
-                      <option value={c.id} disabled={chGated(c.id)}>{c.label}{c.unit ? ` (${c.unit})` : ''}{chGated(c.id) ? ' · needs v0.7.2' : ''}</option>
-                    {/each}
-                  </optgroup>
-                {/each}
-              </select>
-            </label>
-            <label>
-              <span class="lbl">Small value</span>
-              <select bind:value={cfg.pages[i].ch[1]}>
-                <option value={Ch.NONE}>— empty —</option>
-                {#each CHANNEL_GROUPS as g (g)}
-                  <optgroup label={g}>
-                    {#each CHANNELS.filter(c => c.group === g) as c (c.id)}
-                      <option value={c.id} disabled={chGated(c.id)}>{c.label}{c.unit ? ` (${c.unit})` : ''}{chGated(c.id) ? ' · needs v0.7.2' : ''}</option>
-                    {/each}
-                  </optgroup>
-                {/each}
-              </select>
-            </label>
+            <!-- One select per slot the chosen layout actually draws:
+                 BARS = 4 bars, HERO/NEEDLE = 2, TICKS = 1. -->
+            {#each Array(slotsUsed(page.layout)) as _, s (s)}
+              <label>
+                <span class="lbl">{SLOT_NAMES[page.layout]?.[s] ?? `Value ${s + 1}`}</span>
+                <select bind:value={cfg.pages[i].ch[s]}
+                        onchange={() => { if (s === 0) onPrimaryChange(i); }}>
+                  <option value={Ch.NONE}>— empty —</option>
+                  {#each CHANNEL_GROUPS as g (g)}
+                    <optgroup label={g}>
+                      {#each CHANNELS.filter(c => c.group === g) as c (c.id)}
+                        <option value={c.id} disabled={chGated(c.id)}>{c.label}{c.unit ? ` (${c.unit})` : ''}{chGated(c.id) ? ' · needs v0.7.2' : ''}</option>
+                      {/each}
+                    </optgroup>
+                  {/each}
+                </select>
+              </label>
+            {/each}
             <label class="peak">
               <span class="lbl">Peak / redline <span class="hint">0 = off</span></span>
               <div class="peak-row">
@@ -1571,6 +1603,13 @@
   .swatch input[type="color"] {
     position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px);
     padding: 0; border: 0; background: none; cursor: pointer; opacity: 0;
+  }
+  /* arc/needle-1 · needle-2 (NEEDLE only) · text — sit together in the page head */
+  .sw-row { display: flex; gap: 6px; align-items: center; }
+  /* the text swatch reads as a letter so it isn't mistaken for another arc colour */
+  .swatch.txt::after {
+    content: 'A'; position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 12px; font-weight: 700; color: rgba(0,0,0,.55); pointer-events: none;
   }
 
   .pages { display: flex; flex-direction: column; gap: var(--s-3); }
