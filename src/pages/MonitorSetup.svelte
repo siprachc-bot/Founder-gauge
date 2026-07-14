@@ -16,7 +16,7 @@
   import { store } from '../lib/store.svelte';
   import {
     MonitorBleClient, defaultCfg, cfgValid, channelShort, channelDef,
-    CHANNELS, CHANNEL_GROUPS, Ch, Layout, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE,
+    CHANNELS, CHANNEL_GROUPS, Ch, Layout, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE, GAUGE_PAGES,
     hexToRgb565, rgb565ToHex, verStr, verCmp,
     UC_COUNT, UNIT_OPTIONS, UNITS_METRIC, UNITS_IMPERIAL,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
@@ -51,7 +51,9 @@
   let saveResult = $state<'ok' | 'rejected' | null>(null);
   let demo    = $state(false);              // preview the configurator with no gauge (SAVE disabled)
 
-  const PAGE_NAMES = ['MAIN', 'PAGE 2', 'PAGE 3', 'PAGE 4'];
+  const PAGE_NAMES = ['MAIN', 'PAGE 2', 'PAGE 3', 'PAGE 4', 'PAGE 5', 'PAGE 6'];
+  function addPage()    { if (cfg.pageCount < GAUGE_PAGES) cfg.pageCount += 1; }
+  function removePage() { if (cfg.pageCount > 1) cfg.pageCount -= 1; }
 
   // Dirty = the on-screen layout differs from what's on the monitor.
   // Compare the NORMALISED cfg (peak null→0, clamped, layout forced) against the
@@ -68,22 +70,21 @@
     const d = defaultCfg();
     return {
       version: c.version || d.version,
-      pages: c.pages.map(p => {
-        // Length MUST equal SLOTS_PER_PAGE (firmware v6 = 5) or client cfgValid
-        // rejects the whole save with "check value". HERO uses slot 0 (primary)
-        // + slot 1 (support); the rest are reserved → NONE.
+      // Always exactly GAUGE_PAGES entries (the array is fixed-size on the wire);
+      // pageCount decides how many are actually shown. Missing pages → empty NONE.
+      pages: Array.from({ length: GAUGE_PAGES }, (_, p) => {
+        const src = c.pages?.[p];
         const ch: Ch[] = Array.from({ length: SLOTS_PER_PAGE }, (_, s) =>
-          s === 0 ? (p.ch?.[0] ?? Ch.NONE)
-        : s === 1 ? (p.ch?.[1] ?? Ch.NONE)
+          s === 0 ? (src?.ch?.[0] ?? Ch.NONE)
+        : s === 1 ? (src?.ch?.[1] ?? Ch.NONE)
         : Ch.NONE);
-        // Peak (native-unit redline): coerce null/NaN/negative → 0 (off), and
-        // clamp to the primary channel's max so a fat-fingered off-scale value
-        // (e.g. 99999 on an RPM page) can't be written as a bogus marker.
         const mx = channelDef(ch[0])?.max ?? 0;
-        let peak = (Number.isFinite(p.peak) && (p.peak as number) > 0) ? (p.peak as number) : 0;
+        let peak = (Number.isFinite(src?.peak) && (src!.peak as number) > 0) ? (src!.peak as number) : 0;
         if (mx > 0 && peak > mx) peak = mx;
-        return { layout: Layout.HERO, ch, arcColor: p.arcColor || ARC_DEFAULT, peak };
+        return { layout: Layout.HERO, ch, arcColor: src?.arcColor || ARC_DEFAULT, peak };
       }),
+      pageCount: Number.isFinite(c.pageCount)
+        ? Math.max(1, Math.min(GAUGE_PAGES, Math.round(c.pageCount))) : d.pageCount,
       brightness: Number.isFinite(c.brightness)
         ? Math.max(8, Math.min(255, Math.round(c.brightness))) : BRIGHT_DEFAULT,
       // Vehicle-global calc-gear params. MUST be carried through here or the
@@ -842,7 +843,7 @@
   {#if note}<p class="note">{note}</p>{/if}
 
   <div class="pages">
-    {#each cfg.pages as page, i (i)}
+    {#each cfg.pages.slice(0, cfg.pageCount) as page, i (i)}
       <div class="card page-card">
         <div class="page-head">
           <span class="page-tag">{PAGE_NAMES[i]}</span>
@@ -901,6 +902,13 @@
         </div>
       </div>
     {/each}
+  </div>
+
+  <!-- add / remove pages (1..6) -->
+  <div class="page-controls">
+    <button class="pg-btn" onclick={removePage} disabled={cfg.pageCount <= 1} aria-label="Remove page">−</button>
+    <span class="pg-count">{cfg.pageCount} page{cfg.pageCount > 1 ? 's' : ''}</span>
+    <button class="pg-btn" onclick={addPage} disabled={cfg.pageCount >= GAUGE_PAGES} aria-label="Add page">+</button>
   </div>
 
   <!-- global screen brightness (live-dims as you drag) -->
@@ -1557,6 +1565,11 @@
 
   .pages { display: flex; flex-direction: column; gap: var(--s-3); }
   .page-card { padding: var(--s-3) var(--s-4); }
+  .page-controls { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 4px 0 2px; }
+  .pg-btn { width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--fg); font-size: 22px; font-weight: 700; cursor: pointer; line-height: 1; }
+  .pg-btn:disabled { opacity: .35; cursor: default; }
+  .pg-count { font-size: 14px; color: var(--muted); min-width: 64px; text-align: center; }
   .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-3); }
   .page-tag {
     font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px;

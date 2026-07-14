@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.17.0",
+      "date": "2026-07-14",
+      "notes": "Add or remove gauge pages — you can now have anywhere from 1 to 6 pages (was fixed at 4). Use the − / + under the page list in the app. Also the +/− split line on the gauge arc is a bit bolder. Note: this update resets your gauge layout once — set your pages again after updating.",
+      "url": "firmware/axis_can_monitor-v0.17.0.bin",
+      "size_bytes": 1651136
+    },
+    {
       "version": "0.16.1",
       "date": "2026-07-14",
       "notes": "Dyno peak-hold — the Power/Torque gauges now keep a bright 'drag pointer' at your best of the drive (on the arc + on bars), plus a PK reading under the number, like a real dyno. Resets when you switch the car off. Pairs with the v0.16.0 virtual dyno.",

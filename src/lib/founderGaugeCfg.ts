@@ -93,8 +93,9 @@ export enum Ch {
 }
 export enum Layout { HERO = 0, BARS = 1 }
 
-export const CFG_VERSION   = 8;         // v8 = + massKg (VirtualDyno) → 106 B. MUST equal firmware GaugeCfg.version. (v7 = +units 104 B.)
-export const GAUGE_PAGES   = 4;
+export const CFG_VERSION   = 9;         // v9 = pages 4→6 + pageCount → 131 B. MUST equal firmware GaugeCfg.version. (v8 = +massKg 106 B.)
+export const GAUGE_PAGES   = 6;         // MAX pages (array size); active count = cfg.pageCount
+export const GAUGE_PAGES_DEFAULT = 4;   // shown by default
 export const SLOTS_PER_PAGE = 5;        // HERO:[0]=primary [1..3]=support ; BARS:[0..3] ; slot[4] reserved — matches firmware GaugeConfig.h
 export const BRIGHT_DEFAULT = 200;      // matches firmware GAUGE_BRIGHT_DEFAULT
 export const RPM_LIMIT_DEFAULT  = 6000; // redline for calc-gear (V60 T8); app-configurable per car
@@ -236,6 +237,7 @@ export interface GaugeCfg {
   tireRim: number;        // rim diameter inches, e.g. 19 (v5)
   units: number[];        // per-quantity display unit, length UC_COUNT, index by Uc (v7)
   massKg: number;         // vehicle mass incl. driver, kg — VirtualDyno power/torque input (v8)
+  pageCount: number;      // active gauge pages, 1..GAUGE_PAGES; array always length GAUGE_PAGES (v9)
 }
 
 // Factory default — mirrors GaugeConfig.h defaultCfg() so the app "New" state
@@ -249,7 +251,10 @@ export function defaultCfg(): GaugeCfg {
       { layout: Layout.HERO, ch: [Ch.RPM,      Ch.SPEED,   Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 6800 },
       { layout: Layout.HERO, ch: [Ch.THROTTLE, Ch.COOLANT, Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
       { layout: Layout.HERO, ch: [Ch.SOC,      Ch.VOLT,    Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
+      { layout: Layout.HERO, ch: [Ch.PWR,      Ch.TQ,      Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
+      { layout: Layout.HERO, ch: [Ch.TQ,       Ch.PWR,     Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
     ],
+    pageCount: GAUGE_PAGES_DEFAULT,
     brightness: BRIGHT_DEFAULT,
     rpmLimit: RPM_LIMIT_DEFAULT,
     gearCount: GEAR_COUNT_DEFAULT,
@@ -270,7 +275,7 @@ export function defaultCfg(): GaugeCfg {
 //  shiftRpm u16 LE(2) | gearRatios 8×f32 LE(32) | finalDrive f32 LE(4) |
 //  tireWidth u16 LE(2) | tireAspect(1) | tireRim(1)
 export const CFG_BYTES = 1 + GAUGE_PAGES * (1 + SLOTS_PER_PAGE + 2 + 4) + 1 + 2 + 1 + 2
-                           + 8 * 4 + 4 + 2 + 1 + 1 + UC_COUNT + 2; // 106 (v8: + units + massKg u16)
+                           + 8 * 4 + 4 + 2 + 1 + 1 + UC_COUNT + 2 + 1; // 131 (v9: pages 6 + massKg + pageCount)
 
 export function encodeCfg(c: GaugeCfg): Uint8Array {
   const b  = new Uint8Array(CFG_BYTES);
@@ -295,6 +300,7 @@ export function encodeCfg(c: GaugeCfg): Uint8Array {
   b[o++] = (c.tireRim ?? TIRE_DEFAULT.rim) & 0xff;
   for (let i = 0; i < UC_COUNT; i++) b[o++] = (c.units?.[i] ?? 0) & 0xff;   // v7 per-quantity units
   dv.setUint16(o, (c.massKg ?? 1600) & 0xffff, true); o += 2;               // v8 vehicle mass
+  b[o++] = Math.max(1, Math.min(GAUGE_PAGES, c.pageCount ?? GAUGE_PAGES_DEFAULT)) & 0xff;  // v9 active pages
   return b;
 }
 
@@ -302,7 +308,14 @@ export function decodeCfg(v: DataView): GaugeCfg {
   const version = v.getUint8(0);
   const pages: PageCfg[] = [];
   let o = 1;
+  const PAGE_BYTES = 1 + SLOTS_PER_PAGE + 2 + 4;   // 12
   for (let p = 0; p < GAUGE_PAGES; p++) {
+    // Length-guard so an older/shorter blob (pre-v9, 4 pages) still decodes — the
+    // missing pages default to empty NONE pages.
+    if (o + PAGE_BYTES > v.byteLength) {
+      pages.push({ layout: Layout.HERO, ch: Array(SLOTS_PER_PAGE).fill(Ch.NONE), arcColor: ARC_DEFAULT, peak: 0 });
+      continue;
+    }
     const layout = v.getUint8(o++) as Layout;
     const ch: number[] = [];
     for (let s = 0; s < SLOTS_PER_PAGE; s++) ch.push(v.getUint8(o++));
@@ -339,14 +352,17 @@ export function decodeCfg(v: DataView): GaugeCfg {
   const units: number[] = [];
   for (let i = 0; i < UC_COUNT; i++) units.push((o < v.byteLength) ? v.getUint8(o++) : 0);
   const massKg = (o + 1 < v.byteLength) ? v.getUint16(o, true) : 1600; o += 2;   // v8
+  const pageCount = (o < v.byteLength) ? v.getUint8(o) : GAUGE_PAGES_DEFAULT; o += 1;   // v9
   return { version, pages, brightness, rpmLimit, gearCount, shiftRpm,
-           gearRatios, finalDrive, tireWidth, tireAspect, tireRim, units, massKg };
+           gearRatios, finalDrive, tireWidth, tireAspect, tireRim, units, massKg,
+           pageCount: (pageCount >= 1 && pageCount <= GAUGE_PAGES) ? pageCount : GAUGE_PAGES_DEFAULT };
 }
 
 // Client-side mirror of firmware cfgValid() — block a bad SAVE before it goes.
 export function cfgValid(c: GaugeCfg): boolean {
   if (c.version === 0) return false;
   if (c.pages.length !== GAUGE_PAGES) return false;
+  if (!(c.pageCount >= 1 && c.pageCount <= GAUGE_PAGES)) return false;
   for (const pg of c.pages) {
     if (pg.layout > Layout.BARS) return false;
     if (pg.ch.length !== SLOTS_PER_PAGE) return false;
