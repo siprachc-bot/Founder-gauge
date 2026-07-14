@@ -87,11 +87,13 @@ export enum Ch {
   WHP,                                                // 38 estimated total wheel power hp = ICE+EV
   ECON,                                               // 39 instantaneous fuel economy km/L
   ACCEL,                                              // 40 accelerator / driver demand % (passive 0x1FFF0140)
+  PWR,                                                // 41 VirtualDyno crank power hp (any car)
+  TQ,                                                 // 42 VirtualDyno crank torque Nm
   COUNT,
 }
 export enum Layout { HERO = 0, BARS = 1 }
 
-export const CFG_VERSION   = 7;         // v7 = + units[UC_COUNT] (per-quantity display units) → 104 B. MUST equal firmware GaugeCfg.version. (v6 = ch[5] per page, 95 B.)
+export const CFG_VERSION   = 8;         // v8 = + massKg (VirtualDyno) → 106 B. MUST equal firmware GaugeCfg.version. (v7 = +units 104 B.)
 export const GAUGE_PAGES   = 4;
 export const SLOTS_PER_PAGE = 5;        // HERO:[0]=primary [1..3]=support ; BARS:[0..3] ; slot[4] reserved — matches firmware GaugeConfig.h
 export const BRIGHT_DEFAULT = 200;      // matches firmware GAUGE_BRIGHT_DEFAULT
@@ -167,12 +169,13 @@ export const CHANNELS: ChannelDef[] = [
   { id: Ch.VOLT,     label: 'Voltage',    short: 'VOLTS', unit: 'V',    min: 10,  max: 16,    group: 'Electric' },
   { id: Ch.SOC,      label: 'Battery SOC',short: 'SOC',   unit: '%',    min: 0,   max: 100,   group: 'Electric' },
   { id: Ch.MOTOR_TQ, label: 'Motor torque',short:'M.TQ', unit: 'Nm',   min: -500,max: 500,   group: 'Electric' },
-  // Power (estimated — firmware derives from airflow + motor torque; tune in firmware)
-  { id: Ch.WHP,      label: 'Wheel power (est.)',short:'WHP',unit:'hp', min: -100,max: 500,   group: 'Power' },
+  // Power / Torque (VirtualDyno — physics from mass + acceleration; works on any car)
+  { id: Ch.PWR,      label: 'Power (dyno)',short:'PWR', unit: 'hp',   min: 0,   max: 600,   group: 'Power' },
+  { id: Ch.TQ,       label: 'Torque (dyno)',short:'TQ', unit: 'Nm',   min: 0,   max: 800,   group: 'Power' },
   { id: Ch.ACCEL,    label: 'Accelerator (passive)',short:'GAS',unit:'%',min: 0, max: 100,   group: 'Engine' },
   { id: Ch.ECON,     label: 'Fuel economy (inst.)',short:'ECON',unit:'km/L',min:0,max: 30,   group: 'Fuel' },
-  { id: Ch.ICE_HP,   label: 'Engine power (est.)',short:'ICE',unit:'hp',min: 0,   max: 400,   group: 'Power' },
-  { id: Ch.EV_HP,    label: 'Electric power (est.)',short:'EV',unit:'hp',min:-150, max: 150,   group: 'Power' },
+  // legacy estimates (kept selectable; the dyno channels above are more accurate)
+  { id: Ch.WHP,      label: 'Wheel power (est.)',short:'WHP',unit:'hp', min: -100,max: 500,   group: 'Power' },
   // Trip / diagnostic
   { id: Ch.BARO,     label: 'Barometric', short: 'BARO',  unit: 'kPa',  min: 0,   max: 130,   group: 'Trip' },
   { id: Ch.RUNTIME,  label: 'Run time',   short: 'RUN',   unit: 's',    min: 0,   max: 65535, group: 'Trip' },
@@ -232,6 +235,7 @@ export interface GaugeCfg {
   tireAspect: number;     // aspect ratio %, e.g. 40 (v5)
   tireRim: number;        // rim diameter inches, e.g. 19 (v5)
   units: number[];        // per-quantity display unit, length UC_COUNT, index by Uc (v7)
+  massKg: number;         // vehicle mass incl. driver, kg — VirtualDyno power/torque input (v8)
 }
 
 // Factory default — mirrors GaugeConfig.h defaultCfg() so the app "New" state
@@ -256,6 +260,7 @@ export function defaultCfg(): GaugeCfg {
     tireAspect: TIRE_DEFAULT.aspect,
     tireRim: TIRE_DEFAULT.rim,
     units: [...UNITS_METRIC],
+    massKg: 1600,
   };
 }
 
@@ -265,7 +270,7 @@ export function defaultCfg(): GaugeCfg {
 //  shiftRpm u16 LE(2) | gearRatios 8×f32 LE(32) | finalDrive f32 LE(4) |
 //  tireWidth u16 LE(2) | tireAspect(1) | tireRim(1)
 export const CFG_BYTES = 1 + GAUGE_PAGES * (1 + SLOTS_PER_PAGE + 2 + 4) + 1 + 2 + 1 + 2
-                           + 8 * 4 + 4 + 2 + 1 + 1 + UC_COUNT; // 104 (v7: + units[UC_COUNT])
+                           + 8 * 4 + 4 + 2 + 1 + 1 + UC_COUNT + 2; // 106 (v8: + units + massKg u16)
 
 export function encodeCfg(c: GaugeCfg): Uint8Array {
   const b  = new Uint8Array(CFG_BYTES);
@@ -289,6 +294,7 @@ export function encodeCfg(c: GaugeCfg): Uint8Array {
   b[o++] = (c.tireAspect ?? TIRE_DEFAULT.aspect) & 0xff;
   b[o++] = (c.tireRim ?? TIRE_DEFAULT.rim) & 0xff;
   for (let i = 0; i < UC_COUNT; i++) b[o++] = (c.units?.[i] ?? 0) & 0xff;   // v7 per-quantity units
+  dv.setUint16(o, (c.massKg ?? 1600) & 0xffff, true); o += 2;               // v8 vehicle mass
   return b;
 }
 
@@ -332,8 +338,9 @@ export function decodeCfg(v: DataView): GaugeCfg {
   // v7 per-quantity units — length-guarded so an older (pre-v7) blob defaults to metric.
   const units: number[] = [];
   for (let i = 0; i < UC_COUNT; i++) units.push((o < v.byteLength) ? v.getUint8(o++) : 0);
+  const massKg = (o + 1 < v.byteLength) ? v.getUint16(o, true) : 1600; o += 2;   // v8
   return { version, pages, brightness, rpmLimit, gearCount, shiftRpm,
-           gearRatios, finalDrive, tireWidth, tireAspect, tireRim, units };
+           gearRatios, finalDrive, tireWidth, tireAspect, tireRim, units, massKg };
 }
 
 // Client-side mirror of firmware cfgValid() — block a bad SAVE before it goes.

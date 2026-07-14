@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.16.0",
+      "date": "2026-07-14",
+      "notes": "Virtual dyno — real Power (hp) and Torque (Nm) gauges that work on ANY car. It measures how hard the car actually accelerates (from speed) and, with your car's weight, computes power by physics — no special sensor needed, and it automatically adds up petrol + electric. Set your car's Weight (kg) in the app's Drivetrain page, then pick Power (dyno) / Torque (dyno) on any gauge. Note: this resets your gauge layout once (reconfigure your 4 pages).",
+      "url": "firmware/axis_can_monitor-v0.16.0.bin",
+      "size_bytes": 1650512
+    },
+    {
       "version": "0.15.0",
       "date": "2026-07-13",
       "notes": "Accelerator gauge + smarter 0-100 timer. New 'Accelerator (passive)' readout shows how hard the pedal is pressed (%), read straight off the car — no extra sensor. And the hidden 0-100 km/h timer now only starts on a real full-throttle launch (pedal ≥ 80%), so crawling in traffic won't trigger it. Update the sensor to v0.5.7 FIRST, then the gauge.",

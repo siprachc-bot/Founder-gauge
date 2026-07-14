@@ -113,6 +113,7 @@
         const u = c.units?.[i];
         return (Number.isFinite(u)) ? Math.max(0, Math.min(nOpt - 1, Math.round(u as number))) : 0;
       }),
+      massKg: Number.isFinite(c.massKg) ? Math.max(300, Math.min(6000, Math.round(c.massKg))) : d.massKg,
     };
   }
   // ---- unit pickers ----
@@ -979,6 +980,12 @@
         <input type="number" min="20"  max="90"  step="5" bind:value={cfg.tireAspect} style="width:44px;text-align:right;" />R
         <input type="number" min="10"  max="26"  step="1" bind:value={cfg.tireRim}    style="width:44px;text-align:right;" />
       </span>
+    </label>
+
+    <!-- Vehicle weight — powers the VirtualDyno (Power/Torque channels) -->
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;">
+      <span>Weight (kg)<br><small class="sub dim" style="font-weight:400;">incl. driver — used for Power/Torque</small></span>
+      <input type="number" min="300" max="6000" step="10" bind:value={cfg.massKg} style="width:72px;text-align:right;" />
     </label>
 
     <!-- Advanced: type the numbers by hand (car not listed / fine-tuning) -->
