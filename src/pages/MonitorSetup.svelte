@@ -51,7 +51,7 @@
   let saveResult = $state<'ok' | 'rejected' | null>(null);
   let demo    = $state(false);              // preview the configurator with no gauge (SAVE disabled)
 
-  const PAGE_NAMES = ['MAIN', 'PAGE 2', 'PAGE 3', 'PAGE 4', 'PAGE 5', 'PAGE 6'];
+  const PAGE_NAMES = ['MAIN','PAGE 2','PAGE 3','PAGE 4','PAGE 5','PAGE 6','PAGE 7','PAGE 8','PAGE 9','PAGE 10'];
   function addPage()    { if (cfg.pageCount < GAUGE_PAGES) cfg.pageCount += 1; }
   function removePage() { if (cfg.pageCount > 1) cfg.pageCount -= 1; }
 

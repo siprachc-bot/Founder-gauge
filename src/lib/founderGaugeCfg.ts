@@ -96,8 +96,8 @@ export const LAYOUT_NAMES: Record<Layout, string> = {
   [Layout.HERO]: "Hero", [Layout.BARS]: "Bars", [Layout.NEEDLE]: "Needle", [Layout.TICKS]: "Ticks",
 };
 
-export const CFG_VERSION   = 9;         // v9 = pages 4→6 + pageCount → 131 B. MUST equal firmware GaugeCfg.version. (v8 = +massKg 106 B.)
-export const GAUGE_PAGES   = 6;         // MAX pages (array size); active count = cfg.pageCount
+export const CFG_VERSION   = 10;        // v10 = pages 6→10 → 179 B. MUST equal firmware GaugeCfg.version.
+export const GAUGE_PAGES   = 10;        // MAX pages (array size); active count = cfg.pageCount
 export const GAUGE_PAGES_DEFAULT = 4;   // shown by default
 export const SLOTS_PER_PAGE = 5;        // HERO:[0]=primary [1..3]=support ; BARS:[0..3] ; slot[4] reserved — matches firmware GaugeConfig.h
 export const BRIGHT_DEFAULT = 200;      // matches firmware GAUGE_BRIGHT_DEFAULT
@@ -256,6 +256,10 @@ export function defaultCfg(): GaugeCfg {
       { layout: Layout.HERO, ch: [Ch.SOC,      Ch.VOLT,    Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
       { layout: Layout.HERO, ch: [Ch.PWR,      Ch.TQ,      Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
       { layout: Layout.HERO, ch: [Ch.TQ,       Ch.PWR,     Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0    },
+      { layout: Layout.NEEDLE, ch: [Ch.BOOST, Ch.NONE, Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0 },
+      { layout: Layout.TICKS,  ch: [Ch.RPM,   Ch.NONE, Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0 },
+      { layout: Layout.HERO,   ch: [Ch.SPEED, Ch.GEAR, Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0 },
+      { layout: Layout.HERO,   ch: [Ch.VOLT,  Ch.AMBIENT, Ch.NONE, Ch.NONE, Ch.NONE], arcColor: ARC_DEFAULT, peak: 0 },
     ],
     pageCount: GAUGE_PAGES_DEFAULT,
     brightness: BRIGHT_DEFAULT,

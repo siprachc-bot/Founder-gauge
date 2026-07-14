@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.19.0",
+      "date": "2026-07-14",
+      "notes": "Everything glows now — the main arc and the bars get the same neon bloom as the Needle and Ticks faces, in your page colour (and red under the shift light). Plus you can now have up to 10 pages (was 6). Note: this update resets your gauge layout once.",
+      "url": "firmware/axis_can_monitor-v0.19.0.bin",
+      "size_bytes": 1658528
+    },
+    {
       "version": "0.18.0",
       "date": "2026-07-14",
       "notes": "Two new gauge looks — Needle and Ticks. Needle is a fine analog pointer with a neon glow on a pure-black face; Ticks is a ring that lights up right on your value. Both glow in your page colour and flash red with the shift light. Pick them per page in the app (Hero / Bars / Needle / Ticks).",
