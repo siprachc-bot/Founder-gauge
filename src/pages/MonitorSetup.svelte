@@ -131,15 +131,17 @@
   const isMetric   = () => JSON.stringify(cfg.units) === JSON.stringify(UNITS_METRIC);
 
   // How many value slots a layout actually draws:
-  //   BARS   = 4 bars            NEEDLE = 2 hands (long primary + short 2nd)
-  //   HERO   = big + 1 support   TICKS  = 1 (single ring, owner's choice)
-  const slotsUsed = (l: Layout) => l === Layout.BARS ? 4 : l === Layout.TICKS ? 1 : 2;
+  //   BARS = 4 bars · HERO = big + support · NEEDLE = 2 hands · TICKS = ring + a
+  //   short outer tick for the 2nd value (the RING itself stays single-value).
+  const slotsUsed = (l: Layout) => l === Layout.BARS ? 4 : 2;
   const SLOT_NAMES: Record<number, string[]> = {
     [Layout.HERO]:   ['Big value', 'Small value'],
     [Layout.BARS]:   ['Bar 1', 'Bar 2', 'Bar 3', 'Bar 4'],
     [Layout.NEEDLE]: ['Long needle', 'Short needle'],
-    [Layout.TICKS]:  ['Value'],
+    [Layout.TICKS]:  ['Lit ticks', 'Outer tick (2nd value)'],
   };
+  // Layouts whose 2nd value carries its own colour (needle-2 hand / outer tick).
+  const has2ndColor = (l: Layout) => l === Layout.NEEDLE || l === Layout.TICKS;
 
   // ---- per-page arc colour (custom picker, no preset lock-in) ----
   const pageHex = (i: number) => rgb565ToHex(cfg.pages[i].arcColor ?? ARC_DEFAULT);
@@ -874,17 +876,18 @@
           <div class="sw-row">
             <!-- Arc / 1st-needle colour -->
             <label class="swatch" style="background: {pageHex(i)}"
-                   title={page.layout === Layout.NEEDLE ? 'Long-needle colour' : 'Arc colour'}>
+                   title={page.layout === Layout.NEEDLE ? 'Long-needle colour' : 'Arc / tick colour'}>
               <input type="color" value={pageHex(i)}
                 oninput={(e) => setPageColor(i, (e.currentTarget as HTMLInputElement).value)}
                 aria-label="Arc colour for {PAGE_NAMES[i]}" />
             </label>
             <!-- NEEDLE only: the 2nd (short) hand gets its own colour -->
-            {#if page.layout === Layout.NEEDLE}
-              <label class="swatch" style="background: {hand2Hex(i)}" title="Short-needle colour">
+            {#if has2ndColor(page.layout)}
+              <label class="swatch" style="background: {hand2Hex(i)}"
+                     title={page.layout === Layout.NEEDLE ? 'Short-needle colour' : '2nd-value tick colour'}>
                 <input type="color" value={hand2Hex(i)}
                   oninput={(e) => setHand2Color(i, (e.currentTarget as HTMLInputElement).value)}
-                  aria-label="Second needle colour for {PAGE_NAMES[i]}" />
+                  aria-label="Second value colour for {PAGE_NAMES[i]}" />
               </label>
             {/if}
             <!-- Every layout: the value TEXT colour -->

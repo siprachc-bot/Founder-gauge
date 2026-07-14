@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.20.1",
+      "date": "2026-07-14",
+      "notes": "Ticks can now show a second value: a short glowing tick rides just outside the ring, same thickness as the main ticks but brighter, in its own colour. The lit ticks now glide smoothly with the value instead of stepping. Number colours are yours to pick, separate from the tick colour. And the gauge is 3x faster (the arc glow was redrawing the whole arc four times). New DEMO mode in the menu runs a fake drive so you can show the gauge off with no car.",
+      "url": "firmware/axis_can_monitor-v0.20.1.bin",
+      "size_bytes": 1662416
+    },
+    {
       "version": "0.20.0",
       "date": "2026-07-14",
       "notes": "The Needle face can now show TWO values, like a clock — a long thin needle for the main one and a short one for the second, each with its own colour. And every page now lets you pick the colour of the number itself, on any of the four looks. Ticks stays one value. Note: this update resets your gauge layout once.",
