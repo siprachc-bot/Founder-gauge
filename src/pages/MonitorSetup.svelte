@@ -61,6 +61,17 @@
   // read as "unsaved" when it coerces to the same 0 that's on the device.
   let dirty = $derived(JSON.stringify(normalize(cfg)) !== JSON.stringify(saved));
 
+  // LIVE PREVIEW — every edit (layout, channels, peaks, colours, page count, units,
+  // weight, redline…) is pushed to the gauge at once, RAM-only, so the glass always
+  // shows what the screen shows. Saving is what makes it stick. Debounced in the
+  // client, and skipped while the edit still equals what the device already holds.
+  $effect(() => {
+    const next = JSON.stringify(normalize(cfg));      // tracks EVERY field of cfg
+    if (demo || !store.monClient) return;
+    if (next === JSON.stringify(saved)) return;       // nothing to preview
+    store.monClient.previewCfgLive(JSON.parse(next));
+  });
+
   const clone = (c: GaugeCfg): GaugeCfg => JSON.parse(JSON.stringify(c));
 
   // Keep the user's chosen layout + as many slots as that layout actually uses

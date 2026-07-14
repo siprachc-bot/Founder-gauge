@@ -551,6 +551,35 @@ export class MonitorBleClient {
     await CapBle.writeWithoutResponse(this.deviceId, MON_SVC, COLOR_CHAR, new DataView(b.buffer));
   }
 
+  /** LIVE PREVIEW of the whole edited config (same char as setPageColor, but a
+   *  full-size payload). The gauge adopts it in RAM at once — pages, channels,
+   *  peaks, colours, layouts, units, mass, redline — and writes NOTHING to flash;
+   *  `writeCfg` (Save) is what persists. Call it on every edit; it is debounced by
+   *  `previewCfgLive` below so a colour drag doesn't flood the link. */
+  async previewCfg(c: GaugeCfg): Promise<void> {
+    const b = encodeCfg(c);
+    await CapBle.write(this.deviceId, MON_SVC, COLOR_CHAR, new DataView(b.buffer));
+  }
+
+  /** Debounced previewCfg — safe to call from a Svelte $effect on every keystroke.
+   *  Coalesces bursts (a slider drag) into ~1 write per PREVIEW_MS and never queues
+   *  two writes at once; a failure is swallowed (preview is best-effort). */
+  private pvTimer: ReturnType<typeof setTimeout> | null = null;
+  private pvBusy = false;
+  private pvNext: GaugeCfg | null = null;
+  previewCfgLive(c: GaugeCfg, ms = 120): void {
+    this.pvNext = c;
+    if (this.pvTimer) return;
+    this.pvTimer = setTimeout(async () => {
+      this.pvTimer = null;
+      if (this.pvBusy || !this.pvNext) return;
+      const cfg = this.pvNext; this.pvNext = null; this.pvBusy = true;
+      try { await this.previewCfg(cfg); } catch { /* best-effort */ }
+      this.pvBusy = false;
+      if (this.pvNext) this.previewCfgLive(this.pvNext, ms);   // a newer edit landed mid-write
+    }, ms);
+  }
+
   /** Read the device firmware versions (char 7e1c0206, 8 bytes):
    *  [0..2] monitor {maj,min,patch} · [3..5] node · [6] nodeSeen. The sensor
    *  (node) is `null` until it has broadcast at least one 0xAD hello. */
