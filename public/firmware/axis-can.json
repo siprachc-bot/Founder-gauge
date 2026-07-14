@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.16.1",
+      "date": "2026-07-14",
+      "notes": "Dyno peak-hold — the Power/Torque gauges now keep a bright 'drag pointer' at your best of the drive (on the arc + on bars), plus a PK reading under the number, like a real dyno. Resets when you switch the car off. Pairs with the v0.16.0 virtual dyno.",
+      "url": "firmware/axis_can_monitor-v0.16.1.bin",
+      "size_bytes": 1650896
+    },
+    {
       "version": "0.16.0",
       "date": "2026-07-14",
       "notes": "Virtual dyno — real Power (hp) and Torque (Nm) gauges that work on ANY car. It measures how hard the car actually accelerates (from speed) and, with your car's weight, computes power by physics — no special sensor needed, and it automatically adds up petrol + electric. Set your car's Weight (kg) in the app's Drivetrain page, then pick Power (dyno) / Torque (dyno) on any gauge. Note: this resets your gauge layout once (reconfigure your 4 pages).",
