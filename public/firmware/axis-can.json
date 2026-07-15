@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.22.2",
+      "date": "2026-07-15",
+      "notes": "Adds a one-line calibration readout to the Last Drive card (menu → Session) after a hard pull, so wheel-horsepower can be tuned to match your car. Do one full-throttle pull, then open the Last Drive card and photograph the CAL line.",
+      "url": "firmware/axis_can_monitor-v0.22.2.bin",
+      "size_bytes": 1664576
+    },
+    {
       "version": "0.22.1",
       "date": "2026-07-15",
       "notes": "Fixes the STALE indicator flickering a few times right after you start the car. Best with the sensor (node) updated too. No change to your gauge layout.",
