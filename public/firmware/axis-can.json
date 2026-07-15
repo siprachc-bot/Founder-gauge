@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.21.2",
+      "date": "2026-07-15",
+      "notes": "Fix: the gauge jumped to the first page the moment you started editing. Now it stays on whatever page it's showing while you edit — only swiping on the gauge changes the page. (v0.21.1 fixed one path but missed the per-field one.)",
+      "url": "firmware/axis_can_monitor-v0.21.2.bin",
+      "size_bytes": 1662992
+    },
+    {
       "version": "0.21.1",
       "date": "2026-07-15",
       "notes": "Fix: opening the app no longer bounces the gauge back to the first page. Live preview now updates the gauge where it is, without jumping pages, and only when you actually change something. (To preview changes on the bench with the car off, turn on DEMO in the gauge menu.)",
