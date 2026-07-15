@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.21.1",
+      "date": "2026-07-15",
+      "notes": "Fix: opening the app no longer bounces the gauge back to the first page. Live preview now updates the gauge where it is, without jumping pages, and only when you actually change something. (To preview changes on the bench with the car off, turn on DEMO in the gauge menu.)",
+      "url": "firmware/axis_can_monitor-v0.21.1.bin",
+      "size_bytes": 1662816
+    },
+    {
       "version": "0.21.0",
       "date": "2026-07-14",
       "notes": "Everything you change in the app now shows on the gauge as you do it — switch a page's style, swap a value, change a colour, add a page, flip to mph, set the car's weight: the gauge follows along instantly. Nothing is written to the gauge's memory until you tap Save, so you can experiment freely and back out.",
