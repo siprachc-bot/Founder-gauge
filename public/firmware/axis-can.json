@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.22.1",
+      "date": "2026-07-15",
+      "notes": "Fixes the STALE indicator flickering a few times right after you start the car. Best with the sensor (node) updated too. No change to your gauge layout.",
+      "url": "firmware/axis_can_monitor-v0.22.1.bin",
+      "size_bytes": 1664176
+    },
+    {
       "version": "0.22.0",
       "date": "2026-07-15",
       "notes": "New animated startup: gold ticks sweep around the ring and back like a car's gauge self-test, then the SN logo fades in and the whole thing dissolves into your gauge. Also fixes the white flash the screen showed for a moment on power-up — it now comes up black.",
@@ -381,6 +388,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.8",
+      "date": "2026-07-15",
+      "notes": "Keeps sending live data to the gauge even while it runs its start-up self-checks, so the gauge no longer blips 'STALE' a few times when you start the car. Recommended update.",
+      "url": "firmware/axis_can_node-v0.5.8.bin",
+      "size_bytes": 933024
+    },
     {
       "version": "0.5.7",
       "date": "2026-07-13",
