@@ -28,6 +28,8 @@
     type CanManifest, type CanReleaseEntry,
   } from '../lib/axisCanOta';
   import { parseDriveLog, toCsv, driveLogName, saveTextFile } from '../lib/driveLog';
+  import { computeDyno, type DynoResult } from '../lib/dyno';
+  import DynoChart from '../lib/DynoChart.svelte';
   import { parseCanLog, toSavvyCanCsv, canLogStats } from '../lib/canLog';
   import {
     type CarProfile, loadProfiles, addProfile, renameProfile,
@@ -317,6 +319,27 @@
       logMsg = `✓ Exported ${log.samples.length.toLocaleString()} samples`;
     } catch (e) {
       logMsg = '✗ ' + String((e as Error)?.message ?? e);
+    } finally {
+      logBusy = false;
+    }
+  }
+
+  // ---- Dyno graph: pull the log + derive a power/torque curve (dyno.ts) ----
+  let dynoResult = $state<DynoResult | null>(null);
+  let dynoMsg    = $state('');
+  async function showDynoGraph() {
+    if (!store.monClient || logBusy) return;
+    logBusy = true; logPct = 0; dynoMsg = ''; dynoResult = null; logMsg = 'Reading drive…';
+    try {
+      const raw = await store.monClient.pullLog((p) => (logPct = p));
+      const log = parseDriveLog(raw);
+      logMsg = '';
+      if (!log.samples.length) { dynoMsg = 'No drive recorded yet.'; return; }
+      const r = computeDyno(log.samples, cfg.massKg);
+      if (!r) { dynoMsg = 'No full-throttle pull found in this drive — do one hard WOT pull, then try again.'; return; }
+      dynoResult = r;
+    } catch (e) {
+      dynoMsg = '✗ ' + String((e as Error)?.message ?? e);
     } finally {
       logBusy = false;
     }
@@ -1407,11 +1430,23 @@
       {/if}
       {#if logMsg}<p class="note">{logMsg}</p>{/if}
       <div class="fw-actions">
-        <button class="fw-install up" onclick={pullDriveLog} disabled={logBusy}>
-          {logBusy ? `Pulling… ${logPct}%` : 'Download CSV'}
+        <button class="fw-install up" onclick={showDynoGraph} disabled={logBusy}>
+          {logBusy ? `Reading… ${logPct}%` : '📈 Dyno graph'}
         </button>
+        <button class="ghost" onclick={pullDriveLog} disabled={logBusy}>Download CSV</button>
         <button class="ghost" onclick={eraseDriveLog} disabled={logBusy}>Erase</button>
       </div>
+      {#if dynoMsg}<p class="note">{dynoMsg}</p>{/if}
+      {#if dynoResult}
+        <div class="dyno-wrap">
+          <DynoChart result={dynoResult} redline={cfg.rpmLimit} />
+          <p class="sub dim" style="text-align:center;margin-top:6px">
+            Derived from {dynoResult.sampleCount} samples of your pull ·
+            {dynoResult.rpmLo.toLocaleString()}–{dynoResult.rpmHi.toLocaleString()} rpm ·
+            physics from vehicle weight ({cfg.massKg} kg)
+          </p>
+        </div>
+      {/if}
     </details>
 
     <!-- Node log — the CAN node's captured diagnostic log (RE probes etc.) -->
