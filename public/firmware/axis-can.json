@@ -396,6 +396,13 @@
   ],
   "node": [
     {
+      "version": "0.5.10",
+      "date": "2026-07-15",
+      "notes": "Reverts the recent change that could leave the gauge showing only rpm/speed — back to the previous behaviour where all engine values stream (the small 'STALE' blink at start-up may return; that's the trade-off). If values are STILL missing after this, it's the car's gateway needing a key-cycle, not the sensor.",
+      "url": "firmware/axis_can_node-v0.5.10.bin",
+      "size_bytes": 933072
+    },
+    {
       "version": "0.5.9",
       "date": "2026-07-15",
       "notes": "Recovers the engine-data connection faster. If the car's gateway briefly stops answering (can happen after several updates in a row), the sensor now keeps re-testing and the engine values (coolant, boost, battery, etc.) come back on their own within about a minute. Also logs why data is missing (engine off / EV, vs gateway busy).",
