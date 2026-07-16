@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.23.0",
+      "date": "2026-07-17",
+      "notes": "The Needle page is rebuilt: the second value now gets its own small dial with its own scale, instead of a short hand sharing the main one — so both readings mean something. The main needle gains a counterweight tail. Every label and unit is also bigger across all pages (they were too small to read at a glance while driving).",
+      "url": "firmware/axis_can_monitor-v0.23.0.bin",
+      "size_bytes": 1665264
+    },
+    {
       "version": "0.22.3",
       "date": "2026-07-15",
       "notes": "Fix: when you change a page's style (e.g. to Ticks) in the app, the gauge now jumps to that page so you see the change — it no longer sits on the first page. Opening the app still doesn't move the gauge.",
