@@ -19,7 +19,14 @@ export interface GaugeTheme {
   id: string; name: string; desc: string;
   accent: number;                 // for the theme card chrome
   pages: ThemePage[];             // 1..GAUGE_PAGES
+  price?: number;                 // THB; 0/undefined = free (built-in)
+  author?: string;                // "SN Motorsports" for first-party, later a creator
+  tag?: string;                   // short badge: "PRO", "NEW", "EV"…
 }
+
+// THB price of a theme (0 = free). Central helper so UI never reads .price raw.
+export const themePrice = (t: GaugeTheme): number => t.price ?? 0;
+export const isFree = (t: GaugeTheme): boolean => themePrice(t) <= 0;
 
 // H = hero, T = ticks, N = needle, B = bars — compact page builders.
 const H = (arc: number, a: number, b = Ch.NONE, col2 = 0, text = 0): ThemePage =>
@@ -56,7 +63,22 @@ export const THEMES: GaugeTheme[] = [
   { id: 'ev', name: 'EV', accent: GREEN,
     desc: 'Battery, motor torque + efficiency.',
     pages: [ H(GREEN, Ch.SOC, Ch.VOLT), N(GREEN, Ch.MOTOR_TQ, Ch.SPEED, BLUE), H(GREEN, Ch.PWR, Ch.ACCEL) ] },
+
+  // ---- Premium (paid) packs — showcase the store's sell path -------------
+  { id: 'apex-red', name: 'Apex', accent: RED, price: 99, tag: 'PRO', author: 'SN Motorsports',
+    desc: 'Race-day dash: neon tach + dyno power + boost bars.',
+    pages: [ T(RED, Ch.RPM, Ch.SPEED, GOLD, WHITE), H(RED, Ch.PWR, Ch.TQ, 0, WHITE),
+             B4(RED, Ch.BOOST, Ch.THROTTLE, Ch.COOLANT, Ch.SOC) ] },
+
+  { id: 'aurora-ev', name: 'Aurora', accent: BLUE, price: 99, tag: 'PRO', author: 'SN Motorsports',
+    desc: 'EV showpiece: twin-needle motor + battery arcs in neon.',
+    pages: [ N(BLUE, Ch.MOTOR_TQ, Ch.SPEED, GREEN, WHITE), H(GREEN, Ch.SOC, Ch.VOLT, 0, WHITE),
+             H(BLUE, Ch.PWR, Ch.ACCEL, 0, WHITE) ] },
 ];
+
+// Convenience splits for the store UI.
+export const FREE_THEMES = () => THEMES.filter(isFree);
+export const PAID_THEMES = () => THEMES.filter((t) => !isFree(t));
 
 // Apply a theme to a config: replace the PAGES (layout/channels/colours + a
 // sensible auto peak) and pageCount; KEEP the car's drivetrain, units, redline,

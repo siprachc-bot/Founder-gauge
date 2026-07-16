@@ -31,7 +31,7 @@
   import { computeDyno, type DynoResult } from '../lib/dyno';
   import DynoChart from '../lib/DynoChart.svelte';
   import GaugePreview from '../lib/GaugePreview.svelte';
-  import { THEMES, applyTheme, type GaugeTheme } from '../lib/themes';
+  import { applyTheme, type GaugeTheme } from '../lib/themes';
   import { parseCanLog, toSavvyCanCsv, canLogStats } from '../lib/canLog';
   import {
     type CarProfile, loadProfiles, addProfile, renameProfile,
@@ -90,6 +90,15 @@
     selPage = 0;
     note = `Applied "${t.name}" — tweak below, then Save to send it to your gauge.`;
   }
+
+  // The Store tab applies a theme via store.pendingTheme; pick it up here so the
+  // editor reflects it (and Save writes it). Cleared after consuming.
+  $effect(() => {
+    const t = store.pendingTheme;
+    if (!t) return;
+    store.pendingTheme = null;
+    useTheme(t);
+  });
 
   const clone = (c: GaugeCfg): GaugeCfg => JSON.parse(JSON.stringify(c));
 
@@ -940,22 +949,6 @@
 {:else}
   <!-- ---- Configurator ---- -->
   {#if note}<p class="note">{note}</p>{/if}
-
-  <!-- THEME STORE: tap a curated screen template to apply its look -->
-  <div class="card themes-card">
-    <div class="th-head"><span class="page-tag">Themes</span><span class="th-sub">a curated look in one tap</span></div>
-    <div class="th-strip">
-      {#each THEMES as t (t.id)}
-        <button type="button" class="th-card" onclick={() => useTheme(t)} style="--acc:{rgb565ToHex(t.accent)}">
-          <GaugePreview layout={t.pages[0].layout} arc={rgb565ToHex(t.pages[0].arc)}
-            col2={rgb565ToHex(t.pages[0].col2 || t.pages[0].arc)} text={rgb565ToHex(t.pages[0].text || 0xffff)}
-            ch={t.pages[0].ch} chan={chanMeta} size={88} />
-          <span class="th-name">{t.name}</span>
-          <span class="th-desc">{t.desc}</span>
-        </button>
-      {/each}
-    </div>
-  </div>
 
   <!-- ONE big gauge preview of the selected page (like the real glass) + page dots -->
   <div class="card ed-top">
@@ -1885,15 +1878,4 @@
     font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.5px;
     padding: var(--s-3); cursor: pointer; align-self: center;
   }
-  /* theme store */
-  .themes-card { padding: var(--s-3) var(--s-4); }
-  .th-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
-  .th-sub { color: var(--muted); font-size: 12px; }
-  .th-strip { display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 6px; scroll-snap-type: x mandatory; }
-  .th-card { flex: 0 0 auto; width: 128px; display: flex; flex-direction: column; align-items: center; gap: 6px;
-             background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 12px 8px;
-             cursor: pointer; scroll-snap-align: start; text-align: center; }
-  .th-card:hover { border-color: var(--acc); }
-  .th-name { font-weight: 600; font-size: 13px; color: var(--fg); }
-  .th-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
 </style>

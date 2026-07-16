@@ -1,20 +1,33 @@
 <script lang="ts">
-  // Founder Gauge: the gauge config (connect + configure + save) lives in
-  // MonitorSetup; a lightweight Community tab (Supabase-backed) sits alongside it.
+  // Founder Gauge tabs: the gauge config (connect + configure + save) lives in
+  // MonitorSetup; a Store tab (curated screen templates, later a marketplace)
+  // and a lightweight Community tab (Supabase-backed) sit alongside it.
   import MonitorSetup from './pages/MonitorSetup.svelte';
+  import Themes from './pages/Themes.svelte';
   import Community from './pages/Community.svelte';
+  import { store } from './lib/store.svelte';
 
-  let tab = $state<'gauge' | 'community'>('gauge');
+  let tab = $state<'gauge' | 'store' | 'community'>('gauge');
+
+  // The Store tab applies a theme by handing it to the Gauge editor and bumping
+  // wantGaugeTab; jump to the Gauge tab so the owner lands on the live preview.
+  let seenWant = 0;
+  $effect(() => {
+    if (store.wantGaugeTab !== seenWant) { seenWant = store.wantGaugeTab; tab = 'gauge'; }
+  });
 </script>
 
 <nav class="tabs">
   <button class:on={tab === 'gauge'}     onclick={() => tab = 'gauge'}>Gauge</button>
+  <button class:on={tab === 'store'}     onclick={() => tab = 'store'}>Store</button>
   <button class:on={tab === 'community'} onclick={() => tab = 'community'}>Community</button>
 </nav>
 
 <main>
   {#if tab === 'gauge'}
     <MonitorSetup />
+  {:else if tab === 'store'}
+    <Themes />
   {:else}
     <Community />
   {/if}

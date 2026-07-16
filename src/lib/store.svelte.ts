@@ -7,8 +7,10 @@
 //  the last-connected device id for one-tap reconnect.
 // =====================================================================
 import type { MonitorBleClient } from './founderGaugeCfg';
+import type { GaugeTheme } from './themes';
 
 const LS_DEV_KEY = 'foundergauge.device';
+const LS_OWNED_KEY = 'foundergauge.owned';   // theme ids the user has unlocked/bought
 
 // Only one screen — kept as a type so PageHeader (shared with axis-companion)
 // still type-checks its optional `back` prop.
@@ -43,11 +45,40 @@ class Store {
     this.lastDeviceId = id;
     try { localStorage.setItem(LS_DEV_KEY, id); } catch {}
   }
+
+  // ---- Theme store handoff ---------------------------------------------
+  // The Store tab and the Gauge editor are separate tabs, so applying a theme
+  // there can't touch the editor's cfg directly. Instead the Store sets
+  // pendingTheme + requests the Gauge tab; MonitorSetup consumes it (applies to
+  // cfg, then clears) and App switches the visible tab.
+  pendingTheme = $state<GaugeTheme | null>(null);
+  wantGaugeTab = $state(0);                      // bump to ask App to show Gauge
+
+  // Owned/unlocked theme ids (built-ins are free; paid ones land here after a
+  // purchase completes). Persisted locally for now — a real store would verify
+  // entitlements server-side / via the platform receipt.
+  owned = $state<string[]>(loadOwned());
+  isOwned(id: string) { return this.owned.includes(id); }
+  markOwned(id: string) {
+    if (this.owned.includes(id)) return;
+    this.owned = [...this.owned, id];
+    try { localStorage.setItem(LS_OWNED_KEY, JSON.stringify(this.owned)); } catch {}
+  }
+
+  applyTheme(t: GaugeTheme) {
+    this.pendingTheme = t;
+    this.wantGaugeTab += 1;
+  }
 }
 
 function loadDev(): string {
   try { return localStorage.getItem(LS_DEV_KEY) ?? ''; }
   catch { return ''; }
+}
+
+function loadOwned(): string[] {
+  try { const v = JSON.parse(localStorage.getItem(LS_OWNED_KEY) ?? '[]'); return Array.isArray(v) ? v : []; }
+  catch { return []; }
 }
 
 export const store = new Store();

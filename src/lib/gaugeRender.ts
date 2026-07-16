@@ -8,6 +8,8 @@
 //  Coordinate system = the device's 466×466 (CX=CY=233); the component scales
 //  the canvas down. Ported from axis_gauge/sim/gauge.html.
 // =====================================================================
+import { channelDef } from './founderGaugeCfg';
+
 export interface ChanMeta { label: string; unit: string; min: number; max: number; }
 export interface PagePreview {
   layout: number;                 // 0 HERO · 1 BARS · 2 NEEDLE · 3 TICKS
@@ -15,6 +17,13 @@ export interface PagePreview {
   arc: string; col2: string; text: string;   // resolved css colours
 }
 export type ChanLookup = (id: number) => ChanMeta | null;
+
+// Shared channel → preview-meta lookup (short label, unit, range). Used by every
+// GaugePreview so the editor and the Store render channels identically.
+export const chanMeta: ChanLookup = (id) => {
+  const d = channelDef(id);
+  return d ? { label: d.short ?? d.label, unit: d.unit, min: d.min, max: d.max } : null;
+};
 
 const SZ = 466, CX = 233, CY = 233, D = Math.PI / 180;
 const MUT = '#6a6f78', LBL = '#9aa0a8', TRACK = '#181a1e';
