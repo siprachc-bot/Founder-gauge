@@ -64,11 +64,20 @@
   // read as "unsaved" when it coerces to the same 0 that's on the device.
   let dirty = $derived(JSON.stringify(normalize(cfg)) !== JSON.stringify(saved));
 
-  // NOTE: the gauge is NOT live-previewed as you edit — that pushed a new config to
-  // the glass on every keystroke and caused the page to bounce/jump. Instead the
-  // in-app GaugePreview shows the style + colours, and Save() is the ONLY thing that
-  // writes to the gauge. (Brightness stays live below — it's a global dim with no
-  // page state, so it can't bounce.)
+  // HYBRID live preview (owner's call): COLOURS + CHANNELS + peaks preview on the
+  // gauge in real time, but the LAYOUT (Hero/Bars/Needle/Ticks) is held until Save —
+  // a layout change is what made the gauge jump to a half-configured page. So we
+  // push a preview with every page's layout forced to the SAVED layout: the glass
+  // recolours / re-channels the page you're editing live, but its style only
+  // changes when you Save. The in-app GaugePreview shows the new style meanwhile.
+  $effect(() => {
+    const n = normalize(cfg);                          // tracks EVERY field of cfg
+    if (demo || !store.monClient) return;
+    if (JSON.stringify(n) === JSON.stringify(saved)) return;   // nothing changed
+    const pv = { ...n, pages: n.pages.map((p, i) => ({ ...p, layout: saved.pages[i]?.layout ?? p.layout })) };
+    if (JSON.stringify(pv) === JSON.stringify(saved)) return;   // only the layout changed → wait for Save
+    store.monClient.previewCfgLive(pv);
+  });
 
   const clone = (c: GaugeCfg): GaugeCfg => JSON.parse(JSON.stringify(c));
 
