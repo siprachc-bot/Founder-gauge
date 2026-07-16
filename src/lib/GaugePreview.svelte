@@ -20,7 +20,12 @@
     if (!canvas) return;
     const dpr = Math.min(3, window.devicePixelRatio || 1);
     const px = size * dpr;
-    if (canvas.width !== px) { canvas.width = px; canvas.height = px; }
+    // Test BOTH axes. Checking width alone silently skipped the whole resize
+    // whenever size*dpr landed on 300 — the default <canvas> width — leaving
+    // height at its default 150. The store's cards (size 150 at dpr 2) hit that
+    // exactly: they drew 466-space art into a 300×150 buffer, so every card was
+    // cropped to the top-left and squashed 2:1. Rare enough to hide for months.
+    if (canvas.width !== px || canvas.height !== px) { canvas.width = px; canvas.height = px; }
     const ctx = canvas.getContext('2d'); if (!ctx) return;
     ctx.setTransform(px / 466, 0, 0, px / 466, 0, 0);   // 466-space → display px
     renderGaugePreview(ctx, { layout, arc, col2, text, ch }, chan);

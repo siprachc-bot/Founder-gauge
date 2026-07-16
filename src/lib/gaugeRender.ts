@@ -247,6 +247,8 @@ export function renderGaugePreview(
     return;
   }
 
+  if (page.layout === 4) { renderTuner(ctx, page, chan); return; }   // ---- TUNER (paid) ----
+
   // ---- HERO (default) ----
   band(ctx, 196, 13, A0, A1, TRACK);
   if (m0) {
@@ -273,6 +275,162 @@ export function renderGaugePreview(
     ctx.fillText(s.label, CX, 334);
     ctx.fillStyle = text; setDevFont(ctx, 'p20');          // device: y=374, 20pt
     ctx.fillText(s.text + (s.unit ? ' ' + s.unit : ''), CX, 374);
+  }
+}
+
+// =====================================================================
+//  TUNER — ported from axis_gauge/sim/themes.html renderTuner(). The store's
+//  first paid layout, so unlike 0..3 there is no firmware renderer to match
+//  YET: the faces chosen here are the spec the C++ port must hit, not a
+//  reading of an existing one. Every face is p10 (14px cap) or larger — the
+//  owner's measured read-at-a-glance floor from driving the car.
+//
+//  Slots:  ch[0] → the stepped outer arc (its label rides in the wide tab)
+//          ch[1] → the dot scale + the big readout (the tacho)
+//  Colours reuse the existing PageCfg fields, so the wire format is untouched:
+//          arc → the band + pointer accent · col2 → the honeycomb · text → readout
+//
+//  The live-only behaviour (redline strobe on the arc/pointer/honeycomb, the ▲
+//  shift light) is deliberately absent: a still preview showing a strobe frame
+//  would misrepresent the resting state the owner is actually choosing between.
+// =====================================================================
+function hexPath(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = (60 * i - 30) * D, px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.closePath();
+}
+// Per-glyph text bent around a radius. The advance drives the step, so the
+// spacing survives setDevFont()'s letterSpacing correction instead of fighting it.
+function arcText(ctx: CanvasRenderingContext2D, str: string, aMid: number, r: number, col: string, gap = 1) {
+  const ws = [...str].map((c) => ctx.measureText(c).width + gap);
+  const total = ws.reduce((a, b) => a + b, 0);
+  let a = aMid - (total / r) * (180 / Math.PI) / 2;
+  ctx.fillStyle = col; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  [...str].forEach((c, i) => {
+    const deg = (ws[i] / r) * (180 / Math.PI), ac = (a + deg / 2) * D;
+    ctx.save();
+    ctx.translate(CX + Math.cos(ac) * r, CY + Math.sin(ac) * r);
+    ctx.rotate(ac + Math.PI / 2);
+    ctx.fillText(c, 0, 0);
+    ctx.restore();
+    a += deg;
+  });
+}
+
+function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: ChanLookup): void {
+  const { arc, col2, text } = page;
+  const mArc = chan(page.ch[0]), mDot = chan(page.ch[1]);
+  const fArc = mArc ? sample(mArc).frac : 0;
+  const fDot = mDot ? sample(mDot).frac : 0;
+
+  // ---- stepped outer arc: 20px for the first 75%, flaring to 25px for the
+  //      last quarter. The step is on the OUTER edge only — the inner edge stays
+  //      one clean circle, so the tab reads as a flare, not a wobble.
+  const NA0 = 150, NA1 = 320, WIDE = NA1 - (NA1 - NA0) * 0.25;
+  const R_IN = 191, H_N = 10, H_W = 12.5, R_N = R_IN + H_N, R_W = R_IN + H_W;
+  ctx.fillStyle = '#0a0c0e'; ctx.beginPath(); ctx.arc(CX, CY, 231, 0, 2 * Math.PI); ctx.fill();
+  band(ctx, R_N, H_N, NA0, WIDE, '#12262e');
+  band(ctx, R_W, H_W, WIDE, NA1, '#12262e');
+  const fa = NA0 + (NA1 - NA0) * fArc;
+  if (mArc) {
+    band(ctx, R_N, H_N, NA0, Math.min(fa, WIDE), arc);
+    if (fa > WIDE) band(ctx, R_W, H_W, WIDE, fa, arc);
+  }
+
+  // ---- face: black, honeycomb, readout panel, gloss. All clipped to r176,
+  //      pulled in from the band's inner edge so a dark ring separates them —
+  //      without the gap the disc and the band fuse into one lump.
+  ctx.save();
+  ctx.beginPath(); ctx.arc(CX, CY, 176, 0, 2 * Math.PI); ctx.clip();
+  ctx.fillStyle = '#07080a'; ctx.fillRect(0, 0, SZ, SZ);
+  const hr = 17, hdx = Math.sqrt(3) * hr, hdy = hr * 1.5;
+  ctx.strokeStyle = col2; ctx.lineWidth = 1.4;
+  for (let row = -1; row * hdy < SZ + hr; row++)
+    for (let c = -1; c * hdx < SZ + hdx; c++)
+      { hexPath(ctx, c * hdx + (row % 2 ? hdx / 2 : 0), row * hdy, hr); ctx.stroke(); }
+  // One oversized hex laid over the readout's side — the panel IS a hex, so the
+  // mesh reads through it faintly instead of being masked by a foreign shape.
+  ctx.fillStyle = 'rgba(0,0,0,.55)'; hexPath(ctx, CX + 170, CY, 180); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.11)'; ctx.lineWidth = 1.5;
+  hexPath(ctx, CX + 170, CY, 180); ctx.stroke();
+  const gl = ctx.createLinearGradient(0, CY - 176, 0, CY + 176);
+  gl.addColorStop(0, 'rgba(255,255,255,.10)'); gl.addColorStop(0.5, 'rgba(255,255,255,.02)');
+  gl.addColorStop(1, 'rgba(0,0,0,.28)');
+  ctx.fillStyle = gl; ctx.fillRect(0, 0, SZ, SZ);
+  ctx.restore();
+  ctx.strokeStyle = '#0d1013'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(CX, CY, 176, 0, 2 * Math.PI); ctx.stroke();
+
+  // ---- the arc's name AND value together in the wide tab — that is what the
+  //      tab is for. White with a dark shadow because the tab is trough-dark at
+  //      low readings and accent-bright once the fill reaches it.
+  if (mArc) {
+    const s = sample(mArc), str = s.label + ' ' + s.text;
+    setDevFont(ctx, 'p10');
+    arcText(ctx, str, (WIDE + NA1) / 2, R_W + 1.5, 'rgba(0,0,0,.8)');
+    arcText(ctx, str, (WIDE + NA1) / 2, R_W, '#ffffff');
+  }
+
+  // ---- dot scale, 7 → 1 o'clock. The redline is a continuous ARC, not red
+  //      dots: the dots simply stop where it starts. At a 180° sweep it lands at
+  //      12 o'clock. Redline is fixed at 85% here — the preview has no peak.
+  const DA0 = 120, DA1 = 300, ND = 10, rl = 0.85;
+  band(ctx, 154, 5.4, DA0 + (DA1 - DA0) * rl, DA1, '#C0392B');
+  for (let i = 0; i < ND; i++) {
+    const t = i / (ND - 1);
+    if (t >= rl) continue;
+    const a = (DA0 + (DA1 - DA0) * t) * D;
+    ctx.save();
+    ctx.fillStyle = '#f2f4f6';
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
+    ctx.beginPath(); ctx.arc(CX + Math.cos(a) * 154, CY + Math.sin(a) * 154, 5.4, 0, 2 * Math.PI); ctx.fill();
+    ctx.restore();
+  }
+
+  // ---- floating equilateral pointer. The drop shadow is the SAME triangle
+  //      drawn twice, offset and dark — not shadowBlur, which LovyanGFX cannot
+  //      do, so a blurred preview would promise a device render we can't ship.
+  //      The offset is FIXED down-right: one light source over the dial, so the
+  //      shadow must not swing around as the pointer sweeps.
+  if (mDot) {
+    const a = (DA0 + (DA1 - DA0) * fDot) * D, c = Math.cos(a), s = Math.sin(a), px = -s, py = c;
+    const SIDE = 28, H = SIDE * Math.sqrt(3) / 2, TIP = 142;
+    const bx = CX + c * (TIP - H), by = CY + s * (TIP - H);
+    const tri = (dx: number, dy: number, col: string) => {
+      ctx.fillStyle = col; ctx.beginPath();
+      ctx.moveTo(CX + c * TIP + dx, CY + s * TIP + dy);
+      ctx.lineTo(bx + px * SIDE / 2 + dx, by + py * SIDE / 2 + dy);
+      ctx.lineTo(bx - px * SIDE / 2 + dx, by - py * SIDE / 2 + dy);
+      ctx.closePath(); ctx.fill();
+    };
+    tri(4, 5, 'rgba(0,0,0,.42)');
+    tri(2, 2.5, 'rgba(0,0,0,.30)');
+    tri(0, 0, '#eceef1');
+  }
+
+  // ---- readout: ONE centred column (gear / value / unit share x), placed by
+  //      the owner against a grid overlay. Absolute 466-space.
+  //
+  // ⚠️ The sim's FT(700,30) is an EM of 30px, so its cap is 30×0.70 = 21 — NOT
+  // a 27px cap. Reading those numbers as cap heights inflated the gear to p20
+  // and the value to a 40px cap, and the two collided. Same px-vs-cap trap as
+  // GFX "pt" ≠ px; the sim measures in em, the device in cap.
+  //   sim em 30 → cap 21 → p13 (cap 20)    gear
+  //   sim em 40 → cap 28 → p20 (cap 27)    value
+  //   sim em 14 → cap 10 → p10 (cap 14)    unit — the sim is UNDER the owner's
+  //     14px read-at-a-glance floor here, and the floor wins: it was measured in
+  //     the moving car, the sim was eyeballed at a desk.
+  // Stacking check at these faces: gear ends 213, value starts 218.5, value ends
+  // 245.5, unit starts 251. Clear on both joints.
+  if (mDot) {
+    const s = sample(mDot), tx = 322;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#f4f6f8'; setDevFont(ctx, 'p13'); ctx.fillText('3', tx, 203);
+    ctx.fillStyle = text; setDevFont(ctx, 'p20'); ctx.fillText(s.text, tx, 232);
+    ctx.fillStyle = MUT; setDevFont(ctx, 'p10'); ctx.fillText(s.unit, tx, 258);
   }
 }
 

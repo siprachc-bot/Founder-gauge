@@ -91,9 +91,14 @@ export enum Ch {
   TQ,                                                 // 42 VirtualDyno crank torque Nm
   COUNT,
 }
-export enum Layout { HERO = 0, BARS = 1, NEEDLE = 2, TICKS = 3 }
+// 0..3 ship on every gauge and are free. TUNER is the first PAID layout — the
+// store sells layouts that don't exist yet, never a recolour of these four.
+// `layout` is a uint8_t on the wire, so adding 4 costs no bytes and needs no
+// lock-step app/firmware release.
+export enum Layout { HERO = 0, BARS = 1, NEEDLE = 2, TICKS = 3, TUNER = 4 }
 export const LAYOUT_NAMES: Record<Layout, string> = {
   [Layout.HERO]: "Hero", [Layout.BARS]: "Bars", [Layout.NEEDLE]: "Needle", [Layout.TICKS]: "Ticks",
+  [Layout.TUNER]: "Tuner",
 };
 
 export const CFG_VERSION   = 11;        // v11 = PageCfg + color2 + textColor → 219 B. MUST equal firmware GaugeCfg.version.

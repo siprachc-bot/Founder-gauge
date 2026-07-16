@@ -8,10 +8,6 @@
 import { Ch, Layout, channelDef, type GaugeCfg, GAUGE_PAGES, SLOTS_PER_PAGE } from './founderGaugeCfg';
 
 // RGB565 accents (match the CI + the sim palette).
-const GOLD = 0xCD09;   // #C9A24A  SN gold
-const RED  = 0xE249;   // #E24B4A
-const BLUE = 0x4E1E;   // #4FC3F7
-const GREEN = 0x3CE9;  // #3B9C4F
 const WHITE = 0xFFFF;
 
 type ThemePage = { layout: number; ch: number[]; arc: number; col2?: number; text?: number };
@@ -28,57 +24,29 @@ export interface GaugeTheme {
 export const themePrice = (t: GaugeTheme): number => t.price ?? 0;
 export const isFree = (t: GaugeTheme): boolean => themePrice(t) <= 0;
 
-// H = hero, T = ticks, N = needle, B = bars — compact page builders.
-const H = (arc: number, a: number, b = Ch.NONE, col2 = 0, text = 0): ThemePage =>
-  ({ layout: Layout.HERO, ch: [a, b, 0, 0, 0], arc, col2, text });
-const T = (arc: number, a: number, b = Ch.NONE, col2 = 0, text = 0): ThemePage =>
-  ({ layout: Layout.TICKS, ch: [a, b, 0, 0, 0], arc, col2, text });
-const N = (arc: number, a: number, b = Ch.NONE, col2 = 0, text = 0): ThemePage =>
-  ({ layout: Layout.NEEDLE, ch: [a, b, 0, 0, 0], arc, col2, text });
-const B4 = (arc: number, a: number, b: number, c: number, d: number, text = 0): ThemePage =>
-  ({ layout: Layout.BARS, ch: [a, b, c, d, 0], arc, text });
+// A theme is a layout the gauge does not already have. The eight entries that
+// used to sit here — Minimal Gold, Track Red, Neon Blue, Classic, Dyno, EV,
+// Apex, Aurora — were all HERO/TICKS/NEEDLE/BARS in different colours, i.e.
+// things the owner can already build for free in the editor in under a minute.
+// Selling those is selling nothing. TUNER is the first entry that earns the
+// word: an artwork the gauge cannot draw until it is bought.
+const CYAN = 0x3E5D;   // #3FC8E8  TUNER's accent, from the sim
+const STEEL = 0x39C9;  // #39404A  honeycomb — its OWN colour, not tied to the accent
+
+// TUNER's arc is a SLOT: the label follows whatever channel is dropped in, so it
+// reads EV / BOOST / WATER and never a borrowed name. SOC is the default because
+// a T8's battery drains under throttle and refills on regen — an energy bar that
+// is a real instrument on this car, not decoration.
+const TUNER = (arc: number, dot: number): ThemePage =>
+  ({ layout: Layout.TUNER, ch: [arc, dot, 0, 0, 0], arc: CYAN, col2: STEEL, text: WHITE });
 
 export const THEMES: GaugeTheme[] = [
-  { id: 'minimal-gold', name: 'Minimal Gold', accent: GOLD,
-    desc: 'Clean hero dials in SN gold.',
-    pages: [ H(GOLD, Ch.RPM, Ch.SPEED), H(GOLD, Ch.BOOST, Ch.COOLANT), H(GOLD, Ch.SOC, Ch.VOLT) ] },
-
-  { id: 'track-red', name: 'Track Red', accent: RED,
-    desc: 'Tach ticks + shift light, dyno power. Red hot.',
-    pages: [ T(RED, Ch.RPM, Ch.SPEED), H(RED, Ch.BOOST, Ch.COOLANT), H(RED, Ch.PWR, Ch.TQ) ] },
-
-  { id: 'neon-blue', name: 'Neon Blue', accent: BLUE,
-    desc: 'Twin-needle clock + neon ticks.',
-    pages: [ N(BLUE, Ch.RPM, Ch.SPEED, WHITE), T(BLUE, Ch.BOOST, Ch.COOLANT, GOLD), H(BLUE, Ch.SOC, Ch.VOLT) ] },
-
-  { id: 'classic', name: 'Classic', accent: WHITE,
-    desc: 'White-on-black instrument look.',
-    pages: [ H(WHITE, Ch.SPEED, Ch.RPM), H(WHITE, Ch.COOLANT, Ch.OILTEMP), H(WHITE, Ch.FUELLVL, Ch.SOC) ] },
-
-  { id: 'dyno', name: 'Dyno', accent: GOLD,
-    desc: 'Power + torque front and centre.',
-    pages: [ H(GOLD, Ch.PWR, Ch.TQ), T(GOLD, Ch.RPM, Ch.SPEED),
-             B4(GOLD, Ch.BOOST, Ch.THROTTLE, Ch.COOLANT, Ch.SOC) ] },
-
-  { id: 'ev', name: 'EV', accent: GREEN,
-    desc: 'Battery, motor torque + efficiency.',
-    pages: [ H(GREEN, Ch.SOC, Ch.VOLT), N(GREEN, Ch.MOTOR_TQ, Ch.SPEED, BLUE), H(GREEN, Ch.PWR, Ch.ACCEL) ] },
-
-  // ---- Premium (paid) packs — showcase the store's sell path -------------
-  { id: 'apex-red', name: 'Apex', accent: RED, price: 99, tag: 'PRO', author: 'SN Motorsports',
-    desc: 'Race-day dash: neon tach + dyno power + boost bars.',
-    pages: [ T(RED, Ch.RPM, Ch.SPEED, GOLD, WHITE), H(RED, Ch.PWR, Ch.TQ, 0, WHITE),
-             B4(RED, Ch.BOOST, Ch.THROTTLE, Ch.COOLANT, Ch.SOC) ] },
-
-  { id: 'aurora-ev', name: 'Aurora', accent: BLUE, price: 99, tag: 'PRO', author: 'SN Motorsports',
-    desc: 'EV showpiece: twin-needle motor + battery arcs in neon.',
-    pages: [ N(BLUE, Ch.MOTOR_TQ, Ch.SPEED, GREEN, WHITE), H(GREEN, Ch.SOC, Ch.VOLT, 0, WHITE),
-             H(BLUE, Ch.PWR, Ch.ACCEL, 0, WHITE) ] },
+  { id: 'tuner', name: 'Tuner', accent: CYAN, price: 199, tag: 'NEW', author: 'SN Motorsports',
+    desc: 'Import-scene dash, drawn from scratch: a stepped energy arc that carries ' +
+          'its own label, a dot tacho with the redline as a red arc, and a floating ' +
+          'triangle pointer that strobes at the limit. The arc is a slot — pick what it shows.',
+    pages: [ TUNER(Ch.SOC, Ch.RPM), TUNER(Ch.BOOST, Ch.RPM), TUNER(Ch.PWR, Ch.RPM) ] },
 ];
-
-// Convenience splits for the store UI.
-export const FREE_THEMES = () => THEMES.filter(isFree);
-export const PAID_THEMES = () => THEMES.filter((t) => !isFree(t));
 
 // Apply a theme to a config: replace the PAGES (layout/channels/colours + a
 // sensible auto peak) and pageCount; KEEP the car's drivetrain, units, redline,
