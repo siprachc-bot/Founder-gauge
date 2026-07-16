@@ -31,6 +31,7 @@
   import { computeDyno, type DynoResult } from '../lib/dyno';
   import DynoChart from '../lib/DynoChart.svelte';
   import GaugePreview from '../lib/GaugePreview.svelte';
+  import { chanMeta } from '../lib/gaugeRender';
   import { applyTheme, type GaugeTheme } from '../lib/themes';
   import { parseCanLog, toSavvyCanCsv, canLogStats } from '../lib/canLog';
   import {
@@ -78,10 +79,9 @@
   // is pushed to the glass as you edit, so the gauge can't bounce/jump/desync.
   // Save() is the sole writer to the device. (Brightness stays live — global dim,
   // no page state, can't bounce.)
-  const chanMeta = (id: number) => {
-    const d = channelDef(id);
-    return d ? { label: d.short ?? d.label, unit: d.unit, min: d.min, max: d.max } : null;
-  };
+  // (chanMeta now comes from gaugeRender — it was duplicated here and in the
+  //  Store, and every copy shared the same hole: Ch.NONE has a CHANNELS entry,
+  //  so empty slots came back truthy and rendered a fake 0.62 reading.)
 
   // Apply a curated screen template — replaces the pages/look, keeps the car
   // settings. Just updates cfg (preview reflects it); Save writes to the gauge.

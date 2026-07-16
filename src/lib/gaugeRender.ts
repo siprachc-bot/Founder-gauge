@@ -20,14 +20,74 @@ export type ChanLookup = (id: number) => ChanMeta | null;
 
 // Shared channel → preview-meta lookup (short label, unit, range). Used by every
 // GaugePreview so the editor and the Store render channels identically.
+// ⚠️ Ch.NONE (0) HAS a CHANNELS entry — '— empty —', range 0..1 — so channelDef
+// happily returns an object for it and every `if (m)` guard downstream sails
+// straight through. That's why empty bars were drawing "0.62" with a 62%-full
+// track: 0.62 of the range 0..1. An empty slot is not a channel; say so here,
+// once, rather than making every caller special-case id 0.
 export const chanMeta: ChanLookup = (id) => {
+  if (!id) return null;                       // Ch.NONE — empty slot
   const d = channelDef(id);
   return d ? { label: d.short ?? d.label, unit: d.unit, min: d.min, max: d.max } : null;
 };
 
 const SZ = 466, CX = 233, CY = 233, D = Math.PI / 180;
 const MUT = '#6a6f78', LBL = '#9aa0a8', TRACK = '#181a1e';
-const FT = (w: number, s: number) => `${w} ${s}px Michroma, ui-monospace, monospace`;
+// ---- TYPE, SIZED FROM THE DEVICE ------------------------------------------
+// The glass draws with Adafruit-GFX faces compiled from this very OTF
+// (axis_can_monitor/Psionic.h, via fontconvert). So the preview names the
+// DEVICE FACE and converts — it never carries a px number of its own, which is
+// how the two drifted apart in the first place.
+//
+// ⚠️ GFX "pt" is NOT px. psionic13pt7b's digits stand 20px tall on the glass;
+//    the old code wrote `20px` and got 14px. Same number, different unit.
+//
+// cap = digit '0' height, adv = digit '0' xAdvance. BOTH read out of Psionic.h's
+// glyph table — not guessed, not derived.
+const FACE = {
+  p6:  { cap:  8, adv: 11 },
+  p8:  { cap: 11, adv: 15 },
+  p10: { cap: 14, adv: 18 },
+  p13: { cap: 20, adv: 26 },
+  p20: { cap: 27, adv: 36 },
+  p48: { cap: 66, adv: 86 },
+} as const;
+const EM_PER_CAP = 1 / 0.70;   // Psionic's cap is 0.70 em (canvas-measured)
+const OTF_ADV    = 0.978;      // the live OTF's digit advance / em (canvas-measured)
+
+// ⚠️ WHY letterSpacing: matching cap height alone is NOT enough. The device's
+// faces are BITMAPS that fontconvert rasterised and rounded to whole pixels, so
+// their advance is 4–8% tighter than the OTF's at the same cap height (ratio
+// 0.900–0.963 vs the OTF's 0.978, and it varies per face). Left uncorrected the
+// preview runs ~7% wide: "4960" measured 368.9px and overflowed HERO's 366px
+// clear — while on the glass it is 4×86 = 344px and fits with 22px to spare.
+// A preview that invents an overflow the device won't have is worse than no
+// preview, so each face carries its own correction.
+// ⚠️ NO weight argument either: Psionic.h is a SINGLE face and the panel cannot
+// embolden. Asking the browser for 700 gets synthetic bold the glass can't show.
+function setDevFont(ctx: CanvasRenderingContext2D, face: keyof typeof FACE, mul = 1): void {
+  const f = FACE[face];
+  const em = f.cap * mul * EM_PER_CAP;
+  ctx.font = `${em.toFixed(1)}px Psionic, Orbitron, 'Arial Narrow', sans-serif`;
+  // Unsupported on older WebKit — it degrades to the ~7% over-wide render, never breaks.
+  ctx.letterSpacing = `${(f.adv * mul - em * OTF_ADV).toFixed(2)}px`;
+}
+
+// ⚠️ Canvas does NOT re-render when a webfont finishes loading. Unlike DOM text
+// it has no font-display behaviour: whatever is available at fillText() time is
+// baked in, and it stays wrong. So the font must be resolved BEFORE the first
+// draw, and the caller must redraw once this settles.
+let fontReady: Promise<unknown> | null = null;
+export function ensureGaugeFont(): Promise<unknown> {
+  if (fontReady) return fontReady;
+  const fonts = (document as unknown as { fonts?: FontFaceSet }).fonts;
+  fontReady = fonts?.load
+    ? Promise.all([fonts.load('400 82px Psionic'), fonts.load('700 82px Psionic')])
+        .then(() => fonts.ready)
+        .catch(() => undefined)          // never block the preview on a font miss
+    : Promise.resolve();
+  return fontReady;
+}
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 function dim(hex: string, t: number): string {
@@ -58,50 +118,76 @@ export function renderGaugePreview(
   const A0 = 135, A1 = 405;
 
   if (page.layout === 1) {                       // ---- BARS ----
-    const ys = [140, 205, 270, 335];
+    const ys = [150, 210, 270, 330];             // ScreenGauge renderBars
     for (let i = 0; i < 4; i++) {
       const m = chan(page.ch[i]); const y = ys[i];
       const R = 210, dy = y - CY, hw = Math.sqrt(Math.max(0, R * R - dy * dy));
-      const bw = Math.min(hw - 8, 150) * 2, bx = CX - bw / 2;
-      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      ctx.fillStyle = m ? LBL : '#4a4f57'; ctx.font = FT(500, 14);
-      ctx.fillText(m ? m.label.toUpperCase() : '—', bx, y - 13);
+      const bw = Math.max(40, Math.min(hw - 8, 150) * 2), bx = CX - bw / 2;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top';        // device: top_left
+      ctx.fillStyle = m ? LBL : '#4a4f57'; setDevFont(ctx, 'p8');
+      ctx.fillText(m ? m.label.toUpperCase() : '—', bx, y - 26);
       ctx.fillStyle = TRACK; roundRect(ctx, bx, y - 7, bw, 14, 7);
       if (m) {
         const s = sample(m);
         ctx.save(); ctx.shadowColor = arc; ctx.shadowBlur = 8;
         ctx.fillStyle = arc; roundRect(ctx, bx, y - 7, bw * s.frac, 14, 7); ctx.restore();
-        ctx.textAlign = 'right'; ctx.fillStyle = text; ctx.font = FT(600, 20);
-        ctx.fillText(s.text + (s.unit ? ' ' + s.unit : ''), bx + bw, y - 13);
+        ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';  // device: bottom_right
+        ctx.fillStyle = text; setDevFont(ctx, 'p13');
+        ctx.fillText(s.text + (s.unit ? ' ' + s.unit : ''), bx + bw, y - 10);
       }
     }
     return;
   }
 
-  if (page.layout === 2) {                       // ---- NEEDLE (clock, 2 hands) ----
+  if (page.layout === 2) {                       // ---- NEEDLE (chronograph) ----
+    // Mirrors ScreenGauge renderNeedle after the 2026-07-16 redesign: the primary
+    // owns the whole dial, the 2nd value gets its OWN sub-dial with its own pivot
+    // and scale. Was two hands on one pivot, which forced both values onto a
+    // single sweep and made neither readable against it.
+    const m1 = chan(page.ch[1]);
+    const SX = 233, SY = 338, SR = 86;           // sub-dial, measured off the mock
     ctx.strokeStyle = 'rgba(154,160,168,.25)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(CX, CY, 196, 0, 2 * Math.PI); ctx.stroke();
-    for (let q = 0; q < 4; q++) { const a = (q * 90 + 45) * D;   // faint crosshair
+    for (let q = 0; q < 4; q++) { const a = (q * 90) * D;      // main crosshair
       ctx.strokeStyle = 'rgba(154,160,168,.15)';
-      ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(CX + Math.cos(a) * 150, CY + Math.sin(a) * 150); ctx.stroke(); }
-    const m1 = chan(page.ch[1]);
-    const hand = (f: number, len: number, w: number, col: string) => {
+      ctx.beginPath(); ctx.moveTo(CX + Math.cos(a) * 70, CY + Math.sin(a) * 70);
+      ctx.lineTo(CX + Math.cos(a) * 231, CY + Math.sin(a) * 231); ctx.stroke(); }
+    if (m1) {                                    // sub-dial frame + its crosshair
+      ctx.strokeStyle = 'rgba(154,160,168,.45)';
+      ctx.beginPath(); ctx.arc(SX, SY, SR, 0, 2 * Math.PI); ctx.stroke();
+      for (let q = 0; q < 4; q++) { const a = (q * 90) * D;
+        ctx.strokeStyle = 'rgba(154,160,168,.28)';
+        ctx.beginPath(); ctx.moveTo(SX + Math.cos(a) * SR * 0.55, SY + Math.sin(a) * SR * 0.55);
+        ctx.lineTo(SX + Math.cos(a) * SR, SY + Math.sin(a) * SR); ctx.stroke(); }
+    }
+    // Tapered hand with a counterweight TAIL past the pivot — the tail is what
+    // tells the eye where the pivot is, which only matters now there are two.
+    const hand = (ox: number, oy: number, f: number, w: number, len: number, tail: number, col: string) => {
       const a = (A0 + (A1 - A0) * f) * D, c = Math.cos(a), s = Math.sin(a);
-      ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 14;
-      ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(CX + c * len, CY + s * len); ctx.stroke();
+      const px = -s, py = c, bx = ox - c * tail, by = oy - s * tail;
+      ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 14; ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.moveTo(bx + px * w, by + py * w);
+      ctx.lineTo(ox + c * len, oy + s * len);
+      ctx.lineTo(bx - px * w, by - py * w);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx, by, w, 0, 2 * Math.PI); ctx.fill();
       ctx.restore();
     };
-    if (m1) hand(sample(m1).frac, 116, 5, col2);         // short 2nd hand
-    if (m0) hand(sample(m0).frac, 188, 2.4, arc);        // long primary hand
-    ctx.save(); ctx.shadowColor = arc; ctx.shadowBlur = 8; ctx.fillStyle = arc;
-    ctx.beginPath(); ctx.arc(CX, CY, 4, 0, 2 * Math.PI); ctx.fill(); ctx.restore();
+    if (m1) hand(SX, SY, sample(m1).frac, 2.0, 78, 9, col2);          // sub-dial hand
+    if (m0) hand(CX, CY, sample(m0).frac, 3.4, 192, 35, arc);         // primary + tail
     if (m0) {
       const s = sample(m0);
-      ctx.fillStyle = LBL; ctx.textBaseline = 'alphabetic'; ctx.font = FT(500, 15);
-      ctx.fillText(s.label, CX, CY + 78);
-      ctx.fillStyle = text; ctx.textBaseline = 'middle'; ctx.font = FT(700, m1 ? 40 : 50);
-      ctx.fillText(s.text, CX, CY + (m1 ? 112 : 118));
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = LBL; setDevFont(ctx, 'p13'); ctx.fillText(s.label, CX, 160);
+      ctx.fillStyle = text; setDevFont(ctx, 'p20'); ctx.fillText(s.text, CX, 189);
+      ctx.fillStyle = MUT;  setDevFont(ctx, 'p8');  ctx.fillText(s.unit, CX, 209);
+    }
+    if (m1) {                                    // 2nd value reads INSIDE its sub-dial
+      const s2 = sample(m1);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = MUT;  setDevFont(ctx, 'p10'); ctx.fillText(s2.label, SX, 367);
+      ctx.fillStyle = text; setDevFont(ctx, 'p13'); ctx.fillText(s2.text, SX, 393);
     }
     return;
   }
@@ -140,16 +226,19 @@ export function renderGaugePreview(
       ctx.beginPath(); ctx.moveTo(CX + c * 220, CY + s * 220); ctx.lineTo(CX + c * 230, CY + s * 230); ctx.stroke();
       ctx.restore();
     }
-    if (m0) {
+    if (m0) {                                    // ScreenGauge renderTicks
       const s = sample(m0);
-      ctx.fillStyle = LBL; ctx.textBaseline = 'alphabetic'; ctx.font = FT(500, 15);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';  // device: middle_center
+      ctx.fillStyle = LBL; setDevFont(ctx, 'p10');
       ctx.fillText(s.label, CX, CY - (m1 ? 50 : 42));
-      ctx.fillStyle = text; ctx.textBaseline = 'middle'; ctx.font = FT(700, m1 ? 44 : 54);
+      ctx.fillStyle = text;
+      if (m1) setDevFont(ctx, 'p20', 1.6); else setDevFont(ctx, 'p48');
       ctx.fillText(s.text, CX, CY + (m1 ? 0 : 8));
+      ctx.fillStyle = arc; setDevFont(ctx, 'p8');
+      ctx.fillText(s.unit, CX, CY + (m1 ? 40 : 52));
       if (m1) { const s2 = sample(m1);
-        ctx.fillStyle = MUT; ctx.textBaseline = 'alphabetic'; ctx.font = FT(500, 12);
-        ctx.fillText(chan(page.ch[1])!.label.toUpperCase(), CX, CY + 68);
-        ctx.fillStyle = col2; ctx.font = FT(600, 20); ctx.fillText(s2.text + ' ' + s2.unit, CX, CY + 92); }
+        ctx.fillStyle = MUT;  setDevFont(ctx, 'p8');  ctx.fillText(s2.label, CX, CY + 68);
+        ctx.fillStyle = col2; setDevFont(ctx, 'p13'); ctx.fillText(s2.text + ' ' + s2.unit, CX, CY + 96); }
     }
     return;
   }
@@ -160,21 +249,26 @@ export function renderGaugePreview(
     const s = sample(m0);
     ctx.save(); ctx.shadowColor = arc; ctx.shadowBlur = 10;
     band(ctx, 196, 13, A0, A0 + (A1 - A0) * s.frac, arc); ctx.restore();
-    ctx.fillStyle = LBL; ctx.textBaseline = 'alphabetic'; ctx.font = FT(500, 16);
-    ctx.fillText(s.label, CX, CY - 46);
-    ctx.fillStyle = text; ctx.textBaseline = 'middle'; ctx.font = FT(700, 82);
-    ctx.fillText(s.text, CX, CY + 2);
-    ctx.fillStyle = MUT; ctx.textBaseline = 'alphabetic'; ctx.font = FT(500, 15);
-    ctx.fillText(s.unit, CX, CY + 40);
+    // ScreenGauge renderHero — every datum on the device is middle_center
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = LBL; setDevFont(ctx, 'p10');
+    ctx.fillText(s.label, CX, CY - 56);
+    ctx.fillStyle = text; setDevFont(ctx, 'p48');
+    ctx.fillText(s.text, CX, CY + 4);
+    ctx.fillStyle = MUT; setDevFont(ctx, 'p8');
+    ctx.fillText(s.unit, CX, CY + 52);
   } else {
-    ctx.fillStyle = MUT; ctx.textBaseline = 'middle'; ctx.font = FT(700, 40); ctx.fillText('—', CX, CY);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = MUT; setDevFont(ctx, 'p20'); ctx.fillText('—', CX, CY);
   }
   const m1 = chan(page.ch[1]);
   if (m1) {
     const s = sample(m1);
-    ctx.fillStyle = MUT; ctx.textBaseline = 'alphabetic'; ctx.font = FT(500, 12);
-    ctx.fillText(s.label, CX, CY + 78);
-    ctx.fillStyle = text; ctx.font = FT(600, 24); ctx.fillText(s.text + (s.unit ? ' ' + s.unit : ''), CX, CY + 102);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = LBL; setDevFont(ctx, 'p10');           // device: y=334 absolute
+    ctx.fillText(s.label, CX, 334);
+    ctx.fillStyle = text; setDevFont(ctx, 'p20');          // device: y=374, 20pt
+    ctx.fillText(s.text + (s.unit ? ' ' + s.unit : ''), CX, 374);
   }
 }
 
