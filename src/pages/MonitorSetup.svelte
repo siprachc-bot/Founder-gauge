@@ -1018,6 +1018,18 @@
                 <span class="peak-unit">{peakUnit(i)}</span>
               </div>
             </label>
+            <!-- Shift light lives on the RPM page (it's an RPM threshold). Global
+                 cfg.shiftRpm; shown only when this page's big value is RPM. -->
+            {#if page.ch[0] === Ch.RPM}
+              <label class="peak">
+                <span class="lbl">Shift light <span class="hint">RPM · 0 = off</span></span>
+                <div class="peak-row">
+                  <input type="number" min="0" max="12000" step="100"
+                    bind:value={cfg.shiftRpm} placeholder="off" />
+                  <span class="peak-unit">RPM</span>
+                </div>
+              </label>
+            {/if}
           </div>
         </div>
       </div>
@@ -1123,11 +1135,6 @@
           {#each [4, 5, 6, 7, 8] as n}<option value={n}>{n}</option>{/each}
         </select>
       </label>
-      <label style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;">
-        <span>Shift light (RPM)</span>
-        <input type="number" min="0" max="12000" step="100" bind:value={cfg.shiftRpm}
-               style="width:96px;text-align:right;" />
-      </label>
       <div style="margin-top:12px;opacity:.85;font-size:.85em;">Gear ratios</div>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;margin-top:6px;">
         {#each Array(cfg.gearCount) as _, i}
@@ -1148,7 +1155,7 @@
     <p style="opacity:.6;font-size:.8em;margin-top:8px;line-height:1.4;">
       The gear is calculated from RPM + speed using your gear ratios, final drive
       and tyre size. If the gear reads a step high or low, nudge Final drive in
-      Advanced. Shift light flashes the screen red at the redline (0 = off).
+      Advanced. (Shift light is set on the RPM page.)
     </p>
   </div>
 
