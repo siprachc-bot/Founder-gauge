@@ -70,14 +70,14 @@
   // push a preview with every page's layout forced to the SAVED layout: the glass
   // recolours / re-channels the page you're editing live, but its style only
   // changes when you Save. The in-app GaugePreview shows the new style meanwhile.
-  $effect(() => {
-    const n = normalize(cfg);                          // tracks EVERY field of cfg
-    if (demo || !store.monClient) return;
-    if (JSON.stringify(n) === JSON.stringify(saved)) return;   // nothing changed
-    const pv = { ...n, pages: n.pages.map((p, i) => ({ ...p, layout: saved.pages[i]?.layout ?? p.layout })) };
-    if (JSON.stringify(pv) === JSON.stringify(saved)) return;   // only the layout changed → wait for Save
-    store.monClient.previewCfgLive(pv);
-  });
+  // Preview is IN THE APP only (the faithful GaugePreview canvas below) — nothing
+  // is pushed to the glass as you edit, so the gauge can't bounce/jump/desync.
+  // Save() is the sole writer to the device. (Brightness stays live — global dim,
+  // no page state, can't bounce.)
+  const chanMeta = (id: number) => {
+    const d = channelDef(id);
+    return d ? { label: d.short ?? d.label, unit: d.unit, min: d.min, max: d.max } : null;
+  };
 
   const clone = (c: GaugeCfg): GaugeCfg => JSON.parse(JSON.stringify(c));
 
@@ -972,7 +972,7 @@
           <!-- In-app preview of the exact style + colours. Save is what pushes it
                to the gauge (no live-preview-on-the-gauge → no page bounce). -->
           <GaugePreview layout={page.layout} arc={pageHex(i)} col2={hand2Hex(i)} text={textHex(i)}
-            labels={Array.from({ length: slotsUsed(page.layout) }, (_, s) => channelShort(page.ch[s]))} />
+            ch={page.ch} chan={chanMeta} />
 
           <div class="pickers">
             <!-- One select per slot the chosen layout actually draws:
