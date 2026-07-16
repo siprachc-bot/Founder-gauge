@@ -55,8 +55,11 @@
   let demo    = $state(false);              // preview the configurator with no gauge (SAVE disabled)
 
   const PAGE_NAMES = ['MAIN','PAGE 2','PAGE 3','PAGE 4','PAGE 5','PAGE 6','PAGE 7','PAGE 8','PAGE 9','PAGE 10'];
-  function addPage()    { if (cfg.pageCount < GAUGE_PAGES) cfg.pageCount += 1; }
-  function removePage() { if (cfg.pageCount > 1) cfg.pageCount -= 1; }
+  // Which page the single big preview + the controls below edit.
+  let selPage = $state(0);
+  $effect(() => { if (selPage >= cfg.pageCount) selPage = cfg.pageCount - 1; if (selPage < 0) selPage = 0; });
+  function addPage()    { if (cfg.pageCount < GAUGE_PAGES) { cfg.pageCount += 1; selPage = cfg.pageCount - 1; } }
+  function removePage() { if (cfg.pageCount > 1) { cfg.pageCount -= 1; if (selPage >= cfg.pageCount) selPage = cfg.pageCount - 1; } }
 
   // Dirty = the on-screen layout differs from what's on the monitor.
   // Compare the NORMALISED cfg (peak null→0, clamped, layout forced) against the
@@ -875,7 +878,7 @@
   // a buyer (or an App Store reviewer) see what the app does before pairing.
   // SAVE is disabled; "Disconnect" returns to the connect screen.
   function startDemo() {
-    demo = true;
+    demo = true; selPage = 0;
     cfg = defaultCfg();
     saved = defaultCfg();
     note = '';
@@ -929,8 +932,27 @@
   <!-- ---- Configurator: 4 hero pages ---- -->
   {#if note}<p class="note">{note}</p>{/if}
 
+  <!-- ONE big gauge preview of the selected page (like the real glass) + page dots -->
+  <div class="card ed-top">
+    <div class="ed-preview">
+      <GaugePreview layout={cfg.pages[selPage].layout} arc={pageHex(selPage)} col2={hand2Hex(selPage)}
+        text={textHex(selPage)} ch={cfg.pages[selPage].ch} chan={chanMeta} size={232} />
+    </div>
+    <div class="ed-name">{PAGE_NAMES[selPage]}</div>
+    <div class="ed-pages">
+      <button class="pg-btn" onclick={removePage} disabled={cfg.pageCount <= 1} aria-label="Remove page">−</button>
+      {#each cfg.pages.slice(0, cfg.pageCount) as _u, di (di)}
+        <button class="pv-dot" class:on={di === selPage} onclick={() => (selPage = di)} aria-label={PAGE_NAMES[di]}>{di + 1}</button>
+      {/each}
+      <button class="pg-btn" onclick={addPage} disabled={cfg.pageCount >= GAUGE_PAGES} aria-label="Add page">+</button>
+    </div>
+  </div>
+
+  <!-- controls for the SELECTED page only -->
   <div class="pages">
-    {#each cfg.pages.slice(0, cfg.pageCount) as page, i (i)}
+    {#if cfg.pages[selPage]}
+      {@const i = selPage}
+      {@const page = cfg.pages[selPage]}
       <div class="card page-card">
         <div class="page-head">
           <span class="page-tag">{PAGE_NAMES[i]}</span>
@@ -968,12 +990,7 @@
           {/each}
         </div>
 
-        <div class="page-body">
-          <!-- In-app preview of the exact style + colours. Save is what pushes it
-               to the gauge (no live-preview-on-the-gauge → no page bounce). -->
-          <GaugePreview layout={page.layout} arc={pageHex(i)} col2={hand2Hex(i)} text={textHex(i)}
-            ch={page.ch} chan={chanMeta} />
-
+        <div class="page-body single">
           <div class="pickers">
             <!-- One select per slot the chosen layout actually draws:
                  BARS = 4 bars, HERO/NEEDLE = 2, TICKS = 1. -->
@@ -1004,14 +1021,7 @@
           </div>
         </div>
       </div>
-    {/each}
-  </div>
-
-  <!-- add / remove pages (1..6) -->
-  <div class="page-controls">
-    <button class="pg-btn" onclick={removePage} disabled={cfg.pageCount <= 1} aria-label="Remove page">−</button>
-    <span class="pg-count">{cfg.pageCount} page{cfg.pageCount > 1 ? 's' : ''}</span>
-    <button class="pg-btn" onclick={addPage} disabled={cfg.pageCount >= GAUGE_PAGES} aria-label="Add page">+</button>
+    {/if}
   </div>
 
   <!-- global screen brightness (live-dims as you drag) -->
@@ -1782,6 +1792,16 @@
   .fw-man-row select { width: auto; flex: 0 0 auto; }
   .fw-man-row .fw-input { flex: 1; min-width: 140px; }
   .page-body { display: flex; align-items: center; gap: var(--s-4); }
+  .page-body.single { display: block; }
+
+  /* single big preview + page dots */
+  .ed-top { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: var(--s-4); }
+  .ed-preview { display: flex; justify-content: center; }
+  .ed-name { font: 600 12px var(--font-mono, ui-monospace); letter-spacing: .1em; color: var(--accent); text-transform: uppercase; }
+  .ed-pages { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .pv-dot { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--muted); font-size: 13px; cursor: pointer; }
+  .pv-dot.on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg)); }
 
   .prev { width: 84px; height: 84px; flex-shrink: 0; }
   .prev-bezel { fill: #000; stroke: var(--border); stroke-width: 1.5; }
