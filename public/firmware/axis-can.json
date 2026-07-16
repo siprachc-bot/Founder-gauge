@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.22.3",
+      "date": "2026-07-15",
+      "notes": "Fix: when you change a page's style (e.g. to Ticks) in the app, the gauge now jumps to that page so you see the change — it no longer sits on the first page. Opening the app still doesn't move the gauge.",
+      "url": "firmware/axis_can_monitor-v0.22.3.bin",
+      "size_bytes": 1664880
+    },
+    {
       "version": "0.22.2",
       "date": "2026-07-15",
       "notes": "Adds a one-line calibration readout to the Last Drive card (menu → Session) after a hard pull, so wheel-horsepower can be tuned to match your car. Do one full-throttle pull, then open the Last Drive card and photograph the CAL line.",
