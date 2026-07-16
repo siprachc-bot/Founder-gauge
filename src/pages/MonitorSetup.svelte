@@ -30,6 +30,7 @@
   import { parseDriveLog, toCsv, driveLogName, saveTextFile } from '../lib/driveLog';
   import { computeDyno, type DynoResult } from '../lib/dyno';
   import DynoChart from '../lib/DynoChart.svelte';
+  import GaugePreview from '../lib/GaugePreview.svelte';
   import { parseCanLog, toSavvyCanCsv, canLogStats } from '../lib/canLog';
   import {
     type CarProfile, loadProfiles, addProfile, renameProfile,
@@ -63,16 +64,11 @@
   // read as "unsaved" when it coerces to the same 0 that's on the device.
   let dirty = $derived(JSON.stringify(normalize(cfg)) !== JSON.stringify(saved));
 
-  // LIVE PREVIEW — every edit (layout, channels, peaks, colours, page count, units,
-  // weight, redline…) is pushed to the gauge at once, RAM-only, so the glass always
-  // shows what the screen shows. Saving is what makes it stick. Debounced in the
-  // client, and skipped while the edit still equals what the device already holds.
-  $effect(() => {
-    const next = JSON.stringify(normalize(cfg));      // tracks EVERY field of cfg
-    if (demo || !store.monClient) return;
-    if (next === JSON.stringify(saved)) return;       // nothing to preview
-    store.monClient.previewCfgLive(JSON.parse(next));
-  });
+  // NOTE: the gauge is NOT live-previewed as you edit — that pushed a new config to
+  // the glass on every keystroke and caused the page to bounce/jump. Instead the
+  // in-app GaugePreview shows the style + colours, and Save() is the ONLY thing that
+  // writes to the gauge. (Brightness stays live below — it's a global dim with no
+  // page state, so it can't bounce.)
 
   const clone = (c: GaugeCfg): GaugeCfg => JSON.parse(JSON.stringify(c));
 
@@ -159,11 +155,9 @@
   // ---- per-page arc colour (custom picker, no preset lock-in) ----
   const pageHex = (i: number) => rgb565ToHex(cfg.pages[i].arcColor ?? ARC_DEFAULT);
   function setPageColor(i: number, hex: string) {
-    const c565 = hexToRgb565(hex);
-    cfg.pages[i].arcColor = c565;
-    // Live preview: push the colour to the gauge in real time as the picker drags
-    // (RAM-only on the device; the full cfg persists it when the owner taps Save).
-    if (!demo && store.monClient) store.monClient.setPageColor(i, c565).catch(() => {});
+    // Colour shows in the in-app GaugePreview; Save pushes it to the gauge (no
+    // live-recolour on the glass — that jumped the gauge to this page).
+    cfg.pages[i].arcColor = hexToRgb565(hex);
   }
   // ---- v11: 2nd needle hand + value-text colour (0 on the wire = "use default",
   //      so the swatch shows the arc colour / white until the owner picks one) ----
@@ -966,13 +960,10 @@
         </div>
 
         <div class="page-body">
-          <!-- structural preview: big primary + small support, per-page colour -->
-          <svg class="prev" viewBox="0 0 100 100" aria-hidden="true">
-            <circle cx="50" cy="50" r="46" class="prev-bezel" />
-            <path d="M 22 74 A 34 34 0 1 1 78 74" class="prev-arc" style="stroke: {pageHex(i)}" />
-            <text x="50" y="46" class="prev-primary">{channelShort(page.ch[0])}</text>
-            <text x="50" y="62" class="prev-support">{channelShort(page.ch[1])}</text>
-          </svg>
+          <!-- In-app preview of the exact style + colours. Save is what pushes it
+               to the gauge (no live-preview-on-the-gauge → no page bounce). -->
+          <GaugePreview layout={page.layout} arc={pageHex(i)} col2={hand2Hex(i)} text={textHex(i)}
+            labels={Array.from({ length: slotsUsed(page.layout) }, (_, s) => channelShort(page.ch[s]))} />
 
           <div class="pickers">
             <!-- One select per slot the chosen layout actually draws:
