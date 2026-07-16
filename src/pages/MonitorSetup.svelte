@@ -223,6 +223,27 @@
   const nodeUpdate = $derived(!!(nodeLatest && devVers?.node &&
     verCmp(parseVer(nodeLatest.version), devVers.node) > 0));
 
+  // ---- Anti-gateway-lockout: cool-down between SENSOR (node) flashes ----------
+  // Every node reboot pokes the car's OBD gateway to lock the bus; back-to-back
+  // re-flashes = a burst of pokes the SPA gateway's anti-flood trips on → it stops
+  // answering and the gauge drops to rpm/speed only until the car is key-cycled.
+  // So after a node flash we BLOCK the next one for NODE_OTA_COOLDOWN_S — reboots
+  // spaced this far apart never look like a flood. (The gauge/monitor OTA doesn't
+  // poke OBD, so it's never blocked.)
+  const NODE_OTA_COOLDOWN_S = 40;
+  let nodeCoolUntil = $state(0);            // Date.now() ms until node OTA is allowed again
+  let nowTick       = $state(Date.now());
+  let coolTimer: ReturnType<typeof setInterval> | null = null;
+  const nodeCooling  = $derived(nowTick < nodeCoolUntil);
+  const nodeCoolLeft = $derived(Math.max(0, Math.ceil((nodeCoolUntil - nowTick) / 1000)));
+  function startNodeCooldown() {
+    nodeCoolUntil = Date.now() + NODE_OTA_COOLDOWN_S * 1000;
+    if (!coolTimer) coolTimer = setInterval(() => {
+      nowTick = Date.now();
+      if (nowTick >= nodeCoolUntil && coolTimer) { clearInterval(coolTimer); coolTimer = null; }
+    }, 500);
+  }
+
   async function loadOta() {
     if (demo || !store.monClient || otaBusy) return;
     otaBusy = true; otaNote = '';
@@ -251,7 +272,9 @@
       flashMsg = which === 'monitor' ? 'Flashing gauge…' : 'Flashing sensor…';
       const target = which === 'monitor' ? OTA_TARGET_MONITOR : OTA_TARGET_NODE;
       await store.monClient.flash(target, bin, (p) => (flashPct = p));
-      flashMsg = which === 'monitor' ? '✓ Gauge updated — rebooting' : '✓ Sensor updated — rebooting';
+      flashMsg = which === 'monitor' ? '✓ Gauge updated — rebooting'
+               : `✓ Sensor updated — let it reconnect (~${NODE_OTA_COOLDOWN_S}s) before updating again`;
+      if (which === 'node') startNodeCooldown();     // don't re-flash the sensor too soon (gateway anti-flood)
       otaLoaded = false;
       setTimeout(loadOta, 4500);                    // device reboots; re-read versions
     } catch (e) {
@@ -278,6 +301,7 @@
       const target = manTarget === 'monitor' ? OTA_TARGET_MONITOR : OTA_TARGET_NODE;
       await store.monClient.flash(target, manFile, (p) => (flashPct = p));
       flashMsg = '✓ flashed — rebooting';
+      if (manTarget === 'node') startNodeCooldown();   // sensor cool-down (gateway anti-flood)
     } catch (e) {
       flashMsg = '✗ ' + String((e as Error)?.message ?? e);
     } finally {
@@ -710,7 +734,7 @@
     phase = 'idle';
   });
 
-  onDestroy(() => { /* keep the link alive in the store across navigations */ });
+  onDestroy(() => { if (coolTimer) clearInterval(coolTimer); /* keep the link alive in the store across navigations */ });
 
   function onDisconnect() {
     store.monClient = null;
@@ -1218,16 +1242,21 @@
       </div>
       {#if flashing === which}
         <span class="fw-row-status">{flashPct}%</span>
+      {:else if which === 'node' && nodeCooling}
+        <span class="fw-row-status dim">reconnecting… {nodeCoolLeft}s</span>
       {:else if ent}
         <button class="fw-install" class:up={hasUpdate}
-          onclick={() => installUpdate(which, ent)} disabled={flashing !== ''}>
+          onclick={() => installUpdate(which, ent)}
+          disabled={flashing !== '' || (which === 'node' && nodeCooling)}>
           {hasUpdate ? `Update` : 'Reinstall'}
         </button>
       {:else if manifest}
         <span class="fw-row-status dim">—</span>
       {/if}
     </div>
-    {#if hasUpdate && ent?.notes}<p class="fw-notes">{ent.notes}</p>{/if}
+    {#if which === 'node' && nodeCooling}
+      <p class="fw-notes">Sensor is rebooting — wait for it to reconnect before updating again (avoids overloading the car's gateway).</p>
+    {:else if hasUpdate && ent?.notes}<p class="fw-notes">{ent.notes}</p>{/if}
   {/snippet}
 
   {#if !demo}
@@ -1270,8 +1299,11 @@
           <input class="fw-input" type="file" accept=".bin" onchange={onManPick} disabled={flashing !== ''} />
         </div>
         {#if manName}<p class="fw-name">{manName} · {Math.round((manFile?.length ?? 0) / 1024)} KB</p>{/if}
-        <button class="ghost wide" onclick={doManFlash} disabled={!manFile || flashing !== ''}>
-          {flashing ? `Flashing… ${flashPct}%` : 'Flash this file'}
+        <button class="ghost wide" onclick={doManFlash}
+                disabled={!manFile || flashing !== '' || (manTarget === 'node' && nodeCooling)}>
+          {flashing ? `Flashing… ${flashPct}%`
+           : (manTarget === 'node' && nodeCooling) ? `Sensor reconnecting… ${nodeCoolLeft}s`
+           : 'Flash this file'}
         </button>
       </details>
     </details>
