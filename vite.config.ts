@@ -42,6 +42,12 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // The default glob omits fonts. psionic.otf IS the CI face the gauge
+        // preview measures itself against — without it precached, an offline
+        // PWA silently falls back to Orbitron and every glyph metric in
+        // gaugeRender.ts (cap heights, letterSpacing) is computed against the
+        // wrong face, so the preview stops matching the device.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,otf,woff,woff2}'],
         // Never cache the device JSON API — always go to network so we see
         // live state. Pattern matches /api/* whether served from device or
         // a separate origin.
