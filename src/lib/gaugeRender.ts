@@ -124,8 +124,11 @@ export function renderGaugePreview(
       const R = 210, dy = y - CY, hw = Math.sqrt(Math.max(0, R * R - dy * dy));
       const bw = Math.max(40, Math.min(hw - 8, 150) * 2), bx = CX - bw / 2;
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';        // device: top_left
-      ctx.fillStyle = m ? LBL : '#4a4f57'; setDevFont(ctx, 'p8');
-      ctx.fillText(m ? m.label.toUpperCase() : '—', bx, y - 26);
+      // 8pt was an 11px cap — under the 14px read-at-a-glance floor, and this
+      // label is what says which of 4 stacked bars you're looking at. 10pt is
+      // 5px taller, so y-26 would land on the bar: moved to y-31.
+      ctx.fillStyle = m ? LBL : '#4a4f57'; setDevFont(ctx, 'p10');
+      ctx.fillText(m ? m.label.toUpperCase() : '—', bx, y - 31);
       ctx.fillStyle = TRACK; roundRect(ctx, bx, y - 7, bw, 14, 7);
       if (m) {
         const s = sample(m);
@@ -181,7 +184,7 @@ export function renderGaugePreview(
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = LBL; setDevFont(ctx, 'p13'); ctx.fillText(s.label, CX, 160);
       ctx.fillStyle = text; setDevFont(ctx, 'p20'); ctx.fillText(s.text, CX, 189);
-      ctx.fillStyle = MUT;  setDevFont(ctx, 'p8');  ctx.fillText(s.unit, CX, 209);
+      ctx.fillStyle = MUT;  setDevFont(ctx, 'p10'); ctx.fillText(s.unit, CX, 211);
     }
     if (m1) {                                    // 2nd value reads INSIDE its sub-dial
       const s2 = sample(m1);
@@ -234,10 +237,11 @@ export function renderGaugePreview(
       ctx.fillStyle = text;
       if (m1) setDevFont(ctx, 'p20', 1.6); else setDevFont(ctx, 'p48');
       ctx.fillText(s.text, CX, CY + (m1 ? 0 : 8));
-      ctx.fillStyle = arc; setDevFont(ctx, 'p8');
-      ctx.fillText(s.unit, CX, CY + (m1 ? 40 : 52));
+      // !m1 the value is 48pt and reaches CY+41 — 10pt at CY+52 would touch it.
+      ctx.fillStyle = arc; setDevFont(ctx, 'p10');
+      ctx.fillText(s.unit, CX, CY + (m1 ? 40 : 56));
       if (m1) { const s2 = sample(m1);
-        ctx.fillStyle = MUT;  setDevFont(ctx, 'p8');  ctx.fillText(s2.label, CX, CY + 68);
+        ctx.fillStyle = MUT;  setDevFont(ctx, 'p10'); ctx.fillText(s2.label, CX, CY + 68);
         ctx.fillStyle = col2; setDevFont(ctx, 'p13'); ctx.fillText(s2.text + ' ' + s2.unit, CX, CY + 96); }
     }
     return;
@@ -255,7 +259,7 @@ export function renderGaugePreview(
     ctx.fillText(s.label, CX, CY - 56);
     ctx.fillStyle = text; setDevFont(ctx, 'p48');
     ctx.fillText(s.text, CX, CY + 4);
-    ctx.fillStyle = MUT; setDevFont(ctx, 'p8');
+    ctx.fillStyle = MUT; setDevFont(ctx, 'p10');
     ctx.fillText(s.unit, CX, CY + 52);
   } else {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
