@@ -16,7 +16,7 @@
   import { store } from '../lib/store.svelte';
   import {
     MonitorBleClient, defaultCfg, cfgValid, channelShort, channelDef,
-    CHANNELS, CHANNEL_GROUPS, Ch, Layout, LAYOUT_NAMES, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE, GAUGE_PAGES,
+    CHANNELS, CHANNEL_GROUPS, Ch, Layout, LAYOUT_NAMES, layoutKnown, ARC_DEFAULT, BRIGHT_DEFAULT, SLOTS_PER_PAGE, GAUGE_PAGES,
     hexToRgb565, rgb565ToHex, verStr, verCmp,
     UC_COUNT, UNIT_OPTIONS, UNITS_METRIC, UNITS_IMPERIAL,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
@@ -121,7 +121,10 @@
       // pageCount decides how many are actually shown. Missing pages → empty NONE.
       pages: Array.from({ length: GAUGE_PAGES }, (_, p) => {
         const src = c.pages?.[p];
-        const lay = (Number.isFinite(src?.layout) && (src!.layout as number) >= 0 && (src!.layout as number) <= Layout.TICKS)
+        // FIFTH copy of the same bound (see layoutKnown's note). This one is the
+        // editor's own normalize, so even a config that survived decode AND
+        // cfgValid got flattened to Hero on its way into the UI.
+        const lay = (Number.isFinite(src?.layout) && layoutKnown(src!.layout as number))
           ? (src!.layout as Layout) : Layout.HERO;
         const used = slotsUsed(lay);   // BARS 4 · HERO/NEEDLE 2 · TICKS 1
         const ch: Ch[] = Array.from({ length: SLOTS_PER_PAGE }, (_, s) =>

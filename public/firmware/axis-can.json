@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.24.4",
+      "date": "2026-07-17",
+      "notes": "Fixes Tuner turning back into Hero when you saved it. Also carries the new Tuner gauge face from the Store and the shift light that beats instead of flickering. Your colours, layouts and car settings are kept.",
+      "url": "firmware/axis_can_monitor-v0.24.4.bin",
+      "size_bytes": 1670208
+    },
+    {
       "version": "0.24.3",
       "date": "2026-07-17",
       "notes": "New Tuner gauge face — an import-scene dial with a honeycomb background, a dot tacho and a floating pointer. It's a paid theme in the Store; the rest of the gauge is unchanged. The shift light now beats instead of flickering, at the fastest rate this screen can actually show. Your colours, layouts and car settings are kept.",
