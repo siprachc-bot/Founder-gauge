@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.24.9",
+      "date": "2026-07-17",
+      "notes": "Tuner face fixes from the first real-screen photo: removed a leftover debug line at the bottom of the dial, and the honeycomb now fades to black toward the rim instead of filling the whole face. (The mesh colour itself is set by the Honeycomb swatch in the app.)",
+      "url": "firmware/axis_can_monitor-v0.24.9.bin",
+      "size_bytes": 1670800
+    },
+    {
       "version": "0.24.8",
       "date": "2026-07-17",
       "notes": "Tuner face, dialled in: bigger gear digit, readout lines with room to breathe, SN mark centred, the face fading to black at the rim, and the readout panel a touch darker.",
