@@ -445,6 +445,13 @@
   ],
   "node": [
     {
+      "version": "0.5.14",
+      "date": "2026-07-17",
+      "notes": "Battery + gateway fix: the sensor now stops talking to the car when it's parked or charging instead of polling continuously with the engine off. It stays fully awake while driving (including EV).",
+      "url": "firmware/axis_can_node-v0.5.14.bin",
+      "size_bytes": 931776
+    },
+    {
       "version": "0.5.10",
       "date": "2026-07-15",
       "notes": "Reverts the recent change that could leave the gauge showing only rpm/speed — back to the previous behaviour where all engine values stream (the small 'STALE' blink at start-up may return; that's the trade-off). If values are STILL missing after this, it's the car's gateway needing a key-cycle, not the sensor.",
