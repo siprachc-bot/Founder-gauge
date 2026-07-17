@@ -334,7 +334,7 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   //      one clean circle, so the tab reads as a flare, not a wobble.
   const NA0 = 150, NA1 = 320, WIDE = NA1 - (NA1 - NA0) * 0.25;
   const R_IN = 191, H_N = 10, H_W = 12.5, R_N = R_IN + H_N, R_W = R_IN + H_W;
-  ctx.fillStyle = '#0a0c0e'; ctx.beginPath(); ctx.arc(CX, CY, 231, 0, 2 * Math.PI); ctx.fill();
+  ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(CX, CY, 231, 0, 2 * Math.PI); ctx.fill();  // owner: no-element bg pure black
   band(ctx, R_N, H_N, NA0, WIDE, '#12262e');
   band(ctx, R_W, H_W, WIDE, NA1, '#12262e');
   const fa = NA0 + (NA1 - NA0) * fArc;
@@ -348,7 +348,7 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   //      without the gap the disc and the band fuse into one lump.
   ctx.save();
   ctx.beginPath(); ctx.arc(CX, CY, 176, 0, 2 * Math.PI); ctx.clip();
-  ctx.fillStyle = '#07080a'; ctx.fillRect(0, 0, SZ, SZ);
+  ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, SZ, SZ);   // face backdrop pure black (owner)
   const hr = 17, hdx = Math.sqrt(3) * hr, hdy = hr * 1.5;
   ctx.strokeStyle = col2; ctx.lineWidth = 1.4;
   for (let row = -1; row * hdy < SZ + hr; row++)
