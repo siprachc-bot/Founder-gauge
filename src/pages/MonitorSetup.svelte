@@ -188,7 +188,7 @@
     [Layout.BARS]:   ['Bar 1', 'Bar 2', 'Bar 3', 'Bar 4'],
     [Layout.NEEDLE]: ['Long needle', 'Short needle'],
     [Layout.TICKS]:  ['Lit ticks', 'Outer tick (2nd value)'],
-    [Layout.TUNER]:  ['Energy arc', 'Tacho + readout'],
+    [Layout.TUNER]:  ['Tacho + readout', 'Energy arc'],
   };
   // Layouts that use the page's SECOND colour. Note it means different things:
   // on NEEDLE/TICKS it colours the 2nd VALUE, but TUNER has no second indicator —

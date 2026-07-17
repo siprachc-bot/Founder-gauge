@@ -37,15 +37,15 @@ const STEEL = 0x39C9;  // #39404A  honeycomb — its OWN colour, not tied to the
 // reads EV / BOOST / WATER and never a borrowed name. SOC is the default because
 // a T8's battery drains under throttle and refills on regen — an energy bar that
 // is a real instrument on this car, not decoration.
-const TUNER = (arc: number, dot: number): ThemePage =>
-  ({ layout: Layout.TUNER, ch: [arc, dot, 0, 0, 0], arc: CYAN, col2: STEEL, text: WHITE });
+const TUNER = (dot: number, arc: number): ThemePage =>
+  ({ layout: Layout.TUNER, ch: [dot, arc, 0, 0, 0], arc: CYAN, col2: STEEL, text: WHITE });
 
 export const THEMES: GaugeTheme[] = [
   { id: 'tuner', name: 'Tuner', accent: CYAN, price: 199, tag: 'NEW', author: 'SN Motorsports',
     desc: 'Import-scene dash, drawn from scratch: a stepped energy arc that carries ' +
           'its own label, a dot tacho with the redline as a red arc, and a floating ' +
           'triangle pointer that strobes at the limit. The arc is a slot — pick what it shows.',
-    pages: [ TUNER(Ch.SOC, Ch.RPM), TUNER(Ch.BOOST, Ch.RPM), TUNER(Ch.PWR, Ch.RPM) ] },
+    pages: [ TUNER(Ch.RPM, Ch.SOC), TUNER(Ch.RPM, Ch.BOOST), TUNER(Ch.RPM, Ch.PWR) ] },
 ];
 
 // Apply a theme to a config: replace the PAGES (layout/channels/colours + a

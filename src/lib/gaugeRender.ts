@@ -322,7 +322,10 @@ function arcText(ctx: CanvasRenderingContext2D, str: string, aMid: number, r: nu
 
 function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: ChanLookup): void {
   const { arc, col2, text } = page;
-  const mArc = chan(page.ch[0]), mDot = chan(page.ch[1]);
+  // ch[0] = pointer + readout (the PRIMARY), ch[1] = the arc. Swapped 2026-07-17:
+  // the readout is the biggest thing on the dial and was running off the SUPPORT
+  // slot while the arc held "primary". Must match ScreenGauge renderTuner exactly.
+  const mDot = chan(page.ch[0]), mArc = chan(page.ch[1]);
   const fArc = mArc ? sample(mArc).frac : 0;
   const fDot = mDot ? sample(mDot).frac : 0;
 
@@ -428,9 +431,12 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   if (mDot) {
     const s = sample(mDot), tx = 322;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#f4f6f8'; setDevFont(ctx, 'p13'); ctx.fillText('3', tx, 203);
+    // Only the GEAR grows (the value is already at its ceiling here: 4 digits reach
+    // x=403 against a face ending at 409), and the three lines get ~11px of clear
+    // between their cap boxes so the column doesn't read as one block.
+    ctx.fillStyle = '#f4f6f8'; setDevFont(ctx, 'p20', 1.4); ctx.fillText('3', tx, 188);
     ctx.fillStyle = text; setDevFont(ctx, 'p20'); ctx.fillText(s.text, tx, 232);
-    ctx.fillStyle = MUT; setDevFont(ctx, 'p10'); ctx.fillText(s.unit, tx, 258);
+    ctx.fillStyle = MUT; setDevFont(ctx, 'p10'); ctx.fillText(s.unit, tx, 264);
   }
 }
 
