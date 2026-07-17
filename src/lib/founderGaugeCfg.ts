@@ -96,6 +96,17 @@ export enum Ch {
 // `layout` is a uint8_t on the wire, so adding 4 costs no bytes and needs no
 // lock-step app/firmware release.
 export enum Layout { HERO = 0, BARS = 1, NEEDLE = 2, TICKS = 3, TUNER = 4 }
+// ★ The highest layout this build knows. Derive every "is this layout real?" test
+// from THIS — never re-type the last enum member.
+//
+// Adding TUNER left the rule "layout must be <= TICKS" written in THREE places in
+// this file alone (a decode coercion + cfgValid + the companion's copies), and I
+// fixed them one at a time as each broke. The decode one was the worst: it didn't
+// reject a Tuner page, it silently REWROTE it to HERO, so the owner picked Tuner,
+// hit Save, and watched it turn into Hero with no error anywhere. The firmware had
+// the same stale rule in its own cfgValid.
+const LAYOUT_MAX = Layout.TUNER;
+export const layoutKnown = (l: number): boolean => l >= Layout.HERO && l <= LAYOUT_MAX;
 export const LAYOUT_NAMES: Record<Layout, string> = {
   [Layout.HERO]: "Hero", [Layout.BARS]: "Bars", [Layout.NEEDLE]: "Needle", [Layout.TICKS]: "Ticks",
   [Layout.TUNER]: "Tuner",
@@ -340,7 +351,9 @@ export function decodeCfg(v: DataView): GaugeCfg {
     const color2    = (o + 1 < v.byteLength) ? v.getUint16(o, true) : 0; o += 2;   // v11
     const textColor = (o + 1 < v.byteLength) ? v.getUint16(o, true) : 0; o += 2;   // v11
     pages.push({
-      layout: layout > Layout.TICKS ? Layout.HERO : layout,
+      // An UNKNOWN layout (a config written by a newer app) still falls back to
+      // HERO rather than drawing nothing — but Tuner is known now, so it survives.
+      layout: layoutKnown(layout) ? layout : Layout.HERO,
       ch,
       arcColor: arcColor || ARC_DEFAULT,
       // round off float32 storage noise (1.6f -> 1.6000000238) so the peak
@@ -384,7 +397,14 @@ export function cfgValid(c: GaugeCfg): boolean {
   if (c.pages.length !== GAUGE_PAGES) return false;
   if (!(c.pageCount >= 1 && c.pageCount <= GAUGE_PAGES)) return false;
   for (const pg of c.pages) {
-    if (pg.layout > Layout.TICKS) return false;
+    // ⚠️ MUST MOVE WITH THE Layout ENUM — and note this rule is written TWICE, here
+    // and in the firmware's ui/GaugeConfig.h cfgValid(). Adding TUNER left both
+    // stale at TICKS, so a Tuner page was rejected on BOTH sides: the app refused
+    // to send it, and a config that reached the gauge would fail the same check on
+    // load and be replaced by defaults — which is exactly what "Tuner turns into
+    // Hero on Save" was. Hero/Boost is defaultCfg()'s page 0; nothing "bounced",
+    // the whole config was thrown away.
+    if (!layoutKnown(pg.layout)) return false;
     if (pg.ch.length !== SLOTS_PER_PAGE) return false;
     for (const ch of pg.ch) if (ch < 0 || ch >= Ch.COUNT) return false;
     if (!Number.isFinite(pg.peak) || pg.peak < 0) return false;
