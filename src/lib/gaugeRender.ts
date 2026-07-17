@@ -356,7 +356,7 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
       { hexPath(ctx, c * hdx + (row % 2 ? hdx / 2 : 0), row * hdy, hr); ctx.stroke(); }
   // One oversized hex laid over the readout's side — the panel IS a hex, so the
   // mesh reads through it faintly instead of being masked by a foreign shape.
-  ctx.fillStyle = 'rgba(0,0,0,.55)'; hexPath(ctx, CX + 170, CY, 180); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.60)'; hexPath(ctx, CX + 170, CY, 180); ctx.fill();   // owner: .55 → .60
   ctx.strokeStyle = 'rgba(255,255,255,.11)'; ctx.lineWidth = 1.5;
   hexPath(ctx, CX + 170, CY, 180); ctx.stroke();
   const gl = ctx.createLinearGradient(0, CY - 176, 0, CY + 176);
@@ -429,14 +429,18 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   // Stacking check at these faces: gear ends 213, value starts 218.5, value ends
   // 245.5, unit starts 251. Clear on both joints.
   if (mDot) {
-    const s = sample(mDot), tx = 322;
+    const s = sample(mDot), tx = 318;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     // Only the GEAR grows (the value is already at its ceiling here: 4 digits reach
     // x=403 against a face ending at 409), and the three lines get ~11px of clear
     // between their cap boxes so the column doesn't read as one block.
-    ctx.fillStyle = '#f4f6f8'; setDevFont(ctx, 'p20', 1.4); ctx.fillText('3', tx, 188);
-    ctx.fillStyle = text; setDevFont(ctx, 'p20'); ctx.fillText(s.text, tx, 232);
-    ctx.fillStyle = MUT; setDevFont(ctx, 'p10'); ctx.fillText(s.unit, tx, 264);
+    // Owner's sim-slider values, converted: gear 50 em → cap 35 → p20 ×1.30,
+    // value 34 em → cap 23.8 → p13 ×1.19. Must stay identical to ScreenGauge
+    // renderTuner — a preview that quietly disagrees with the glass is the whole
+    // reason this file exists.
+    ctx.fillStyle = '#f4f6f8'; setDevFont(ctx, 'p20', 1.30); ctx.fillText('3', tx, 186);
+    ctx.fillStyle = text; setDevFont(ctx, 'p13', 1.19); ctx.fillText(s.text, tx, 232);
+    ctx.fillStyle = MUT; setDevFont(ctx, 'p10'); ctx.fillText(s.unit, tx, 262);
   }
 }
 

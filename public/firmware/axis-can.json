@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.24.8",
+      "date": "2026-07-17",
+      "notes": "Tuner face, dialled in: bigger gear digit, readout lines with room to breathe, SN mark centred, the face fading to black at the rim, and the readout panel a touch darker.",
+      "url": "firmware/axis_can_monitor-v0.24.8.bin",
+      "size_bytes": 1670912
+    },
+    {
       "version": "0.24.6",
       "date": "2026-07-17",
       "notes": "Tuner face refinements: the gear is now the big number, the readout lines have room to breathe, and the SN mark sits at the centre of the dial. The main value you pick is now the one the pointer and the big number follow.",
