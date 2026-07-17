@@ -459,6 +459,13 @@
   ],
   "node": [
     {
+      "version": "0.5.15",
+      "date": "2026-07-18",
+      "notes": "Removes a leftover diagnostic probe that kept querying the car every time it connected, even with the engine off. Less battery use and less needless talking to the car's gateway when parked.",
+      "url": "firmware/axis_can_node-v0.5.15.bin",
+      "size_bytes": 931312
+    },
+    {
       "version": "0.5.14",
       "date": "2026-07-17",
       "notes": "Battery + gateway fix: the sensor now stops talking to the car when it's parked or charging instead of polling continuously with the engine off. It stays fully awake while driving (including EV).",
