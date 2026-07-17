@@ -335,13 +335,8 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   const NA0 = 150, NA1 = 320, WIDE = NA1 - (NA1 - NA0) * 0.25;
   const R_IN = 191, H_N = 10, H_W = 12.5, R_N = R_IN + H_N, R_W = R_IN + H_W;
   ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(CX, CY, 231, 0, 2 * Math.PI); ctx.fill();  // owner: no-element bg pure black
-  band(ctx, R_N, H_N, NA0, WIDE, '#12262e');
-  band(ctx, R_W, H_W, WIDE, NA1, '#12262e');
-  const fa = NA0 + (NA1 - NA0) * fArc;
-  if (mArc) {
-    band(ctx, R_N, H_N, NA0, Math.min(fa, WIDE), arc);
-    if (fa > WIDE) band(ctx, R_W, H_W, WIDE, fa, arc);
-  }
+  // (the outer band is drawn LAST now — owner wants it on the TOP layer, over the
+  // mesh; see the end of this function. band() already uses round caps.)
 
   // ---- face: black, honeycomb, readout panel, gloss. All clipped to r176,
   //      pulled in from the band's inner edge so a dark ring separates them —
@@ -375,15 +370,7 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   ctx.strokeStyle = '#0d1013'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.arc(CX, CY, 176, 0, 2 * Math.PI); ctx.stroke();
 
-  // ---- the arc's name AND value together in the wide tab — that is what the
-  //      tab is for. White with a dark shadow because the tab is trough-dark at
-  //      low readings and accent-bright once the fill reaches it.
-  if (mArc) {
-    const s = sample(mArc), str = s.label + ' ' + s.text;
-    setDevFont(ctx, 'p10');
-    arcText(ctx, str, (WIDE + NA1) / 2, R_W + 1.5, 'rgba(0,0,0,.8)');
-    arcText(ctx, str, (WIDE + NA1) / 2, R_W, '#ffffff');
-  }
+  // (the outer band + its label are drawn LAST — see the end of this function.)
 
   // ---- dot scale, 7 → 1 o'clock. The redline is a continuous ARC, not red
   //      dots: the dots simply stop where it starts. At a 180° sweep it lands at
@@ -449,6 +436,24 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
     ctx.fillStyle = '#f4f6f8'; setDevFont(ctx, 'p20', 1.30); ctx.fillText('3', tx, 186);
     ctx.fillStyle = text; setDevFont(ctx, 'p13', 1.19); ctx.fillText(s.text, tx, 232);
     ctx.fillStyle = MUT; setDevFont(ctx, 'p10'); ctx.fillText(s.unit, tx, 262);
+  }
+
+  // ---- OUTER ENERGY BAND — TOP LAYER (owner: arc on top, over the mesh), round
+  //      caps (band() uses lineCap 'round'). Sits in the r191+ ring, clear of the
+  //      r176 face, so drawing it last keeps it crisp over any bleed. Mirrors
+  //      ScreenGauge renderTuner's end block exactly.
+  band(ctx, R_N, H_N, NA0, WIDE, '#12262e');
+  band(ctx, R_W, H_W, WIDE, NA1, '#12262e');
+  const fa = NA0 + (NA1 - NA0) * fArc;
+  if (mArc) {
+    band(ctx, R_N, H_N, NA0, Math.min(fa, WIDE), arc);
+    if (fa > WIDE) band(ctx, R_W, H_W, WIDE, fa, arc);
+  }
+  if (mArc) {
+    const s = sample(mArc), str = s.label + ' ' + s.text;
+    setDevFont(ctx, 'p10');
+    arcText(ctx, str, (WIDE + NA1) / 2, R_W + 1.5, 'rgba(0,0,0,.8)');
+    arcText(ctx, str, (WIDE + NA1) / 2, R_W, '#ffffff');
   }
 }
 
