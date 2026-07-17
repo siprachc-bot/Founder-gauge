@@ -97,6 +97,13 @@
     const t = store.pendingTheme;
     if (!t) return;
     store.pendingTheme = null;
+    // With no gauge paired, the editor isn't showing — Apply would drop the owner
+    // on the CONNECT screen under a note telling them to "tweak below", with
+    // nothing below to tweak and the theme they just bought nowhere in sight.
+    // Buying a look and being shown a pairing prompt is the wrong answer; open
+    // the demo editor so they can at least see and tweak it, and Save stays
+    // disabled until a gauge is actually connected.
+    if (phase !== 'ready') startDemo();
     useTheme(t);
   });
 
@@ -178,9 +185,23 @@
     [Layout.BARS]:   ['Bar 1', 'Bar 2', 'Bar 3', 'Bar 4'],
     [Layout.NEEDLE]: ['Long needle', 'Short needle'],
     [Layout.TICKS]:  ['Lit ticks', 'Outer tick (2nd value)'],
+    [Layout.TUNER]:  ['Energy arc', 'Tacho + readout'],
   };
-  // Layouts whose 2nd value carries its own colour (needle-2 hand / outer tick).
-  const has2ndColor = (l: Layout) => l === Layout.NEEDLE || l === Layout.TICKS;
+  // Layouts that use the page's SECOND colour. Note it means different things:
+  // on NEEDLE/TICKS it colours the 2nd VALUE, but TUNER has no second indicator —
+  // it spends the field on the honeycomb behind the face, which the sim proved
+  // has to be independent of the accent or the dial reads as one flat colour.
+  const has2ndColor = (l: Layout) =>
+    l === Layout.NEEDLE || l === Layout.TICKS || l === Layout.TUNER;
+  const color2Title = (l: Layout) =>
+    l === Layout.NEEDLE ? 'Short-needle colour'
+    : l === Layout.TUNER ? 'Honeycomb colour'
+    : '2nd-value tick colour';
+
+  // Layouts offered in the picker. 0..3 ship on every gauge; TUNER is the store's
+  // first PAID layout and the first that a gauge might be unable to draw at all.
+  // (Its gates live with the other firmware gates, below — they need devVers.)
+  const LAYOUT_CHOICES = [Layout.HERO, Layout.BARS, Layout.NEEDLE, Layout.TICKS, Layout.TUNER];
 
   // ---- per-page arc colour (custom picker, no preset lock-in) ----
   const pageHex = (i: number) => rgb565ToHex(cfg.pages[i].arcColor ?? ARC_DEFAULT);
@@ -229,6 +250,29 @@
   // after an OTA → they enable). Unknown version (demo / not read yet) = enabled.
   const PHASE_B_MIN: FwVersion = { major: 0, minor: 7, patch: 2 };
   const monHasPhaseB = $derived(!devVers?.monitor || verCmp(devVers.monitor, PHASE_B_MIN) >= 0);
+
+  // The gauge firmware that actually DRAWS Tuner. ScreenGauge.cpp knows layouts
+  // 0..3 as of monitor v0.23.0: a TUNER page sent to an older gauge falls through
+  // its if-chain and renders HERO — the buyer would pay ฿199 and get the free
+  // layout, with nothing on screen to say why. So the picker stays locked until
+  // the gauge reports firmware new enough, same shape as the PHASE_B gate above.
+  // ⚠️ v0.24.0 DOES NOT EXIST YET — it is the version the C++ port must ship as.
+  // Unknown version (demo / not read yet) = open, so the look can still be judged.
+  const TUNER_MIN: FwVersion = { major: 0, minor: 24, patch: 0 };
+  const monDrawsTuner = $derived(!devVers?.monitor || verCmp(devVers.monitor, TUNER_MIN) >= 0);
+  // Two INDEPENDENT gates, and the hint must say WHICH one is shut — a bare
+  // "locked" would send someone to the Store to re-buy a theme they already own.
+  const layGated = (l: Layout) =>
+    l === Layout.TUNER && (!store.isOwned('tuner') || !monDrawsTuner);
+  const layHint = (l: Layout) =>
+    l !== Layout.TUNER ? ''
+    : !store.isOwned('tuner') ? 'Tuner — get it in the Store tab'
+    : !monDrawsTuner ? `Tuner needs gauge ${verStr(TUNER_MIN)} — update it under Firmware below`
+    : 'Tuner';
+  // A page already set to TUNER (the Store's Apply does exactly that) on a gauge
+  // that can't draw it: saving would silently hand back HERO. Flag it instead.
+  const tunerStale = $derived(!monDrawsTuner && cfg.pages
+    .slice(0, cfg.pageCount).some((p) => p.layout === Layout.TUNER));
   // A channel the CONNECTED gauge is too old to accept (can't be selected/saved).
   const chGated = (id: number) => !monHasPhaseB && id >= Ch.LAMBDA_M;
   // A stale config still carrying a gated channel would reject on save — flag it
@@ -949,6 +993,12 @@
 {:else}
   <!-- ---- Configurator ---- -->
   {#if note}<p class="note">{note}</p>{/if}
+  <!-- The preview draws Tuner even when the connected gauge can't. Say so here,
+       or Save quietly writes a page that comes back as Hero on the glass. -->
+  {#if tunerStale}
+    <p class="note">⚠ Your gauge runs {verStr(devVers!.monitor!)} and can’t draw Tuner —
+      it will show Hero until you update it to {verStr(TUNER_MIN)} under Firmware below.</p>
+  {/if}
 
   <!-- ONE big gauge preview of the selected page (like the real glass) + page dots -->
   <div class="card ed-top">
@@ -985,7 +1035,7 @@
             <!-- NEEDLE only: the 2nd (short) hand gets its own colour -->
             {#if has2ndColor(page.layout)}
               <label class="swatch" style="background: {hand2Hex(i)}"
-                     title={page.layout === Layout.NEEDLE ? 'Short-needle colour' : '2nd-value tick colour'}>
+                     title={color2Title(page.layout)}>
                 <input type="color" value={hand2Hex(i)}
                   oninput={(e) => setHand2Color(i, (e.currentTarget as HTMLInputElement).value)}
                   aria-label="Second value colour for {PAGE_NAMES[i]}" />
@@ -1002,8 +1052,9 @@
 
         <!-- layout: how this page is drawn on the gauge -->
         <div class="lay-row">
-          {#each [Layout.HERO, Layout.BARS, Layout.NEEDLE, Layout.TICKS] as L}
+          {#each LAYOUT_CHOICES as L}
             <button type="button" class="chip sm" class:on={cfg.pages[i].layout === L}
+                    class:locked={layGated(L)} disabled={layGated(L)} title={layHint(L)}
                     onclick={() => cfg.pages[i].layout = L}>{LAYOUT_NAMES[L]}</button>
           {/each}
         </div>
@@ -1693,6 +1744,11 @@
           cursor: pointer; white-space: nowrap; }
   .chip.sm { padding: 5px 11px; font-size: 12px; }
   .chip.on { background: var(--accent); color: #000; border-color: var(--accent); }
+  /* A locked layout stays VISIBLE and readable — hiding it would make Tuner look
+     like it doesn't exist right after someone bought it. The title says which
+     gate is shut. `.on` still wins so an applied-but-undrawable page reads as
+     selected-and-locked rather than silently deselected. */
+  .chip.locked { opacity: 0.5; cursor: not-allowed; border-style: dashed; }
   .unit-system .chip { flex: 1; }
   .msg p { color: var(--muted); font-size: 14px; line-height: 1.5; }
   .msg strong { color: var(--fg); }

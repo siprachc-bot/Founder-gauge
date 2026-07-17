@@ -23,14 +23,18 @@
   <button class:on={tab === 'community'} onclick={() => tab = 'community'}>Community</button>
 </nav>
 
+<!-- HIDDEN, NOT UNMOUNTED. `{#if tab === …}` destroyed the editor every time the
+     owner looked at another tab, taking its whole state with it: demo mode, the
+     page being edited, and any tweak not yet Saved. That guts the Store's entire
+     reason to exist — apply a theme, tweak it, compare it against the store
+     again — and it made the Store's own Apply land on the CONNECT screen saying
+     "tweak below" with nothing below, because `demo` had just been wiped.
+     Mounting all three once and toggling visibility costs a hidden canvas that
+     nobody looks at; unmounting cost the owner their work. -->
 <main>
-  {#if tab === 'gauge'}
-    <MonitorSetup />
-  {:else if tab === 'store'}
-    <Themes />
-  {:else}
-    <Community />
-  {/if}
+  <div class="pane" class:hide={tab !== 'gauge'}><MonitorSetup /></div>
+  <div class="pane" class:hide={tab !== 'store'}><Themes /></div>
+  <div class="pane" class:hide={tab !== 'community'}><Community /></div>
 </main>
 
 <style>
@@ -52,4 +56,8 @@
     gap: var(--s-3);
     padding-bottom: calc(var(--s-4) + env(safe-area-inset-bottom, 0));
   }
+  /* The pane inherits main's column flow so each page lays out exactly as it did
+     when it was main's only child. */
+  .pane { flex: 1; display: flex; flex-direction: column; gap: var(--s-3); }
+  .pane.hide { display: none; }
 </style>
