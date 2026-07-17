@@ -359,9 +359,17 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   ctx.fillStyle = 'rgba(0,0,0,.60)'; hexPath(ctx, CX + 170, CY, 180); ctx.fill();   // owner: .55 → .60
   ctx.strokeStyle = 'rgba(255,255,255,.11)'; ctx.lineWidth = 1.5;
   hexPath(ctx, CX + 170, CY, 180); ctx.stroke();
-  const gl = ctx.createLinearGradient(0, CY - 176, 0, CY + 176);
-  gl.addColorStop(0, 'rgba(255,255,255,.10)'); gl.addColorStop(0.5, 'rgba(255,255,255,.02)');
-  gl.addColorStop(1, 'rgba(0,0,0,.28)');
+  // RADIAL fade to true black at the rim, black reaching 60% of the radius inward
+  // (owner). This was still the old top-to-bottom LINEAR sheen while the sim and
+  // firmware had both gone radial — the preview is the third place the face is
+  // drawn and it silently lagged the other two. GRAD_BLACK matches
+  // ScreenGauge renderTuner; canvas has real alpha, so the ring maths the firmware
+  // fakes with annuli is a two-stop gradient here.
+  const GRAD_BLACK = 0.60;
+  const gl = ctx.createRadialGradient(CX, CY, 0, CX, CY, 176);
+  gl.addColorStop(0, 'rgba(0,0,0,0)');
+  gl.addColorStop(1 - GRAD_BLACK, 'rgba(0,0,0,0)');   // fade starts here
+  gl.addColorStop(1, 'rgba(0,0,0,1)');                // #000000 dead on the rim
   ctx.fillStyle = gl; ctx.fillRect(0, 0, SZ, SZ);
   ctx.restore();
   ctx.strokeStyle = '#0d1013'; ctx.lineWidth = 3;
