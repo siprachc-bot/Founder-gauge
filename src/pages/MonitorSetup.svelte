@@ -21,7 +21,7 @@
     UC_COUNT, UNIT_OPTIONS, UNITS_METRIC, UNITS_IMPERIAL,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
     type GaugeCfg, type DeviceVersions, type FwVersion, type AccelTimes,
-    type ExhaustStatus,
+    type ExhaustStatus, type AntiSleepCfg,
   } from '../lib/founderGaugeCfg';
   import {
     fetchCanManifest, latest, downloadFirmware, parseVer,
@@ -595,6 +595,27 @@
     try { await store.monClient.exhaustPulse(open); exhMsg = `Sent ${open ? 'OPEN' : 'CLOSE'} pulse.`; }
     catch (e) { exhMsg = '✗ ' + String((e as Error)?.message ?? e); }
     finally { exhBusy = false; }
+  }
+
+  // ---- Anti-sleep "take a break" reminder (char 7e1c020f) ----
+  let as     = $state<AntiSleepCfg | null>(null);
+  let asBusy = $state(false);
+  let asMsg  = $state('');
+  const asHours = (m: number) => (m / 60).toFixed(2).replace(/\.?0+$/, '');
+
+  async function readAntiSleep() {
+    if (demo || !store.monClient || asBusy) return;
+    asBusy = true;
+    try { as = await store.monClient.readAntiSleep(); asMsg = ''; }
+    catch (e) { asMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { asBusy = false; }
+  }
+  async function saveAntiSleep() {
+    if (demo || !store.monClient || asBusy || !as) return;
+    asBusy = true; asMsg = 'Saving…';
+    try { await store.monClient.setAntiSleep(as); await new Promise(r => setTimeout(r, 200)); await readAntiSleep(); asMsg = '✓ Saved to the gauge.'; }
+    catch (e) { asMsg = '✗ ' + String((e as Error)?.message ?? e); }
+    finally { asBusy = false; }
   }
 
   function saveCurrentAsCar() {
@@ -1291,6 +1312,41 @@
           Save codes to gauge
         </button>
       </details>
+    </details>
+  {/if}
+
+  <!-- Anti-sleep: a time-based "take a break" reminder painted on the gauge -->
+  {#if !demo}
+    <details class="card fw-card" ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open && !as) readAntiSleep(); }}>
+      <summary>Anti-sleep reminder</summary>
+      <p class="sub dim">
+        A full-screen <b>“Take a break”</b> reminder after a set stretch of continuous driving.
+        A real rest stop resets it; a tap snoozes it. A drowsy-driving <b>aid</b> — not a substitute
+        for real rest.
+      </p>
+      {#if as}
+        <label class="exh-row"><span>Enabled</span>
+          <input type="checkbox" bind:checked={as.enabled} /></label>
+        <label class="exh-row"><span>Remind after</span>
+          <span style="display:flex;align-items:center;gap:8px;min-width:150px;">
+            <input type="range" min="30" max="240" step="15" bind:value={as.intervalMin} disabled={!as.enabled} style="flex:1;" />
+            <b style="min-width:44px;text-align:right;">{asHours(as.intervalMin)} h</b>
+          </span></label>
+        <label class="exh-row"><span>Rest resets after</span>
+          <span style="display:flex;align-items:center;gap:8px;min-width:150px;">
+            <input type="range" min="1" max="30" step="1" bind:value={as.restMin} disabled={!as.enabled} style="flex:1;" />
+            <b style="min-width:44px;text-align:right;">{as.restMin} min</b>
+          </span></label>
+        <label class="exh-row"><span>Snooze on tap</span>
+          <span style="display:flex;align-items:center;gap:8px;min-width:150px;">
+            <input type="range" min="5" max="60" step="5" bind:value={as.snoozeMin} disabled={!as.enabled} style="flex:1;" />
+            <b style="min-width:44px;text-align:right;">{as.snoozeMin} min</b>
+          </span></label>
+        <button class="fw-install up" style="margin-top:10px;" onclick={saveAntiSleep} disabled={asBusy}>
+          Save to gauge
+        </button>
+      {/if}
+      {#if asMsg}<p class="note">{asMsg}</p>{/if}
     </details>
   {/if}
 

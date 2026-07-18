@@ -31,6 +31,7 @@ const ACCEL_CHAR      = '7e1c020b-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // accel best-ti
 const NLOG_CHAR       = '7e1c020c-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // node-log text pull (WRITE cmd → READ reply)
 const CAN_CHAR        = '7e1c020d-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // raw CAN-log pull + capture start/stop
 const EXH_CHAR        = '7e1c020e-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // exhaust valve control (READ status | WRITE cmd)
+const AS_CHAR         = '7e1c020f-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // anti-sleep "take a break" config (READ | WRITE)
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -63,6 +64,10 @@ export interface ExhaustStatus { mode: number; valve: number; hasCodes: boolean;
 /** Cloned fob codes from the RF sniffer (axis_exhaust_node/tools/rf_sniffer). */
 export interface ExhaustCodes { open: number; close: number; bits: number; proto: number; pulse: number; repeat: number; single: boolean; }
 export interface ExhaustAuto { openRpm: number; closeRpm: number; openThr: number; dwellMs?: number; }
+/** Anti-sleep "take a break" reminder (char 7e1c020f). Time-based fatigue aid:
+ *  a full-screen reminder after `intervalMin` of continuous driving, reset by a
+ *  rest of `restMin` not-moving; a tap snoozes it `snoozeMin` (no reset). */
+export interface AntiSleepCfg { enabled: boolean; intervalMin: number; restMin: number; snoozeMin: number; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -971,5 +976,27 @@ export class MonitorBleClient {
   /** Manual one-shot test pulse (fires the code, doesn't change mode). */
   async exhaustPulse(open: boolean): Promise<void> {
     await CapBle.write(this.deviceId, MON_SVC, EXH_CHAR, new DataView(new Uint8Array([0x04, open ? 1 : 0]).buffer));
+  }
+
+  // ---- Anti-sleep "take a break" reminder (char 7e1c020f) ----
+  /** Read the gauge's anti-sleep config. */
+  async readAntiSleep(): Promise<AntiSleepCfg> {
+    const v = await CapBle.read(this.deviceId, MON_SVC, AS_CHAR);
+    if (v.byteLength < 5) return { enabled: true, intervalMin: 120, restMin: 5, snoozeMin: 15 };
+    return {
+      enabled: v.getUint8(0) === 1,
+      intervalMin: v.getUint16(1, true),
+      restMin: v.getUint8(3),
+      snoozeMin: v.getUint8(4),
+    };
+  }
+  /** Write the anti-sleep config (persists in NVS on the gauge). */
+  async setAntiSleep(c: AntiSleepCfg): Promise<void> {
+    const b = new Uint8Array(5); const dv = new DataView(b.buffer);
+    b[0] = c.enabled ? 1 : 0;
+    dv.setUint16(1, c.intervalMin & 0xffff, true);
+    b[3] = c.restMin & 0xff;
+    b[4] = c.snoozeMin & 0xff;
+    await CapBle.write(this.deviceId, MON_SVC, AS_CHAR, new DataView(b.buffer));
   }
 }

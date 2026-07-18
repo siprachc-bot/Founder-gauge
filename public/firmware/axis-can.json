@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.26.0",
+      "date": "2026-07-18",
+      "notes": "New anti-sleep reminder: a full-screen “Take a break” alert after a set time of continuous driving (default 2h), reset by a real rest stop and snoozed by a tap. Turn it on/off and tune the timing in the app's Anti-sleep card. A drowsy-driving aid, not a substitute for real rest.",
+      "url": "firmware/axis_can_monitor-v0.26.0.bin",
+      "size_bytes": 1673424
+    },
+    {
       "version": "0.25.0",
       "date": "2026-07-18",
       "notes": "Tuner now has FOUR configurable slots instead of two: the RPM dot tacho, the energy arc, and a two-line readout (a big main value with a small second value above it). The gear can go in either readout line and shows both P/R/N/D and the calculated gear number.",
