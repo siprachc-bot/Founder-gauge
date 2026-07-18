@@ -67,7 +67,7 @@ export interface ExhaustAuto { openRpm: number; closeRpm: number; openThr: numbe
 /** Anti-sleep "take a break" reminder (char 7e1c020f). Time-based fatigue aid:
  *  a full-screen reminder after `intervalMin` of continuous driving, reset by a
  *  rest of `restMin` not-moving; a tap snoozes it `snoozeMin` (no reset). */
-export interface AntiSleepCfg { enabled: boolean; intervalMin: number; restMin: number; snoozeMin: number; }
+export interface AntiSleepCfg { enabled: boolean; intervalMin: number; restMin: number; snoozeMin: number; moveKph: number; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -982,21 +982,23 @@ export class MonitorBleClient {
   /** Read the gauge's anti-sleep config. */
   async readAntiSleep(): Promise<AntiSleepCfg> {
     const v = await CapBle.read(this.deviceId, MON_SVC, AS_CHAR);
-    if (v.byteLength < 5) return { enabled: true, intervalMin: 120, restMin: 5, snoozeMin: 15 };
+    if (v.byteLength < 5) return { enabled: true, intervalMin: 120, restMin: 5, snoozeMin: 15, moveKph: 60 };
     return {
       enabled: v.getUint8(0) === 1,
       intervalMin: v.getUint16(1, true),
       restMin: v.getUint8(3),
       snoozeMin: v.getUint8(4),
+      moveKph: v.byteLength >= 6 ? v.getUint8(5) : 60,
     };
   }
   /** Write the anti-sleep config (persists in NVS on the gauge). */
   async setAntiSleep(c: AntiSleepCfg): Promise<void> {
-    const b = new Uint8Array(5); const dv = new DataView(b.buffer);
+    const b = new Uint8Array(6); const dv = new DataView(b.buffer);
     b[0] = c.enabled ? 1 : 0;
     dv.setUint16(1, c.intervalMin & 0xffff, true);
     b[3] = c.restMin & 0xff;
     b[4] = c.snoozeMin & 0xff;
+    b[5] = c.moveKph & 0xff;
     await CapBle.write(this.deviceId, MON_SVC, AS_CHAR, new DataView(b.buffer));
   }
 }

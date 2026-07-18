@@ -1321,8 +1321,9 @@
       <summary>Anti-sleep reminder</summary>
       <p class="sub dim">
         A full-screen <b>“Take a break”</b> reminder after a set stretch of continuous driving.
-        A real rest stop resets it; a tap snoozes it. A drowsy-driving <b>aid</b> — not a substitute
-        for real rest.
+        Only time spent <b>above</b> the speed you pick counts — slow city traffic just pauses the
+        timer (it won't nag you in a jam, and won't reset either). A real rest stop resets it; a tap
+        snoozes it. A drowsy-driving <b>aid</b> — not a substitute for real rest.
       </p>
       {#if as}
         <label class="exh-row"><span>Enabled</span>
@@ -1331,6 +1332,11 @@
           <span style="display:flex;align-items:center;gap:8px;min-width:150px;">
             <input type="range" min="30" max="240" step="15" bind:value={as.intervalMin} disabled={!as.enabled} style="flex:1;" />
             <b style="min-width:44px;text-align:right;">{asHours(as.intervalMin)} h</b>
+          </span></label>
+        <label class="exh-row"><span>Count driving above</span>
+          <span style="display:flex;align-items:center;gap:8px;min-width:150px;">
+            <input type="range" min="20" max="100" step="5" bind:value={as.moveKph} disabled={!as.enabled} style="flex:1;" />
+            <b style="min-width:44px;text-align:right;">{as.moveKph} km/h</b>
           </span></label>
         <label class="exh-row"><span>Rest resets after</span>
           <span style="display:flex;align-items:center;gap:8px;min-width:150px;">
