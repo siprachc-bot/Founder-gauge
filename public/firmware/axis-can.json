@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.25.0",
+      "date": "2026-07-18",
+      "notes": "Tuner now has FOUR configurable slots instead of two: the RPM dot tacho, the energy arc, and a two-line readout (a big main value with a small second value above it). The gear can go in either readout line and shows both P/R/N/D and the calculated gear number.",
+      "url": "firmware/axis_can_monitor-v0.25.0.bin",
+      "size_bytes": 1671520
+    },
+    {
       "version": "0.24.12",
       "date": "2026-07-18",
       "notes": "Fixes the gear number vanishing on the Tuner page — it now shows the calculated gear (1-8) as well as P/R/N/D.",
