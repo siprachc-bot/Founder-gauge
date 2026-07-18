@@ -285,8 +285,10 @@ export function renderGaugePreview(
 //  reading of an existing one. Every face is p10 (14px cap) or larger — the
 //  owner's measured read-at-a-glance floor from driving the car.
 //
-//  Slots:  ch[0] → the stepped outer arc (its label rides in the wide tab)
-//          ch[1] → the dot scale + the big readout (the tacho)
+//  Slots:  ch[0] → the dot scale + floating pointer (the tacho)
+//          ch[1] → the stepped outer energy arc (its label rides the wide tab)
+//          ch[2] → readout PRIMARY   (big, bottom of the centred column)
+//          ch[3] → readout SECONDARY (small, above the primary)
 //  Colours reuse the existing PageCfg fields, so the wire format is untouched:
 //          arc → the band + pointer accent · col2 → the honeycomb · text → readout
 //
@@ -322,10 +324,12 @@ function arcText(ctx: CanvasRenderingContext2D, str: string, aMid: number, r: nu
 
 function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: ChanLookup): void {
   const { arc, col2, text } = page;
-  // ch[0] = pointer + readout (the PRIMARY), ch[1] = the arc. Swapped 2026-07-17:
-  // the readout is the biggest thing on the dial and was running off the SUPPORT
-  // slot while the arc held "primary". Must match ScreenGauge renderTuner exactly.
+  // ★ FOUR slots (owner 2026-07-18): the tacho and the readout are now separate
+  // channels, and the readout carries TWO values. ch[0]=dot tacho, ch[1]=arc,
+  // ch[2]=readout PRIMARY (big), ch[3]=readout SECONDARY (small). Must match
+  // ScreenGauge renderTuner exactly.
   const mDot = chan(page.ch[0]), mArc = chan(page.ch[1]);
+  const mPri = chan(page.ch[2]), mSec = chan(page.ch[3]);
   const fArc = mArc ? sample(mArc).frac : 0;
   const fDot = mDot ? sample(mDot).frac : 0;
 
@@ -409,33 +413,28 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
     tri(0, 0, '#eceef1');
   }
 
-  // ---- readout: ONE centred column (gear / value / unit share x), placed by
-  //      the owner against a grid overlay. Absolute 466-space.
-  //
-  // ⚠️ The sim's FT(700,30) is an EM of 30px, so its cap is 30×0.70 = 21 — NOT
-  // a 27px cap. Reading those numbers as cap heights inflated the gear to p20
-  // and the value to a 40px cap, and the two collided. Same px-vs-cap trap as
-  // GFX "pt" ≠ px; the sim measures in em, the device in cap.
-  //   sim em 30 → cap 21 → p13 (cap 20)    gear
-  //   sim em 40 → cap 28 → p20 (cap 27)    value
-  //   sim em 14 → cap 10 → p10 (cap 14)    unit — the sim is UNDER the owner's
-  //     14px read-at-a-glance floor here, and the floor wins: it was measured in
-  //     the moving car, the sim was eyeballed at a desk.
-  // Stacking check at these faces: gear ends 213, value starts 218.5, value ends
-  // 245.5, unit starts 251. Clear on both joints.
-  if (mDot) {
-    const s = sample(mDot), tx = 318;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    // Only the GEAR grows (the value is already at its ceiling here: 4 digits reach
-    // x=403 against a face ending at 409), and the three lines get ~11px of clear
-    // between their cap boxes so the column doesn't read as one block.
-    // Owner's sim-slider values, converted: gear 50 em → cap 35 → p20 ×1.30,
-    // value 34 em → cap 23.8 → p13 ×1.19. Must stay identical to ScreenGauge
-    // renderTuner — a preview that quietly disagrees with the glass is the whole
-    // reason this file exists.
-    ctx.fillStyle = '#f4f6f8'; setDevFont(ctx, 'p20', 1.30); ctx.fillText('3', tx, 186);
-    ctx.fillStyle = text; setDevFont(ctx, 'p13', 1.19); ctx.fillText(s.text, tx, 232);
-    ctx.fillStyle = MUT; setDevFont(ctx, 'p10'); ctx.fillText(s.unit, tx, 262);
+  // ---- readout: TWO stacked values in one centred column (owner 2026-07-18).
+  //      SECONDARY on top (small), PRIMARY at the bottom (big) — "readout หลัก
+  //      อยู่ล่าง". pri = ch[2], sec = ch[3]; the tacho (ch[0]) no longer feeds it.
+  //      Faces converted em → cap, identical to ScreenGauge renderTuner:
+  //        sec label p6 · sec value p10 ×0.90 · pri label p6 ×1.13
+  //        pri value p13 ×1.19 · unit p6 ×1.13. Column pinned at TX=318 (the face
+  //        ends at x=409, so the value cannot move right).
+  // GEAR shows a representative 'D' here — the glass resolves the real P/R/N/D +
+  // numeric sub-gear from live data, which a still preview has no source for.
+  const tx = 318;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const roText = (m: ChanMeta) => (m.label.toUpperCase() === 'GEAR' ? 'D' : sample(m).text);
+  if (mSec) {
+    ctx.fillStyle = '#7b828b'; setDevFont(ctx, 'p6');        ctx.fillText(mSec.label.toUpperCase(), tx, 192);
+    ctx.fillStyle = '#cdd2d8'; setDevFont(ctx, 'p10', 0.90); ctx.fillText(roText(mSec), tx, 214);
+  }
+  if (mPri) {
+    ctx.fillStyle = '#9aa0a8'; setDevFont(ctx, 'p6', 1.13);  ctx.fillText(mPri.label.toUpperCase(), tx, 232);
+    ctx.fillStyle = text;      setDevFont(ctx, 'p13', 1.19); ctx.fillText(roText(mPri), tx, 262);
+    if (mPri.label.toUpperCase() !== 'GEAR' && mPri.unit) {
+      ctx.fillStyle = '#8a939f'; setDevFont(ctx, 'p6', 1.13); ctx.fillText(mPri.unit, tx, 286);
+    }
   }
 
   // ---- OUTER ENERGY BAND — TOP LAYER (owner: arc on top, over the mesh), round

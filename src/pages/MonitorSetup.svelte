@@ -181,14 +181,15 @@
 
   // How many value slots a layout actually draws:
   //   BARS = 4 bars · HERO = big + support · NEEDLE = 2 hands · TICKS = ring + a
-  //   short outer tick for the 2nd value (the RING itself stays single-value).
-  const slotsUsed = (l: Layout) => l === Layout.BARS ? 4 : 2;
+  //   short outer tick for the 2nd value (the RING itself stays single-value) ·
+  //   TUNER = dot tacho + arc + a two-line readout (primary + secondary) = 4.
+  const slotsUsed = (l: Layout) => (l === Layout.BARS || l === Layout.TUNER) ? 4 : 2;
   const SLOT_NAMES: Record<number, string[]> = {
     [Layout.HERO]:   ['Big value', 'Small value'],
     [Layout.BARS]:   ['Bar 1', 'Bar 2', 'Bar 3', 'Bar 4'],
     [Layout.NEEDLE]: ['Long needle', 'Short needle'],
     [Layout.TICKS]:  ['Lit ticks', 'Outer tick (2nd value)'],
-    [Layout.TUNER]:  ['Tacho + readout', 'Energy arc'],
+    [Layout.TUNER]:  ['RPM dot (tacho)', 'Energy arc', 'Readout — main (big)', 'Readout — sub (small)'],
   };
   // Layouts that use the page's SECOND colour. Note it means different things:
   // on NEEDLE/TICKS it colours the 2nd VALUE, but TUNER has no second indicator —
@@ -254,14 +255,16 @@
   const PHASE_B_MIN: FwVersion = { major: 0, minor: 7, patch: 2 };
   const monHasPhaseB = $derived(!devVers?.monitor || verCmp(devVers.monitor, PHASE_B_MIN) >= 0);
 
-  // The gauge firmware that actually DRAWS Tuner. ScreenGauge.cpp knows layouts
-  // 0..3 as of monitor v0.23.0: a TUNER page sent to an older gauge falls through
-  // its if-chain and renders HERO — the buyer would pay ฿199 and get the free
-  // layout, with nothing on screen to say why. So the picker stays locked until
-  // the gauge reports firmware new enough, same shape as the PHASE_B gate above.
-  // ⚠️ v0.24.0 DOES NOT EXIST YET — it is the version the C++ port must ship as.
-  // Unknown version (demo / not read yet) = open, so the look can still be judged.
-  const TUNER_MIN: FwVersion = { major: 0, minor: 24, patch: 0 };
+  // The gauge firmware that actually DRAWS Tuner. A TUNER page sent to an older
+  // gauge falls through its if-chain and renders HERO — the buyer would pay ฿199
+  // and get the free layout, with nothing on screen to say why. So the picker
+  // stays locked until the gauge reports firmware new enough, same shape as the
+  // PHASE_B gate above.
+  // ⚠️ Bumped to v0.25.0 with the 4-SLOT READOUT: the editor now shows four slots
+  // (dot / arc / readout main / readout sub), but a 0.24.x gauge only reads the
+  // first two — so gate on the firmware that renders all four. Unknown version
+  // (demo / not read yet) = open, so the look can still be judged.
+  const TUNER_MIN: FwVersion = { major: 0, minor: 25, patch: 0 };
   const monDrawsTuner = $derived(!devVers?.monitor || verCmp(devVers.monitor, TUNER_MIN) >= 0);
   // Two INDEPENDENT gates, and the hint must say WHICH one is shut — a bare
   // "locked" would send someone to the Store to re-buy a theme they already own.

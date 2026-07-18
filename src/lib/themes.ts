@@ -33,19 +33,24 @@ export const isFree = (t: GaugeTheme): boolean => themePrice(t) <= 0;
 const CYAN = 0x3E5D;   // #3FC8E8  TUNER's accent, from the sim
 const STEEL = 0x39C9;  // #39404A  honeycomb — its OWN colour, not tied to the accent
 
-// TUNER's arc is a SLOT: the label follows whatever channel is dropped in, so it
-// reads EV / BOOST / WATER and never a borrowed name. SOC is the default because
-// a T8's battery drains under throttle and refills on regen — an energy bar that
-// is a real instrument on this car, not decoration.
-const TUNER = (dot: number, arc: number): ThemePage =>
-  ({ layout: Layout.TUNER, ch: [dot, arc, 0, 0, 0], arc: CYAN, col2: STEEL, text: WHITE });
+// TUNER is FOUR slots (owner 2026-07-18): a dot tacho, the arc (a SLOT whose label
+// follows whatever channel is dropped in — reads EV / BOOST / WATER, never a
+// borrowed name), and a readout that stacks a big PRIMARY over a small SECONDARY.
+// SOC is the arc default because a T8's battery drains under throttle and refills
+// on regen — a real instrument on this car, not decoration; the readout defaults
+// pair a live pressure with coolant so the plate reads useful out of the box.
+const TUNER = (dot: number, arc: number,
+              pri: number = Ch.BOOST, sec: number = Ch.COOLANT): ThemePage =>
+  ({ layout: Layout.TUNER, ch: [dot, arc, pri, sec, 0], arc: CYAN, col2: STEEL, text: WHITE });
 
 export const THEMES: GaugeTheme[] = [
   { id: 'tuner', name: 'Tuner', accent: CYAN, price: 199, tag: 'NEW', author: 'SN Motorsports',
     desc: 'Import-scene dash, drawn from scratch: a stepped energy arc that carries ' +
           'its own label, a dot tacho with the redline as a red arc, and a floating ' +
           'triangle pointer that strobes at the limit. The arc is a slot — pick what it shows.',
-    pages: [ TUNER(Ch.RPM, Ch.SOC), TUNER(Ch.RPM, Ch.BOOST), TUNER(Ch.RPM, Ch.PWR) ] },
+    pages: [ TUNER(Ch.RPM, Ch.SOC,   Ch.BOOST, Ch.COOLANT),
+             TUNER(Ch.RPM, Ch.BOOST, Ch.SPEED, Ch.COOLANT),
+             TUNER(Ch.RPM, Ch.PWR,   Ch.BOOST, Ch.SOC) ] },
 ];
 
 // Apply a theme to a config: replace the PAGES (layout/channels/colours + a
