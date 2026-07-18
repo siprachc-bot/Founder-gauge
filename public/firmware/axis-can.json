@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.26.2",
+      "date": "2026-07-18",
+      "notes": "Tuner performance: the honeycomb dial now renders much faster — the fade and panel shading are precomputed instead of recalculated every frame, so the Tuner page is smoother (less stutter).",
+      "url": "firmware/axis_can_monitor-v0.26.2.bin",
+      "size_bytes": 1673712
+    },
+    {
       "version": "0.26.1",
       "date": "2026-07-18",
       "notes": "Anti-sleep: the reminder now only counts time driven above a speed you set (default 60 km/h), so being stuck in slow city traffic pauses the timer instead of either nagging you or resetting it. Set the speed in the Anti-sleep card.",
