@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.24.12",
+      "date": "2026-07-18",
+      "notes": "Fixes the gear number vanishing on the Tuner page — it now shows the calculated gear (1-8) as well as P/R/N/D.",
+      "url": "firmware/axis_can_monitor-v0.24.12.bin",
+      "size_bytes": 1671056
+    },
+    {
       "version": "0.24.11",
       "date": "2026-07-18",
       "notes": "Tuner layering: the SN mark now sits behind the honeycomb as a watermark, and the energy arc is on top with rounded ends.",
