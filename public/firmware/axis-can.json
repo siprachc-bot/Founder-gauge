@@ -501,6 +501,13 @@
   ],
   "node": [
     {
+      "version": "0.5.16",
+      "date": "2026-07-18",
+      "notes": "Adds a wireless bring-up diagnostic so a car that shows no values (e.g. a BMW) can be diagnosed in-car via the app log — no laptop needed. Logging only; no behaviour change on the Volvo.",
+      "url": "firmware/axis_can_node-v0.5.16.bin",
+      "size_bytes": 931664
+    },
+    {
       "version": "0.5.15",
       "date": "2026-07-18",
       "notes": "Removes a leftover diagnostic probe that kept querying the car every time it connected, even with the engine off. Less battery use and less needless talking to the car's gateway when parked.",
