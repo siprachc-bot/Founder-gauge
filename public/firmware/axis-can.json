@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.26.3",
+      "date": "2026-07-18",
+      "notes": "Fixes a periodic stutter on the gauge: the on-screen log was blocking on the USB port when powered from a car adapter. All pages (especially Tuner) should be smoother now.",
+      "url": "firmware/axis_can_monitor-v0.26.3.bin",
+      "size_bytes": 1673744
+    },
+    {
       "version": "0.26.2",
       "date": "2026-07-18",
       "notes": "Tuner performance: the honeycomb dial now renders much faster — the fade and panel shading are precomputed instead of recalculated every frame, so the Tuner page is smoother (less stutter).",
