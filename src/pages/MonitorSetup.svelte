@@ -221,9 +221,31 @@
   const setHand2Color = (i: number, hex: string) => { cfg.pages[i].color2    = hexToRgb565(hex); };
   const setTextColor  = (i: number, hex: string) => { cfg.pages[i].textColor = hexToRgb565(hex); };
 
-  // ---- per-page peak (native units of the big value) ----
-  // Pre-fill the channel's sensible default when the big value changes.
-  function onPrimaryChange(i: number) { cfg.pages[i].peak = channelDef(cfg.pages[i].ch[0])?.peak ?? 0; }
+  // ---- redlines are PER VALUE, not per page (owner: "set every value's limit,
+  //      whether it's on the gauge or not") ----
+  // The firmware still stores the redline per PAGE (cfg.pages[i].peak = the arc's
+  // redline mark). So the Limits & peaks card edits a per-CHANNEL redline and
+  // (a) writes it to every page currently showing that value, and (b) remembers it
+  // for values not on any page yet, so it's pre-filled the moment you place them.
+  let peakOverrides = $state<Record<number, number>>({});
+  const limitable = (c: { id: number; min: number; max: number }) =>
+    c.id !== Ch.NONE && c.id !== Ch.GEAR && (c.max ?? 0) > (c.min ?? 0);
+  function channelPeakValue(chId: number): number {
+    const pg = cfg.pages.slice(0, cfg.pageCount).find((p) => p.ch[0] === chId);
+    if (pg && pg.peak > 0) return pg.peak;
+    if (peakOverrides[chId] != null) return peakOverrides[chId];
+    return channelDef(chId)?.peak ?? 0;
+  }
+  function setChannelPeak(chId: number, val: number) {
+    peakOverrides[chId] = val;
+    cfg.pages.forEach((p, i) => { if (i < cfg.pageCount && p.ch[0] === chId) cfg.pages[i].peak = val; });
+  }
+  // When a page's big value changes, pre-fill its redline from the per-value store
+  // (the user's override if set, else the channel's sensible default).
+  function onPrimaryChange(i: number) {
+    const chId = cfg.pages[i].ch[0];
+    cfg.pages[i].peak = (peakOverrides[chId] ?? channelDef(chId)?.peak) ?? 0;
+  }
   const peakMax  = (i: number) => channelDef(cfg.pages[i].ch[0])?.max ?? 0;
   const peakUnit = (i: number) => channelDef(cfg.pages[i].ch[0])?.unit ?? '';
 
@@ -1106,30 +1128,60 @@
                 </select>
               </label>
             {/each}
-            <label class="peak">
-              <span class="lbl">Peak / redline <span class="hint">0 = off</span></span>
-              <div class="peak-row">
-                <input type="number" min="0" max={peakMax(i)} step="any"
-                  bind:value={cfg.pages[i].peak} placeholder="off" />
-                <span class="peak-unit">{peakUnit(i)}</span>
-              </div>
-            </label>
-            <!-- Shift light lives on the RPM page (it's an RPM threshold). Global
-                 cfg.shiftRpm; shown only when this page's big value is RPM. -->
-            {#if page.ch[0] === Ch.RPM}
-              <label class="peak">
-                <span class="lbl">Shift light <span class="hint">RPM · 0 = off</span></span>
-                <div class="peak-row">
-                  <input type="number" min="0" max="12000" step="100"
-                    bind:value={cfg.shiftRpm} placeholder="off" />
-                  <span class="peak-unit">RPM</span>
-                </div>
-              </label>
-            {/if}
+            <!-- Peak/redline + shift light moved OUT to the "Limits & peaks" card
+                 below (owner) — set every page's redline in one place. -->
           </div>
         </div>
       </div>
     {/if}
+  </div>
+
+  <!-- Limits & peaks — one place to set the redline for ANY value + the shift
+       light + the calc-gear redline (owner: set every value's limit, whether it's
+       on a gauge page now or not). Redlines are per-VALUE: a value shown on a page
+       gets its redline applied live; one not on any page is remembered for later. -->
+  <div class="card">
+    <div class="bright-head"><span class="lbl">Limits &amp; peaks</span></div>
+    <p class="sub dim" style="margin-top:4px;">
+      Set a redline for any value — it applies wherever that value appears, on a
+      gauge now or not. Blank / 0 = no redline.
+    </p>
+
+    <label class="lp-row">
+      <span>Shift light <span class="hint">RPM · 0 = off</span></span>
+      <div class="peak-row">
+        <input type="number" min="0" max="12000" step="100" bind:value={cfg.shiftRpm} placeholder="off" />
+        <span class="peak-unit">RPM</span>
+      </div>
+    </label>
+    <label class="lp-row">
+      <span>Calc-gear redline <span class="hint">RPM</span></span>
+      <div class="peak-row">
+        <input type="number" min="1000" max="12000" step="100" bind:value={cfg.rpmLimit} />
+        <span class="peak-unit">RPM</span>
+      </div>
+    </label>
+
+    {#each CHANNEL_GROUPS as g (g)}
+      {@const rows = CHANNELS.filter((c) => c.group === g && limitable(c))}
+      {#if rows.length}
+        <div class="lp-grp">{g}</div>
+        <div class="lp-list">
+          {#each rows as c (c.id)}
+            <label class="lp-row">
+              <span>{c.label}</span>
+              <div class="peak-row">
+                <input type="number" min="0" max={c.max} step="any"
+                       value={channelPeakValue(c.id) || ''}
+                       oninput={(e) => setChannelPeak(c.id, Number((e.currentTarget as HTMLInputElement).value) || 0)}
+                       placeholder="off" />
+                <span class="peak-unit">{c.unit}</span>
+              </div>
+            </label>
+          {/each}
+        </div>
+      {/if}
+    {/each}
   </div>
 
   <!-- global screen brightness (live-dims as you drag) -->
@@ -1876,6 +1928,15 @@
     padding: 0 var(--s-2); font-size: 14px;
   }
   .peak-unit { font-family: var(--font-mono); font-size: 12px; color: var(--muted); flex: 0 0 auto; }
+  /* Limits & peaks card — one row per page + the shift light */
+  .lp-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; }
+  .lp-row > span { font-size: 14px; }
+  .lp-row .hint { text-transform: none; letter-spacing: 0; color: var(--muted); opacity: 0.7; margin-left: 6px; }
+  .lp-list { margin-top: 2px; }
+  .lp-list .lp-row + .lp-row { border-top: 1px solid var(--border, rgba(255,255,255,0.06)); }
+  .lp-row input { width: 84px; text-align: right; }
+  .lp-grp { margin-top: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--muted); opacity: 0.8; }
 
   /* global brightness */
   .bright-card { padding: var(--s-3) var(--s-4); }
