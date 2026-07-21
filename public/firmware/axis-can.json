@@ -501,6 +501,13 @@
   ],
   "node": [
     {
+      "version": "0.5.18",
+      "date": "2026-07-18",
+      "notes": "VIN auto-ID: reads the car's VIN and logs the make + model year (e.g. 'CAR: BMW 2013'). First step toward the app auto-picking your car profile with no manual setup. Needs a real car to verify.",
+      "url": "firmware/axis_can_node-v0.5.18.bin",
+      "size_bytes": 933424
+    },
+    {
       "version": "0.5.17",
       "date": "2026-07-18",
       "notes": "Reads more cars: adds physical OBD addressing (0x7E0) as a fallback for gatewayed cars that ignore the generic broadcast request. Pairs with the diagnostic build to close the 'no values' gap on brands like BMW. No change on the Volvo.",
