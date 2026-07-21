@@ -1437,7 +1437,8 @@
         car's computer (not just the calculated gear). Sent to the sensor and remembered.
       </p>
 
-      <!-- VIN auto-ID: the sensor reads the VIN and identifies the car for you -->
+      <!-- Auto-ID: the sensor reads the VIN internally, derives make+year, discards
+           the VIN (never shown/sent), and the app suggests the matching profile. -->
       {#if carId?.detected}
         <div class="detected-car">
           <span>Detected: <b>{carId.make || 'Unknown'}{carId.year ? ' ' + carId.year : ''}</b></span>
@@ -1449,7 +1450,7 @@
         </div>
       {:else}
         <div class="detected-car dc-none">
-          <span class="sub dim">No car detected yet — plug the sensor in with the engine on; it reads the VIN automatically.</span>
+          <span class="sub dim">No car detected yet — plug the sensor in with the engine on; it identifies your car automatically.</span>
           <button class="ghost dc-use" onclick={readDetectedCar} disabled={carIdBusy}>
             {carIdBusy ? 'Checking…' : 'Check now'}
           </button>
