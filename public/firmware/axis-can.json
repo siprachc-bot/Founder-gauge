@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.27.1",
+      "date": "2026-07-18",
+      "notes": "Privacy: the car-ID feature now shows make + year only; the VIN is never transmitted.",
+      "url": "firmware/axis_can_monitor-v0.27.1.bin",
+      "size_bytes": 1674256
+    },
+    {
       "version": "0.27.0",
       "date": "2026-07-18",
       "notes": "Relays the sensor's VIN-decoded car identity to the app (new car-ID channel), so the app can auto-detect your car and suggest the matching gear profile.",
@@ -507,6 +514,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.20",
+      "date": "2026-07-18",
+      "notes": "Privacy: the VIN is never sent or logged — the sensor identifies your car's make + year only.",
+      "url": "firmware/axis_can_node-v0.5.20.bin",
+      "size_bytes": 933568
+    },
     {
       "version": "0.5.19",
       "date": "2026-07-18",

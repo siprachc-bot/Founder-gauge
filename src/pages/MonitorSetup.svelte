@@ -1440,8 +1440,7 @@
       <!-- VIN auto-ID: the sensor reads the VIN and identifies the car for you -->
       {#if carId?.detected}
         <div class="detected-car">
-          <span><i class="ti"></i>Detected: <b>{carId.make || 'Unknown'}{carId.year ? ' ' + carId.year : ''}</b></span>
-          {#if carId.vin}<span class="dc-vin">VIN {carId.vin}</span>{/if}
+          <span>Detected: <b>{carId.make || 'Unknown'}{carId.year ? ' ' + carId.year : ''}</b></span>
           {#if suggestedProfile && suggestedProfile.id !== gearCarId}
             <button class="ghost dc-use" onclick={() => { gearCarId = suggestedProfile!.id; }}>
               Use {suggestedProfile.name}
@@ -1820,7 +1819,6 @@
                   margin-top: 8px; padding: 8px 10px; border-radius: var(--radius, 8px);
                   background: var(--bg-accent, rgba(120,160,255,0.08)); font-size: 14px; }
   .detected-car.dc-none { background: transparent; padding: 6px 0; }
-  .dc-vin { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
   .dc-use { margin-left: auto; }
   .car-select {
     width: 100%; margin: var(--s-2) 0;

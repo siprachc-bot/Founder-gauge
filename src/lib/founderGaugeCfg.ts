@@ -70,8 +70,9 @@ export interface ExhaustAuto { openRpm: number; closeRpm: number; openThr: numbe
  *  rest of `restMin` not-moving; a tap snoozes it `snoozeMin` (no reset). */
 export interface AntiSleepCfg { enabled: boolean; intervalMin: number; restMin: number; snoozeMin: number; moveKph: number; }
 /** Car identity decoded by the node from the VIN (char 7e1c0210). `detected` = the
- *  node has read + decoded a VIN; make/year come from the WMI + 10th VIN char. */
-export interface CarId { make: string; year: number; vin: string; detected: boolean; }
+ *  node has read + decoded a VIN; make/year come from the WMI + 10th VIN char.
+ *  The VIN itself is NEVER transmitted or exposed (privacy) — only make/year. */
+export interface CarId { make: string; year: number; detected: boolean; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -999,16 +1000,11 @@ export class MonitorBleClient {
    *  zero (detected:false) until the node reads a VIN off a live car. */
   async readCarId(): Promise<CarId> {
     const v = await CapBle.read(this.deviceId, MON_SVC, CAR_CHAR);
-    if (v.byteLength < 32) return { make: '', year: 0, vin: '', detected: false };
-    const cstr = (off: number, len: number) => {
-      let s = '';
-      for (let i = 0; i < len; i++) { const ch = v.getUint8(off + i); if (!ch) break; s += String.fromCharCode(ch); }
-      return s;
-    };
+    if (v.byteLength < 14) return { make: '', year: 0, detected: false };
+    let make = '';
+    for (let i = 0; i < 12; i++) { const ch = v.getUint8(2 + i); if (!ch) break; make += String.fromCharCode(ch); }
     const year = v.getUint16(0, true);
-    const make = cstr(2, 12);
-    const vin  = cstr(14, 18);
-    return { make, year, vin, detected: year > 0 || make.length > 0 };
+    return { make, year, detected: year > 0 || make.length > 0 };
   }
 
   /** Write the anti-sleep config (persists in NVS on the gauge). */
