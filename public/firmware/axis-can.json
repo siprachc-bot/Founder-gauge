@@ -501,6 +501,13 @@
   ],
   "node": [
     {
+      "version": "0.5.17",
+      "date": "2026-07-18",
+      "notes": "Reads more cars: adds physical OBD addressing (0x7E0) as a fallback for gatewayed cars that ignore the generic broadcast request. Pairs with the diagnostic build to close the 'no values' gap on brands like BMW. No change on the Volvo.",
+      "url": "firmware/axis_can_node-v0.5.17.bin",
+      "size_bytes": 931744
+    },
+    {
       "version": "0.5.16",
       "date": "2026-07-18",
       "notes": "Adds a wireless bring-up diagnostic so a car that shows no values (e.g. a BMW) can be diagnosed in-car via the app log — no laptop needed. Logging only; no behaviour change on the Volvo.",
