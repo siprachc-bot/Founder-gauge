@@ -32,6 +32,7 @@ const NLOG_CHAR       = '7e1c020c-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // node-log text
 const CAN_CHAR        = '7e1c020d-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // raw CAN-log pull + capture start/stop
 const EXH_CHAR        = '7e1c020e-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // exhaust valve control (READ status | WRITE cmd)
 const AS_CHAR         = '7e1c020f-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // anti-sleep "take a break" config (READ | WRITE)
+const CAR_CHAR        = '7e1c0210-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // car-ID (READ: make/year/VIN, node-decoded from the VIN)
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -68,6 +69,9 @@ export interface ExhaustAuto { openRpm: number; closeRpm: number; openThr: numbe
  *  a full-screen reminder after `intervalMin` of continuous driving, reset by a
  *  rest of `restMin` not-moving; a tap snoozes it `snoozeMin` (no reset). */
 export interface AntiSleepCfg { enabled: boolean; intervalMin: number; restMin: number; snoozeMin: number; moveKph: number; }
+/** Car identity decoded by the node from the VIN (char 7e1c0210). `detected` = the
+ *  node has read + decoded a VIN; make/year come from the WMI + 10th VIN char. */
+export interface CarId { make: string; year: number; vin: string; detected: boolean; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -991,6 +995,22 @@ export class MonitorBleClient {
       moveKph: v.byteLength >= 6 ? v.getUint8(5) : 60,
     };
   }
+  /** Read the car identity the node decoded from the VIN (char 7e1c0210). All
+   *  zero (detected:false) until the node reads a VIN off a live car. */
+  async readCarId(): Promise<CarId> {
+    const v = await CapBle.read(this.deviceId, MON_SVC, CAR_CHAR);
+    if (v.byteLength < 32) return { make: '', year: 0, vin: '', detected: false };
+    const cstr = (off: number, len: number) => {
+      let s = '';
+      for (let i = 0; i < len; i++) { const ch = v.getUint8(off + i); if (!ch) break; s += String.fromCharCode(ch); }
+      return s;
+    };
+    const year = v.getUint16(0, true);
+    const make = cstr(2, 12);
+    const vin  = cstr(14, 18);
+    return { make, year, vin, detected: year > 0 || make.length > 0 };
+  }
+
   /** Write the anti-sleep config (persists in NVS on the gauge). */
   async setAntiSleep(c: AntiSleepCfg): Promise<void> {
     const b = new Uint8Array(6); const dv = new DataView(b.buffer);

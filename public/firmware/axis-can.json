@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.27.0",
+      "date": "2026-07-18",
+      "notes": "Relays the sensor's VIN-decoded car identity to the app (new car-ID channel), so the app can auto-detect your car and suggest the matching gear profile.",
+      "url": "firmware/axis_can_monitor-v0.27.0.bin",
+      "size_bytes": 1674352
+    },
+    {
       "version": "0.26.3",
       "date": "2026-07-18",
       "notes": "Fixes a periodic stutter on the gauge: the on-screen log was blocking on the USB port when powered from a car adapter. All pages (especially Tuner) should be smoother now.",
@@ -500,6 +507,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.19",
+      "date": "2026-07-18",
+      "notes": "Sends the decoded car make/year/VIN to the gauge so the app can auto-identify your car (and suggest the right gear profile). Needs a real car to verify.",
+      "url": "firmware/axis_can_node-v0.5.19.bin",
+      "size_bytes": 933632
+    },
     {
       "version": "0.5.18",
       "date": "2026-07-18",

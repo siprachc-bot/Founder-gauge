@@ -21,7 +21,7 @@
     UC_COUNT, UNIT_OPTIONS, UNITS_METRIC, UNITS_IMPERIAL,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
     type GaugeCfg, type DeviceVersions, type FwVersion, type AccelTimes,
-    type ExhaustStatus, type AntiSleepCfg,
+    type ExhaustStatus, type AntiSleepCfg, type CarId,
   } from '../lib/founderGaugeCfg';
   import {
     fetchCanManifest, latest, downloadFirmware, parseVer,
@@ -517,6 +517,26 @@
   let gearBusy = $state(false);
   let gearNote = $state('');
   let gearCar  = $derived(gearProfileById(gearCarId));
+
+  // ---- VIN auto-ID: the node decodes the car from the VIN → suggest the profile ----
+  let carId    = $state<CarId | null>(null);
+  let carIdBusy = $state(false);
+  async function readDetectedCar() {
+    if (demo || !store.monClient || carIdBusy) return;
+    carIdBusy = true;
+    try { carId = await store.monClient.readCarId(); }
+    catch { carId = null; }
+    finally { carIdBusy = false; }
+  }
+  // The gear profile whose name matches the detected make (VIN gives make, not model,
+  // so this is a suggestion — the user confirms).
+  let suggestedProfile = $derived(
+    carId?.detected && carId.make
+      ? GEAR_PROFILES.find((p) => p.pushable && p.name.toLowerCase().includes(carId!.make.toLowerCase()))
+      : undefined,
+  );
+  // Auto-read the detected car once when a gauge is connected.
+  $effect(() => { if (!demo && store.monClient && carId === null) readDetectedCar(); });
 
   /** Send the selected car's gear-decode profile to the node (via the monitor). */
   async function sendGearProfile() {
@@ -1416,6 +1436,27 @@
         Pick your car so the sensor reads the <b>real</b> P/R/N/D straight off the
         car's computer (not just the calculated gear). Sent to the sensor and remembered.
       </p>
+
+      <!-- VIN auto-ID: the sensor reads the VIN and identifies the car for you -->
+      {#if carId?.detected}
+        <div class="detected-car">
+          <span><i class="ti"></i>Detected: <b>{carId.make || 'Unknown'}{carId.year ? ' ' + carId.year : ''}</b></span>
+          {#if carId.vin}<span class="dc-vin">VIN {carId.vin}</span>{/if}
+          {#if suggestedProfile && suggestedProfile.id !== gearCarId}
+            <button class="ghost dc-use" onclick={() => { gearCarId = suggestedProfile!.id; }}>
+              Use {suggestedProfile.name}
+            </button>
+          {/if}
+        </div>
+      {:else}
+        <div class="detected-car dc-none">
+          <span class="sub dim">No car detected yet — plug the sensor in with the engine on; it reads the VIN automatically.</span>
+          <button class="ghost dc-use" onclick={readDetectedCar} disabled={carIdBusy}>
+            {carIdBusy ? 'Checking…' : 'Check now'}
+          </button>
+        </div>
+      {/if}
+
       <select class="car-select" bind:value={gearCarId} disabled={gearBusy} style="margin-top:8px;">
         {#each GEAR_PROFILES as p (p.id)}
           <option value={p.id} disabled={!p.pushable}>
@@ -1775,6 +1816,12 @@
   }
 
   /* Cars + fault-code lookup */
+  .detected-car { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+                  margin-top: 8px; padding: 8px 10px; border-radius: var(--radius, 8px);
+                  background: var(--bg-accent, rgba(120,160,255,0.08)); font-size: 14px; }
+  .detected-car.dc-none { background: transparent; padding: 6px 0; }
+  .dc-vin { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .dc-use { margin-left: auto; }
   .car-select {
     width: 100%; margin: var(--s-2) 0;
     padding: 8px 10px; border-radius: var(--r-1);
