@@ -219,7 +219,12 @@
   }
   // ---- v11: 2nd needle hand + value-text colour (0 on the wire = "use default",
   //      so the swatch shows the arc colour / white until the owner picks one) ----
-  const hand2Hex = (i: number) => rgb565ToHex(cfg.pages[i].color2 || (cfg.pages[i].arcColor ?? ARC_DEFAULT));
+  const hand2Hex = (i: number) => {
+    const p = cfg.pages[i];
+    if (p.color2) return rgb565ToHex(p.color2);
+    // CHRONO's 2nd colour is the BACKGROUND — default it to black, not the accent.
+    return p.layout === Layout.CHRONO ? '#000000' : rgb565ToHex(p.arcColor ?? ARC_DEFAULT);
+  };
   const textHex  = (i: number) => rgb565ToHex(cfg.pages[i].textColor || 0xffff);
   const setHand2Color = (i: number, hex: string) => { cfg.pages[i].color2    = hexToRgb565(hex); };
   const setTextColor  = (i: number, hex: string) => { cfg.pages[i].textColor = hexToRgb565(hex); };

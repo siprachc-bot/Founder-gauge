@@ -527,8 +527,12 @@ function renderRegent(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Ch
 //    Big main dial + a BORDERLESS sub-dial sharing the main face; the ONLY layout with
 //    a settable background (page.col2): achromatic passes, chromatic → 25% pale tint,
 //    elements flip dark-on-light. Owner-tuned constants baked in.
-function chBg(c565: number): { css: string; light: boolean } {
-  let r = Math.round(((c565 >> 11) & 0x1f) * 255 / 31), g = Math.round(((c565 >> 5) & 0x3f) * 255 / 63), b = Math.round((c565 & 0x1f) * 255 / 31);
+// col2 arrives as a resolved CSS colour STRING ("#rrggbb" or "rgb(r,g,b)") — parse
+// it, then apply the achromatic-pass / chromatic-mute rule.
+function chBg(css: string): { css: string; light: boolean } {
+  let r = 0, g = 0, b = 0;
+  if (css && css[0] === '#') { const n = parseInt(css.slice(1), 16); r = (n >> 16) & 255; g = (n >> 8) & 255; b = n & 255; }
+  else { const m = (css || '').match(/\d+/g); if (m && m.length >= 3) { r = +m[0]; g = +m[1]; b = +m[2]; } }
   if (Math.max(r, g, b) - Math.min(r, g, b) > 16) { r = 191 + (r >> 2); g = 191 + (g >> 2); b = 191 + (b >> 2); }
   return { css: `rgb(${r},${g},${b})`, light: (0.299 * r + 0.587 * g + 0.114 * b) > 128 };
 }
@@ -558,7 +562,7 @@ function chronoDial(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: nu
 }
 function renderChrono(ctx: CanvasRenderingContext2D, page: PagePreview, chan: ChanLookup): void {
   const mM = chan(page.ch[0]), mS = chan(page.ch[1]);
-  const bg = chBg(page.col2 || 0);
+  const bg = chBg(page.col2);
   const light = bg.light;
   const tint = page.arc;
   const minorRGB = light ? '70,76,84' : '150,158,168';
