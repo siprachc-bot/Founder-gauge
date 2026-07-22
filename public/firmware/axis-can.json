@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.32.2",
+      "date": "2026-07-22",
+      "notes": "CHRONO: the SN monogram is smaller and lower so it no longer overlaps the tick ring.",
+      "url": "firmware/axis_can_monitor-v0.32.2.bin",
+      "size_bytes": 1683104
+    },
+    {
       "version": "0.32.1",
       "date": "2026-07-22",
       "notes": "CHRONO: the STALE badge no longer sits on top of the SN monogram.",
