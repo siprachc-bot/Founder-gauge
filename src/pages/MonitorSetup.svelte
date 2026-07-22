@@ -228,8 +228,6 @@
   // (a) writes it to every page currently showing that value, and (b) remembers it
   // for values not on any page yet, so it's pre-filled the moment you place them.
   let peakOverrides = $state<Record<number, number>>({});
-  const limitable = (c: { id: number; min: number; max: number }) =>
-    c.id !== Ch.NONE && c.id !== Ch.GEAR && (c.max ?? 0) > (c.min ?? 0);
   function channelPeakValue(chId: number): number {
     const pg = cfg.pages.slice(0, cfg.pageCount).find((p) => p.ch[0] === chId);
     if (pg && pg.peak > 0) return pg.peak;
@@ -246,8 +244,6 @@
     const chId = cfg.pages[i].ch[0];
     cfg.pages[i].peak = (peakOverrides[chId] ?? channelDef(chId)?.peak) ?? 0;
   }
-  const peakMax  = (i: number) => channelDef(cfg.pages[i].ch[0])?.max ?? 0;
-  const peakUnit = (i: number) => channelDef(cfg.pages[i].ch[0])?.unit ?? '';
 
   // ---- global brightness (live-dims the AMOLED as the slider drags) ----
   function onBrightness(e: Event) {
@@ -1140,7 +1136,7 @@
                   <option value={Ch.NONE}>— empty —</option>
                   {#each CHANNEL_GROUPS as g (g)}
                     <optgroup label={g}>
-                      {#each CHANNELS.filter(c => c.group === g) as c (c.id)}
+                      {#each CHANNELS.filter(c => c.group === g && !c.hidden) as c (c.id)}
                         <option value={c.id} disabled={chGated(c.id)}>{c.label}{c.unit ? ` (${c.unit})` : ''}{chGated(c.id) ? ' · needs v0.7.2' : ''}</option>
                       {/each}
                     </optgroup>
@@ -1160,11 +1156,11 @@
        light + the calc-gear redline (owner: set every value's limit, whether it's
        on a gauge page now or not). Redlines are per-VALUE: a value shown on a page
        gets its redline applied live; one not on any page is remembered for later. -->
-  <div class="card">
-    <div class="bright-head"><span class="lbl">Limits &amp; peaks</span></div>
+  <details class="card fw-card">
+    <summary>Limits &amp; peaks</summary>
     <p class="sub dim" style="margin-top:4px;">
-      Set a redline for any value — it applies wherever that value appears, on a
-      gauge now or not. Blank / 0 = no redline.
+      Redline / peak-hold for the values where it matters, plus the shift light.
+      Applies wherever the value appears, on a gauge now or not. Blank / 0 = off.
     </p>
 
     <label class="lp-row">
@@ -1183,7 +1179,7 @@
     </label>
 
     {#each CHANNEL_GROUPS as g (g)}
-      {@const rows = CHANNELS.filter((c) => c.group === g && limitable(c))}
+      {@const rows = CHANNELS.filter((c) => c.group === g && c.peakable)}
       {#if rows.length}
         <div class="lp-grp">{g}</div>
         <div class="lp-list">
@@ -1202,7 +1198,7 @@
         </div>
       {/if}
     {/each}
-  </div>
+  </details>
 
   <!-- global screen brightness (live-dims as you drag) -->
   <div class="card bright-card">

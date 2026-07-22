@@ -162,55 +162,57 @@ export function hexToRgb565(hex: string): number {
 export interface ChannelDef {
   id: Ch; label: string; short: string; unit: string;
   min: number; max: number; peak?: number; group: string;
+  hidden?: boolean;    // redundant/derived-unreliable → kept for back-compat but off the picker
+  peakable?: boolean;  // a redline / peak-hold is meaningful → shows in the Limits & peaks tab
 }
 export const CHANNELS: ChannelDef[] = [
   { id: Ch.NONE,     label: '— empty —',  short: '--',    unit: '',     min: 0,   max: 1,     group: '' },
   // Engine
-  { id: Ch.RPM,      label: 'RPM',        short: 'RPM',   unit: '',     min: 0,   max: 8000,  peak: 6800, group: 'Engine' },
-  { id: Ch.SPEED,    label: 'Speed',      short: 'SPEED', unit: 'km/h', min: 0,   max: 240,   group: 'Engine' },
+  { id: Ch.RPM,      label: 'RPM',        short: 'RPM',   unit: '',     min: 0,   max: 8000,  peak: 6800, peakable: true, group: 'Engine' },
+  { id: Ch.SPEED,    label: 'Speed',      short: 'SPEED', unit: 'km/h', min: 0,   max: 240,   peakable: true, group: 'Engine' },
   { id: Ch.LOAD,     label: 'Engine load',short: 'LOAD',  unit: '%',    min: 0,   max: 100,   group: 'Engine' },
   { id: Ch.THROTTLE, label: 'Throttle',   short: 'THR',   unit: '%',    min: 0,   max: 100,   group: 'Engine' },
   { id: Ch.CMDTHR,   label: 'Cmd throttle',short:'CTHR',  unit: '%',    min: 0,   max: 100,   group: 'Engine' },
-  { id: Ch.BOOST,    label: 'Boost',      short: 'BOOST', unit: 'bar',  min: -1,  max: 2,     peak: 1.6,  group: 'Engine' },
-  { id: Ch.MAP_ABS,  label: 'Manifold press',short:'MAP', unit: 'kPa',  min: 0,   max: 255,   group: 'Engine' },
-  { id: Ch.MAF,      label: 'Air flow (MAF)',short:'MAF', unit: 'g/s',  min: 0,   max: 400,   group: 'Engine' },
+  { id: Ch.BOOST,    label: 'Boost',      short: 'BOOST', unit: 'bar',  min: -1,  max: 2,     peak: 1.6,  peakable: true, group: 'Engine' },
+  { id: Ch.MAP_ABS,  label: 'Manifold press',short:'MAP', unit: 'kPa',  min: 0,   max: 255,   peakable: true, group: 'Engine' },
+  { id: Ch.MAF,      label: 'Air flow (MAF)',short:'MAF', unit: 'g/s',  min: 0,   max: 400,   peakable: true, group: 'Engine' },
   { id: Ch.TIMING,   label: 'Spark advance',short:'ADV',  unit: '°',    min: -20, max: 50,    group: 'Engine' },
   { id: Ch.GEAR,     label: 'Gear (calc)',short: 'GEAR',  unit: '',     min: 0,   max: 8,     group: 'Engine' },
-  { id: Ch.ABSLOAD,  label: 'Absolute load',short:'ALOAD',unit: '%',    min: 0,   max: 250,   group: 'Engine' },
+  { id: Ch.ABSLOAD,  label: 'Absolute load',short:'ALOAD',unit: '%',    min: 0,   max: 250,   hidden: true, group: 'Engine' },
   { id: Ch.PEDAL,    label: 'Accelerator pedal',short:'PEDAL',unit:'%', min: 0,   max: 100,   group: 'Engine' },
-  { id: Ch.RELTHR,   label: 'Rel. throttle',short:'RTHR', unit: '%',    min: 0,   max: 100,   group: 'Engine' },
+  { id: Ch.RELTHR,   label: 'Rel. throttle',short:'RTHR', unit: '%',    min: 0,   max: 100,   hidden: true, group: 'Engine' },
   // Temps
-  { id: Ch.COOLANT,  label: 'Water temp', short: 'WTEMP', unit: '°C',   min: 40,  max: 120,   peak: 110,  group: 'Temps' },
-  { id: Ch.OILTEMP,  label: 'Oil temp',   short: 'OIL T', unit: '°C',   min: 40,  max: 150,   peak: 125,  group: 'Temps' },
+  { id: Ch.COOLANT,  label: 'Water temp', short: 'WTEMP', unit: '°C',   min: 40,  max: 120,   peak: 110,  peakable: true, group: 'Temps' },
+  { id: Ch.OILTEMP,  label: 'Oil temp',   short: 'OIL T', unit: '°C',   min: 40,  max: 150,   peak: 125,  peakable: true, group: 'Temps' },
   { id: Ch.INTAKE,   label: 'Intake air', short: 'IAT',   unit: '°C',   min: 0,   max: 90,    group: 'Temps' },
   { id: Ch.AMBIENT,  label: 'Ambient air',short: 'AMB',   unit: '°C',   min: -40, max: 50,    group: 'Temps' },
-  { id: Ch.CATTEMP,  label: 'Catalyst temp',short:'CAT',  unit: '°C',   min: -40, max: 1000,  peak: 900,  group: 'Temps' },
+  { id: Ch.CATTEMP,  label: 'Catalyst temp',short:'CAT',  unit: '°C',   min: -40, max: 1000,  peak: 900,  peakable: true, group: 'Temps' },
   // Fuel
   { id: Ch.FUELRATE, label: 'Fuel rate',  short: 'FUEL',  unit: 'L/h',  min: 0,   max: 40,    group: 'Fuel' },
   { id: Ch.FUELLVL,  label: 'Fuel level', short: 'FUEL%', unit: '%',    min: 0,   max: 100,   group: 'Fuel' },
   { id: Ch.STFT,     label: 'Short fuel trim',short:'STFT',unit: '%',   min: -25, max: 25,    group: 'Fuel' },
   { id: Ch.LTFT,     label: 'Long fuel trim',short:'LTFT', unit: '%',   min: -25, max: 25,    group: 'Fuel' },
   { id: Ch.AFR,      label: 'A/F ratio (cmd)',short:'A/F', unit: ':1',   min: 10,  max: 20,    group: 'Fuel' },
-  { id: Ch.LAMBDA,   label: 'Lambda (cmd)',short:'LAMBDA', unit: '',     min: 0.70,max: 1.30,  group: 'Fuel' },
+  { id: Ch.LAMBDA,   label: 'Lambda (cmd)',short:'LAMBDA', unit: '',     min: 0.70,max: 1.30,  hidden: true, group: 'Fuel' },
   { id: Ch.AFR_M,    label: 'A/F actual (wideband)',short:'AF ACT',unit:':1',min:10,max: 20,   group: 'Fuel' },
-  { id: Ch.LAMBDA_M, label: 'Lambda actual',short:'λ ACT', unit: '',     min: 0.70,max: 1.30,  group: 'Fuel' },
+  { id: Ch.LAMBDA_M, label: 'Lambda actual',short:'λ ACT', unit: '',     min: 0.70,max: 1.30,  hidden: true, group: 'Fuel' },
   { id: Ch.FRP,      label: 'Fuel rail pressure',short:'FRAIL',unit:'bar',min: 0,  max: 250,   group: 'Fuel' },
   // Electric
   { id: Ch.VOLT,     label: 'Voltage',    short: 'VOLTS', unit: 'V',    min: 10,  max: 16,    group: 'Electric' },
   { id: Ch.SOC,      label: 'Battery SOC',short: 'SOC',   unit: '%',    min: 0,   max: 100,   group: 'Electric' },
-  { id: Ch.MOTOR_TQ, label: 'Motor torque',short:'M.TQ', unit: 'Nm',   min: -500,max: 500,   group: 'Electric' },
+  { id: Ch.MOTOR_TQ, label: 'Motor torque',short:'M.TQ', unit: 'Nm',   min: -500,max: 500,   peakable: true, group: 'Electric' },
   // Power / Torque (VirtualDyno — physics from mass + acceleration; works on any car)
-  { id: Ch.PWR,      label: 'Power (dyno)',short:'PWR', unit: 'hp',   min: 0,   max: 600,   group: 'Power' },
-  { id: Ch.TQ,       label: 'Torque (dyno)',short:'TQ', unit: 'Nm',   min: 0,   max: 800,   group: 'Power' },
-  { id: Ch.ACCEL,    label: 'Accelerator (passive)',short:'GAS',unit:'%',min: 0, max: 100,   group: 'Engine' },
+  { id: Ch.PWR,      label: 'Power (dyno)',short:'PWR', unit: 'hp',   min: 0,   max: 600,   peakable: true, group: 'Power' },
+  { id: Ch.TQ,       label: 'Torque (dyno)',short:'TQ', unit: 'Nm',   min: 0,   max: 800,   peakable: true, group: 'Power' },
+  { id: Ch.ACCEL,    label: 'Accelerator (passive)',short:'GAS',unit:'%',min: 0, max: 100,   hidden: true, group: 'Engine' },
   { id: Ch.ECON,     label: 'Fuel economy (inst.)',short:'ECON',unit:'km/L',min:0,max: 30,   group: 'Fuel' },
   // legacy estimates (kept selectable; the dyno channels above are more accurate)
-  { id: Ch.WHP,      label: 'Wheel power (est.)',short:'WHP',unit:'hp', min: -100,max: 500,   group: 'Power' },
+  { id: Ch.WHP,      label: 'Wheel power (est.)',short:'WHP',unit:'hp', min: -100,max: 500,   hidden: true, group: 'Power' },
   // Trip / diagnostic
-  { id: Ch.BARO,     label: 'Barometric', short: 'BARO',  unit: 'kPa',  min: 0,   max: 130,   group: 'Trip' },
-  { id: Ch.RUNTIME,  label: 'Run time',   short: 'RUN',   unit: 's',    min: 0,   max: 65535, group: 'Trip' },
-  { id: Ch.DISTMIL,  label: 'Dist. MIL on',short:'dMIL',  unit: 'km',   min: 0,   max: 65535, group: 'Trip' },
-  { id: Ch.DISTCLR,  label: 'Dist. cleared',short:'dCLR', unit: 'km',   min: 0,   max: 65535, group: 'Trip' },
+  { id: Ch.BARO,     label: 'Barometric', short: 'BARO',  unit: 'kPa',  min: 0,   max: 130,   hidden: true, group: 'Trip' },
+  { id: Ch.RUNTIME,  label: 'Run time',   short: 'RUN',   unit: 's',    min: 0,   max: 65535, hidden: true, group: 'Trip' },
+  { id: Ch.DISTMIL,  label: 'Dist. MIL on',short:'dMIL',  unit: 'km',   min: 0,   max: 65535, hidden: true, group: 'Trip' },
+  { id: Ch.DISTCLR,  label: 'Dist. cleared',short:'dCLR', unit: 'km',   min: 0,   max: 65535, hidden: true, group: 'Trip' },
   { id: Ch.DTC,      label: 'Fault codes (count)',short:'DTC',unit: '',  min: 0,   max: 20,    group: 'Trip' },
 ];
 export function channelDef(id: number): ChannelDef | undefined {
