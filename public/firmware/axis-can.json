@@ -2,11 +2,11 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
-      "version": "0.33.0",
+      "version": "0.33.1",
       "date": "2026-07-23",
-      "notes": "New Oil pressure channel, plus the relay that lets the app configure a standalone-ECU CAN profile.",
-      "url": "firmware/axis_can_monitor-v0.33.0.bin",
-      "size_bytes": 1683888
+      "notes": "New Oil pressure channel, and the gauge now keeps working with a sensor that is running an older firmware version.",
+      "url": "firmware/axis_can_monitor-v0.33.1.bin",
+      "size_bytes": 1683904
     },
     {
       "version": "0.32.2",
@@ -584,13 +584,6 @@
     }
   ],
   "node": [
-    {
-      "version": "0.6.0",
-      "date": "2026-07-23",
-      "notes": "Reads aftermarket standalone ECUs (Haltech/Link/ECUMaster/Emtron/MAXXECU) via a configurable CAN profile; adds the Oil pressure channel.",
-      "url": "firmware/axis_can_node-v0.6.0.bin",
-      "size_bytes": 938224
-    },
     {
       "version": "0.5.23",
       "date": "2026-07-22",
