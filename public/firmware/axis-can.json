@@ -529,6 +529,13 @@
   ],
   "node": [
     {
+      "version": "0.5.23",
+      "date": "2026-07-22",
+      "notes": "VIN auto-ID now recognizes Porsche + Mini/Land Rover/Jaguar/Tesla/Mitsubishi/Suzuki/Peugeot/Citroen/Renault/Fiat/Alfa/Jeep/Ram (were Unknown).",
+      "url": "firmware/axis_can_node-v0.5.23.bin",
+      "size_bytes": 934544
+    },
+    {
       "version": "0.5.22",
       "date": "2026-07-18",
       "notes": "Vehicle Health now also reads pending + permanent fault codes (early-warning + must-fix-to-pass-inspection).",
