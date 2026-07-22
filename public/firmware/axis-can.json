@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.29.0",
+      "date": "2026-07-22",
+      "notes": "TUNER readout: name labels removed (value only), both values bigger.",
+      "url": "firmware/axis_can_monitor-v0.29.0.bin",
+      "size_bytes": 1674768
+    },
+    {
       "version": "0.28.2",
       "date": "2026-07-22",
       "notes": "TUNER arc stutter fix — the outer energy band now clips its fill like every other arc (~10x cheaper).",

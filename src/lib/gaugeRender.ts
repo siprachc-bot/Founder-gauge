@@ -416,24 +416,22 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   // ---- readout: TWO stacked values in one centred column (owner 2026-07-18).
   //      SECONDARY on top (small), PRIMARY at the bottom (big) — "readout หลัก
   //      อยู่ล่าง". pri = ch[2], sec = ch[3]; the tacho (ch[0]) no longer feeds it.
-  //      Faces converted em → cap, identical to ScreenGauge renderTuner:
-  //        sec label p6 · sec value p10 ×0.90 · pri label p6 ×1.13
-  //        pri value p13 ×1.19 · unit p6 ×1.13. Column pinned at TX=318 (the face
-  //        ends at x=409, so the value cannot move right).
+  //      ★ owner 2026-07-22: NO name labels — value only. Sizes converted px→cap
+  //      identical to ScreenGauge renderTuner (psionic20pt, yAdv=43, yAdv×scale≈px):
+  //        sec 40px → p20 ×0.93 @180 · pri 48px → p20 ×1.12 @240 · unit p6 ×1.13 @264.
+  //      Column pinned at TX=318 (the face ends at x=409, so the value cannot move right).
   // GEAR shows a representative 'D' here — the glass resolves the real P/R/N/D +
   // numeric sub-gear from live data, which a still preview has no source for.
   const tx = 318;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const roText = (m: ChanMeta) => (m.label.toUpperCase() === 'GEAR' ? 'D' : sample(m).text);
   if (mSec) {
-    ctx.fillStyle = '#7b828b'; setDevFont(ctx, 'p6');        ctx.fillText(mSec.label.toUpperCase(), tx, 192);
-    ctx.fillStyle = '#cdd2d8'; setDevFont(ctx, 'p10', 0.90); ctx.fillText(roText(mSec), tx, 214);
+    ctx.fillStyle = '#cdd2d8'; setDevFont(ctx, 'p20', 0.93); ctx.fillText(roText(mSec), tx, 180);
   }
   if (mPri) {
-    ctx.fillStyle = '#9aa0a8'; setDevFont(ctx, 'p6', 1.13);  ctx.fillText(mPri.label.toUpperCase(), tx, 232);
-    ctx.fillStyle = text;      setDevFont(ctx, 'p13', 1.19); ctx.fillText(roText(mPri), tx, 262);
+    ctx.fillStyle = text;      setDevFont(ctx, 'p20', 1.12); ctx.fillText(roText(mPri), tx, 240);
     if (mPri.label.toUpperCase() !== 'GEAR' && mPri.unit) {
-      ctx.fillStyle = '#8a939f'; setDevFont(ctx, 'p6', 1.13); ctx.fillText(mPri.unit, tx, 286);
+      ctx.fillStyle = '#8a939f'; setDevFont(ctx, 'p6', 1.13); ctx.fillText(mPri.unit, tx, 264);
     }
   }
 
