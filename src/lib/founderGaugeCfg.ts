@@ -26,6 +26,7 @@ const OTA_CHAR        = '7e1c0205-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // firmware OTA 
 const VER_CHAR        = '7e1c0206-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // read, 8-byte version report
 const LOG_CHAR        = '7e1c0207-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // drive-log pull: WRITE cmd → READ reply
 const GEAR_CHAR       = '7e1c0208-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // Push-A: 38-byte GearProfile relay → node
+const ECU_CHAR        = '7e1c0212-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // standalone-ECU profile relay → node
 const DTC_CHAR        = '7e1c020a-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // DTC: READ live code list, WRITE[0x01] clear
 const ACCEL_CHAR      = '7e1c020b-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // accel best-times blob (READ, ui::AccelTimes)
 const NLOG_CHAR       = '7e1c020c-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // node-log text pull (WRITE cmd → READ reply)
@@ -104,6 +105,8 @@ export enum Ch {
   ACCEL,                                              // 40 accelerator / driver demand % (passive 0x1FFF0140)
   PWR,                                                // 41 VirtualDyno crank power hp (any car)
   TQ,                                                 // 42 VirtualDyno crank torque Nm
+  // ---- SENSOR NODE: values no car exposes on OBD, read from a real sender ----
+  OILPRESS,                                           // 43 oil pressure bar (sensor node)
   COUNT,
 }
 // 0..3 ship on every gauge and are free. TUNER is the first PAID layout — the
@@ -209,6 +212,7 @@ export const CHANNELS: ChannelDef[] = [
   // Power / Torque (VirtualDyno — physics from mass + acceleration; works on any car)
   { id: Ch.PWR,      label: 'Power (dyno)',short:'PWR', unit: 'hp',   min: 0,   max: 600,   peakable: true, group: 'Power' },
   { id: Ch.TQ,       label: 'Torque (dyno)',short:'TQ', unit: 'Nm',   min: 0,   max: 800,   peakable: true, group: 'Power' },
+  { id: Ch.OILPRESS, label: 'Oil pressure', short:'OIL P', unit: 'bar', min: 0,  max: 10,    peakable: true, group: 'Engine' },
   { id: Ch.ACCEL,    label: 'Accelerator (passive)',short:'GAS',unit:'%',min: 0, max: 100,   hidden: true, group: 'Engine' },
   { id: Ch.ECON,     label: 'Fuel economy (inst.)',short:'ECON',unit:'km/L',min:0,max: 30,   group: 'Fuel' },
   // legacy estimates (kept selectable; the dyno channels above are more accurate)
@@ -564,6 +568,20 @@ export class MonitorBleClient {
    *  it with encodeGearProfile() from gearProfiles.ts. Resolves once the monitor
    *  NOTIFYs it relayed the blob (or after a short timeout — ESP-NOW is fire-and-
    *  forget, so the node's on-screen "gear profile set" log is the real proof). */
+  /**
+   * Push a standalone-ECU CAN profile to the node (char 7e1c0212). The profile is
+   * bigger than one packet, so it goes as 0xC4 chunks; the monitor relays each
+   * write verbatim over ESP-NOW and the node reassembles + persists it to NVS.
+   * Chunks are spaced because the node latches one at a time.
+   */
+  async setEcuProfile(chunks: Uint8Array[]): Promise<void> {
+    for (const c of chunks) {
+      await CapBle.write(this.deviceId, MON_SVC, ECU_CHAR,
+                         new DataView(c.buffer, c.byteOffset, c.byteLength));
+      await new Promise((r) => setTimeout(r, 60));   // let the node drain this chunk
+    }
+  }
+
   async setGearProfile(bytes: Uint8Array): Promise<void> {
     if (bytes.length !== 38) throw new Error(`gear profile must be 38 bytes, got ${bytes.length}`);
     let relayed: (() => void) | null = null;

@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.33.0",
+      "date": "2026-07-23",
+      "notes": "New Oil pressure channel, plus the relay that lets the app configure a standalone-ECU CAN profile.",
+      "url": "firmware/axis_can_monitor-v0.33.0.bin",
+      "size_bytes": 1683888
+    },
+    {
       "version": "0.32.2",
       "date": "2026-07-22",
       "notes": "CHRONO: the SN monogram is smaller and lower so it no longer overlaps the tick ring.",
@@ -577,6 +584,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.6.0",
+      "date": "2026-07-23",
+      "notes": "Reads aftermarket standalone ECUs (Haltech/Link/ECUMaster/Emtron/MAXXECU) via a configurable CAN profile; adds the Oil pressure channel.",
+      "url": "firmware/axis_can_node-v0.6.0.bin",
+      "size_bytes": 938224
+    },
     {
       "version": "0.5.23",
       "date": "2026-07-22",
