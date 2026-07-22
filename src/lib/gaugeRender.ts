@@ -95,12 +95,19 @@ function dim(hex: string, t: number): string {
   return `rgb(${Math.round(((n >> 16) & 255) * t)},${Math.round(((n >> 8) & 255) * t)},${Math.round((n & 255) * t)})`;
 }
 // A representative reading + its format, from the channel's range (0.62 of span).
-function sample(m: ChanMeta): { frac: number; text: string; unit: string; label: string } {
-  const frac = 0.62;
-  const v = m.min + frac * (m.max - m.min);
+// ★ center-zero (owner 2026-07-22): a SIGNED channel (min<0 — boost, motor torque,
+// fuel trim) is drawn center-zero via SPLIT-HALF scaling — 0 sits at frac 0.5 and
+// `zero` (the fill origin) is 0.5 too, so the fill/indicator swings both ways from
+// centre. Unipolar channels (min>=0) are unchanged (zero = 0 = the min end).
+function sample(m: ChanMeta): { frac: number; zero: number; text: string; unit: string; label: string } {
+  const pos = 0.62;                                        // representative position in the linear range
+  const v = m.min + pos * (m.max - m.min);
   const span = m.max - m.min;
   const txt = span <= 3 ? v.toFixed(2) : span <= 25 ? v.toFixed(1) : String(Math.round(v / 10) * 10);
-  return { frac, text: txt, unit: m.unit, label: m.label.toUpperCase() };
+  const bipolar = m.min < 0;
+  const frac = bipolar ? clamp(0.5 + 0.5 * (v >= 0 ? v / m.max : v / -m.min), 0, 1) : pos;
+  const zero = bipolar ? 0.5 : 0;
+  return { frac, zero, text: txt, unit: m.unit, label: m.label.toUpperCase() };
 }
 
 export function renderGaugePreview(
@@ -132,8 +139,9 @@ export function renderGaugePreview(
       ctx.fillStyle = TRACK; roundRect(ctx, bx, y - 7, bw, 14, 7);
       if (m) {
         const s = sample(m);
+        const flo = Math.min(s.frac, s.zero), fhi = Math.max(s.frac, s.zero);   // ★ fill zero→value
         ctx.save(); ctx.shadowColor = arc; ctx.shadowBlur = 8;
-        ctx.fillStyle = arc; roundRect(ctx, bx, y - 7, bw * s.frac, 14, 7); ctx.restore();
+        ctx.fillStyle = arc; roundRect(ctx, bx + bw * flo, y - 7, bw * (fhi - flo), 14, 7); ctx.restore();
         ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';  // device: bottom_right
         ctx.fillStyle = text; setDevFont(ctx, 'p13');
         ctx.fillText(s.text + (s.unit ? ' ' + s.unit : ''), bx + bw, y - 10);
@@ -253,8 +261,9 @@ export function renderGaugePreview(
   band(ctx, 196, 13, A0, A1, TRACK);
   if (m0) {
     const s = sample(m0);
+    const az = A0 + (A1 - A0) * s.zero, af = A0 + (A1 - A0) * s.frac;   // ★ fill zero→value
     ctx.save(); ctx.shadowColor = arc; ctx.shadowBlur = 10;
-    band(ctx, 196, 13, A0, A0 + (A1 - A0) * s.frac, arc); ctx.restore();
+    band(ctx, 196, 13, Math.min(az, af), Math.max(az, af), arc); ctx.restore();
     // ScreenGauge renderHero — every datum on the device is middle_center
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = LBL; setDevFont(ctx, 'p10');
@@ -443,8 +452,12 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
   band(ctx, R_W, H_W, WIDE, NA1, '#12262e');
   const fa = NA0 + (NA1 - NA0) * fArc;
   if (mArc) {
-    band(ctx, R_N, H_N, NA0, Math.min(fa, WIDE), arc);
-    if (fa > WIDE) band(ctx, R_W, H_W, WIDE, fa, arc);
+    const z0 = NA0 + (NA1 - NA0) * sample(mArc).zero;        // ★ center-zero fill origin
+    const lo = Math.min(z0, fa), hi = Math.max(z0, fa);       // fill spans zero→value
+    if (hi > lo) {
+      if (lo < WIDE) band(ctx, R_N, H_N, lo, Math.min(hi, WIDE), arc);
+      if (hi > WIDE) band(ctx, R_W, H_W, Math.max(lo, WIDE), hi, arc);
+    }
   }
   if (mArc) {
     const s = sample(mArc), str = s.label + ' ' + s.text;
