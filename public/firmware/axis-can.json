@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.32.1",
+      "date": "2026-07-22",
+      "notes": "CHRONO: the STALE badge no longer sits on top of the SN monogram.",
+      "url": "firmware/axis_can_monitor-v0.32.1.bin",
+      "size_bytes": 1682976
+    },
+    {
       "version": "0.32.0",
       "date": "2026-07-22",
       "notes": "New REGENT + CHRONO gauge styles (fine-instrument dial + chronograph) with thin Psionic numerals; CHRONO has a settable, auto-muted background.",
