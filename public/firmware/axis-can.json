@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.28.2",
+      "date": "2026-07-22",
+      "notes": "TUNER arc stutter fix — the outer energy band now clips its fill like every other arc (~10x cheaper).",
+      "url": "firmware/axis_can_monitor-v0.28.2.bin",
+      "size_bytes": 1674912
+    },
+    {
       "version": "0.28.1",
       "date": "2026-07-18",
       "notes": "Vehicle Health card now shows pending + permanent fault codes.",
