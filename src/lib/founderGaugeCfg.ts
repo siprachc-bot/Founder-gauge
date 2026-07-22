@@ -77,7 +77,7 @@ export interface CarId { make: string; year: number; detected: boolean; }
 /** Vehicle Health / I-M readiness (char 7e1c0211), from Mode-01 PID 01. `received`
  *  = the sensor has read it off a live car; `milOn` = check-engine lamp; `dtc` =
  *  confirmed emission code count; monReady/monSupported = readiness monitors. */
-export interface VehicleHealth { received: boolean; milOn: boolean; dtc: number; monSupported: number; monReady: number; }
+export interface VehicleHealth { received: boolean; milOn: boolean; dtc: number; monSupported: number; monReady: number; pending: number; permanent: number; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -1018,13 +1018,15 @@ export class MonitorBleClient {
    *  is false until the sensor decodes PID 01 off a live car. */
   async readHealth(): Promise<VehicleHealth> {
     const v = await CapBle.read(this.deviceId, MON_SVC, HEALTH_CHAR);
-    if (v.byteLength < 5) return { received: false, milOn: false, dtc: 0, monSupported: 0, monReady: 0 };
+    if (v.byteLength < 5) return { received: false, milOn: false, dtc: 0, monSupported: 0, monReady: 0, pending: 0, permanent: 0 };
     return {
       received: v.getUint8(0) === 1,
       milOn: v.getUint8(1) === 1,
       dtc: v.getUint8(2),
       monSupported: v.getUint8(3),
       monReady: v.getUint8(4),
+      pending: v.byteLength >= 7 ? v.getUint8(5) : 0,
+      permanent: v.byteLength >= 7 ? v.getUint8(6) : 0,
     };
   }
 

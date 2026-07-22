@@ -547,7 +547,8 @@
   // "Ready for inspection": no MIL, no stored codes, every supported monitor complete.
   let healthReady = $derived(
     health?.received
-      ? !health.milOn && health.dtc === 0 && health.monSupported > 0 && health.monReady >= health.monSupported
+      ? !health.milOn && health.dtc === 0 && health.permanent === 0
+          && health.monSupported > 0 && health.monReady >= health.monSupported
       : false,
   );
   $effect(() => { if (!demo && store.monClient && health === null) readHealth(); });
@@ -1457,6 +1458,8 @@
         <div class="lp-list" style="margin-top:8px;">
           <div class="lp-row"><span>Check-engine lamp</span><b>{health.milOn ? 'ON ⚠' : 'off'}</b></div>
           <div class="lp-row"><span>Stored fault codes</span><b>{health.dtc}</b></div>
+          {#if health.pending > 0}<div class="lp-row"><span>Pending codes <span class="hint">early warning</span></span><b>{health.pending}</b></div>{/if}
+          {#if health.permanent > 0}<div class="lp-row"><span>Permanent codes <span class="hint">must fix to pass</span></span><b>⚠ {health.permanent}</b></div>{/if}
           <div class="lp-row"><span>Readiness monitors</span><b>{health.monReady}/{health.monSupported} ready</b></div>
         </div>
         {#if !healthReady && health.monSupported > 0 && health.monReady < health.monSupported}

@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.28.1",
+      "date": "2026-07-18",
+      "notes": "Vehicle Health card now shows pending + permanent fault codes.",
+      "url": "firmware/axis_can_monitor-v0.28.1.bin",
+      "size_bytes": 1674816
+    },
+    {
       "version": "0.28.0",
       "date": "2026-07-18",
       "notes": "Relays the Vehicle Health / inspection-readiness summary to the app.",
@@ -521,6 +528,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.22",
+      "date": "2026-07-18",
+      "notes": "Vehicle Health now also reads pending + permanent fault codes (early-warning + must-fix-to-pass-inspection).",
+      "url": "firmware/axis_can_node-v0.5.22.bin",
+      "size_bytes": 934080
+    },
     {
       "version": "0.5.21",
       "date": "2026-07-18",
