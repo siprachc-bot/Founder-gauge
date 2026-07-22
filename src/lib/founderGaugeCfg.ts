@@ -32,7 +32,8 @@ const NLOG_CHAR       = '7e1c020c-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // node-log text
 const CAN_CHAR        = '7e1c020d-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // raw CAN-log pull + capture start/stop
 const EXH_CHAR        = '7e1c020e-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // exhaust valve control (READ status | WRITE cmd)
 const AS_CHAR         = '7e1c020f-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // anti-sleep "take a break" config (READ | WRITE)
-const CAR_CHAR        = '7e1c0210-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // car-ID (READ: make/year/VIN, node-decoded from the VIN)
+const CAR_CHAR        = '7e1c0210-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // car-ID (READ: make/year, node-decoded from the VIN)
+const HEALTH_CHAR     = '7e1c0211-9b3a-4f8e-8a5b-9d2e1f3a7c6d'; // vehicle health (READ: I/M readiness summary)
 const OTA_CHUNK       = 224;   // MUST match the monitor's ESP-NOW relay chunk (OtaTx CHUNK)
 
 // OTA targets — byte 1 of the BEGIN packet. Must match OtaTx::Tgt on the monitor.
@@ -73,6 +74,10 @@ export interface AntiSleepCfg { enabled: boolean; intervalMin: number; restMin: 
  *  node has read + decoded a VIN; make/year come from the WMI + 10th VIN char.
  *  The VIN itself is NEVER transmitted or exposed (privacy) — only make/year. */
 export interface CarId { make: string; year: number; detected: boolean; }
+/** Vehicle Health / I-M readiness (char 7e1c0211), from Mode-01 PID 01. `received`
+ *  = the sensor has read it off a live car; `milOn` = check-engine lamp; `dtc` =
+ *  confirmed emission code count; monReady/monSupported = readiness monitors. */
+export interface VehicleHealth { received: boolean; milOn: boolean; dtc: number; monSupported: number; monReady: number; }
 export const verStr = (v: FwVersion | null | undefined) =>
   v ? `v${v.major}.${v.minor}.${v.patch}` : 'unknown';
 /** Compare two version triples: >0 if a newer than b, 0 equal, <0 older. */
@@ -1007,6 +1012,20 @@ export class MonitorBleClient {
     for (let i = 0; i < 12; i++) { const ch = v.getUint8(2 + i); if (!ch) break; make += String.fromCharCode(ch); }
     const year = v.getUint16(0, true);
     return { make, year, detected: year > 0 || make.length > 0 };
+  }
+
+  /** Read the vehicle-health / I-M readiness summary (char 7e1c0211). `received`
+   *  is false until the sensor decodes PID 01 off a live car. */
+  async readHealth(): Promise<VehicleHealth> {
+    const v = await CapBle.read(this.deviceId, MON_SVC, HEALTH_CHAR);
+    if (v.byteLength < 5) return { received: false, milOn: false, dtc: 0, monSupported: 0, monReady: 0 };
+    return {
+      received: v.getUint8(0) === 1,
+      milOn: v.getUint8(1) === 1,
+      dtc: v.getUint8(2),
+      monSupported: v.getUint8(3),
+      monReady: v.getUint8(4),
+    };
   }
 
   /** Write the anti-sleep config (persists in NVS on the gauge). */

@@ -21,7 +21,7 @@
     UC_COUNT, UNIT_OPTIONS, UNITS_METRIC, UNITS_IMPERIAL,
     OTA_TARGET_NODE, OTA_TARGET_MONITOR,
     type GaugeCfg, type DeviceVersions, type FwVersion, type AccelTimes,
-    type ExhaustStatus, type AntiSleepCfg, type CarId,
+    type ExhaustStatus, type AntiSleepCfg, type CarId, type VehicleHealth,
   } from '../lib/founderGaugeCfg';
   import {
     fetchCanManifest, latest, downloadFirmware, parseVer,
@@ -533,6 +533,24 @@
   );
   // Auto-read the detected car once when a gauge is connected.
   $effect(() => { if (!demo && store.monClient && carId === null) readDetectedCar(); });
+
+  // ---- Vehicle Health: emissions I/M readiness (char 7e1c0211) ----
+  let health     = $state<VehicleHealth | null>(null);
+  let healthBusy = $state(false);
+  async function readHealth() {
+    if (demo || !store.monClient || healthBusy) return;
+    healthBusy = true;
+    try { health = await store.monClient.readHealth(); }
+    catch { health = null; }
+    finally { healthBusy = false; }
+  }
+  // "Ready for inspection": no MIL, no stored codes, every supported monitor complete.
+  let healthReady = $derived(
+    health?.received
+      ? !health.milOn && health.dtc === 0 && health.monSupported > 0 && health.monReady >= health.monSupported
+      : false,
+  );
+  $effect(() => { if (!demo && store.monClient && health === null) readHealth(); });
 
   /** Send the selected car's gear-decode profile to the node (via the monitor). */
   async function sendGearProfile() {
@@ -1424,6 +1442,39 @@
     </details>
   {/if}
 
+  <!-- Vehicle Health — emissions I/M readiness (Mode-01 PID 01). "Will it pass?" -->
+  {#if !demo}
+    <div class="card">
+      <div class="bright-head"><span class="lbl">Vehicle health</span></div>
+      <p class="sub dim" style="margin-top:4px;">
+        Emissions readiness — a quick “will it pass an inspection?” check straight off
+        the car's computer.
+      </p>
+      {#if health?.received}
+        <div class="health-verdict" class:ok={healthReady} class:bad={!healthReady}>
+          {healthReady ? '✓ Ready for inspection' : '✗ Not ready yet'}
+        </div>
+        <div class="lp-list" style="margin-top:8px;">
+          <div class="lp-row"><span>Check-engine lamp</span><b>{health.milOn ? 'ON ⚠' : 'off'}</b></div>
+          <div class="lp-row"><span>Stored fault codes</span><b>{health.dtc}</b></div>
+          <div class="lp-row"><span>Readiness monitors</span><b>{health.monReady}/{health.monSupported} ready</b></div>
+        </div>
+        {#if !healthReady && health.monSupported > 0 && health.monReady < health.monSupported}
+          <p class="sub dim" style="margin-top:6px;font-size:11px;">
+            {health.monSupported - health.monReady} monitor(s) incomplete — drive a full warm-up/cool-down cycle, then re-check.
+          </p>
+        {/if}
+      {:else}
+        <div class="detected-car dc-none">
+          <span class="sub dim">No reading yet — plug the sensor in with the engine on.</span>
+          <button class="ghost dc-use" onclick={readHealth} disabled={healthBusy}>
+            {healthBusy ? 'Checking…' : 'Check now'}
+          </button>
+        </div>
+      {/if}
+    </div>
+  {/if}
+
   <!-- Push-A: real gear — pick the car so the sensor reads the TRUE selector -->
   {#if !demo}
     <div class="card">
@@ -1817,6 +1868,9 @@
                   background: var(--bg-accent, rgba(120,160,255,0.08)); font-size: 14px; }
   .detected-car.dc-none { background: transparent; padding: 6px 0; }
   .dc-use { margin-left: auto; }
+  .health-verdict { padding: 8px 12px; border-radius: var(--radius, 8px); font-weight: 600; text-align: center; }
+  .health-verdict.ok  { background: var(--bg-success, rgba(60,180,90,0.12));  color: var(--text-success, #3cb45a); }
+  .health-verdict.bad { background: var(--bg-warning, rgba(230,160,40,0.12)); color: var(--text-warning, #e0a028); }
   .car-select {
     width: 100%; margin: var(--s-2) 0;
     padding: 8px 10px; border-radius: var(--r-1);

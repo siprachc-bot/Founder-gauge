@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.28.0",
+      "date": "2026-07-18",
+      "notes": "Relays the Vehicle Health / inspection-readiness summary to the app.",
+      "url": "firmware/axis_can_monitor-v0.28.0.bin",
+      "size_bytes": 1674704
+    },
+    {
       "version": "0.27.1",
       "date": "2026-07-18",
       "notes": "Privacy: the car-ID feature now shows make + year only; the VIN is never transmitted.",
@@ -514,6 +521,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.21",
+      "date": "2026-07-18",
+      "notes": "Vehicle Health: reads the emissions readiness monitors so the app can show a 'ready for inspection' check.",
+      "url": "firmware/axis_can_node-v0.5.21.bin",
+      "size_bytes": 933824
+    },
     {
       "version": "0.5.20",
       "date": "2026-07-18",
