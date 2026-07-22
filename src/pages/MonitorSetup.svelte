@@ -183,29 +183,32 @@
   //   BARS = 4 bars · HERO = big + support · NEEDLE = 2 hands · TICKS = ring + a
   //   short outer tick for the 2nd value (the RING itself stays single-value) ·
   //   TUNER = dot tacho + arc + a two-line readout (primary + secondary) = 4.
-  const slotsUsed = (l: Layout) => (l === Layout.BARS || l === Layout.TUNER) ? 4 : 2;
+  const slotsUsed = (l: Layout) => (l === Layout.BARS || l === Layout.TUNER) ? 4 : l === Layout.REGENT ? 1 : 2;
   const SLOT_NAMES: Record<number, string[]> = {
     [Layout.HERO]:   ['Big value', 'Small value'],
     [Layout.BARS]:   ['Bar 1', 'Bar 2', 'Bar 3', 'Bar 4'],
     [Layout.NEEDLE]: ['Long needle', 'Short needle'],
     [Layout.TICKS]:  ['Lit ticks', 'Outer tick (2nd value)'],
     [Layout.TUNER]:  ['RPM dot (tacho)', 'Energy arc', 'Readout — main (big)', 'Readout — sub (small)'],
+    [Layout.REGENT]: ['Needle + value'],
+    [Layout.CHRONO]: ['Main dial', 'Sub-dial'],
   };
   // Layouts that use the page's SECOND colour. Note it means different things:
   // on NEEDLE/TICKS it colours the 2nd VALUE, but TUNER has no second indicator —
   // it spends the field on the honeycomb behind the face, which the sim proved
   // has to be independent of the accent or the dial reads as one flat colour.
   const has2ndColor = (l: Layout) =>
-    l === Layout.NEEDLE || l === Layout.TICKS || l === Layout.TUNER;
+    l === Layout.NEEDLE || l === Layout.TICKS || l === Layout.TUNER || l === Layout.CHRONO;
   const color2Title = (l: Layout) =>
     l === Layout.NEEDLE ? 'Short-needle colour'
     : l === Layout.TUNER ? 'Honeycomb colour'
+    : l === Layout.CHRONO ? 'Background colour'
     : '2nd-value tick colour';
 
   // Layouts offered in the picker. 0..3 ship on every gauge; TUNER is the store's
   // first PAID layout and the first that a gauge might be unable to draw at all.
   // (Its gates live with the other firmware gates, below — they need devVers.)
-  const LAYOUT_CHOICES = [Layout.HERO, Layout.BARS, Layout.NEEDLE, Layout.TICKS, Layout.TUNER];
+  const LAYOUT_CHOICES = [Layout.HERO, Layout.BARS, Layout.NEEDLE, Layout.TICKS, Layout.TUNER, Layout.REGENT, Layout.CHRONO];
 
   // ---- per-page arc colour (custom picker, no preset lock-in) ----
   const pageHex = (i: number) => rgb565ToHex(cfg.pages[i].arcColor ?? ARC_DEFAULT);
@@ -284,15 +287,34 @@
   // (demo / not read yet) = open, so the look can still be judged.
   const TUNER_MIN: FwVersion = { major: 0, minor: 25, patch: 0 };
   const monDrawsTuner = $derived(!devVers?.monitor || verCmp(devVers.monitor, TUNER_MIN) >= 0);
+  // REGENT — the second PAID layout (coachbuilt fine-instrument dial). Same two-gate
+  // shape as Tuner: the gauge must run the firmware that draws it (v0.31.0), and the
+  // buyer must own it. Unknown version (demo / not read) = open, so the look shows.
+  const REGENT_MIN: FwVersion = { major: 0, minor: 31, patch: 0 };
+  const monDrawsRegent = $derived(!devVers?.monitor || verCmp(devVers.monitor, REGENT_MIN) >= 0);
+  // CHRONO — third paid layout (REGENT DNA as a chronograph). Gauge must run v0.32.0.
+  const CHRONO_MIN: FwVersion = { major: 0, minor: 32, patch: 0 };
+  const monDrawsChrono = $derived(!devVers?.monitor || verCmp(devVers.monitor, CHRONO_MIN) >= 0);
   // Two INDEPENDENT gates, and the hint must say WHICH one is shut — a bare
   // "locked" would send someone to the Store to re-buy a theme they already own.
   const layGated = (l: Layout) =>
-    l === Layout.TUNER && (!store.isOwned('tuner') || !monDrawsTuner);
+    (l === Layout.TUNER  && (!store.isOwned('tuner')  || !monDrawsTuner)) ||
+    (l === Layout.REGENT && (!store.isOwned('regent') || !monDrawsRegent)) ||
+    (l === Layout.CHRONO && (!store.isOwned('chrono') || !monDrawsChrono));
   const layHint = (l: Layout) =>
-    l !== Layout.TUNER ? ''
-    : !store.isOwned('tuner') ? 'Tuner — get it in the Store tab'
-    : !monDrawsTuner ? `Tuner needs gauge ${verStr(TUNER_MIN)} — update it under Firmware below`
-    : 'Tuner';
+    l === Layout.TUNER
+      ? (!store.isOwned('tuner') ? 'Tuner — get it in the Store tab'
+        : !monDrawsTuner ? `Tuner needs gauge ${verStr(TUNER_MIN)} — update it under Firmware below`
+        : 'Tuner')
+    : l === Layout.REGENT
+      ? (!store.isOwned('regent') ? 'Regent — get it in the Store tab'
+        : !monDrawsRegent ? `Regent needs gauge ${verStr(REGENT_MIN)} — update it under Firmware below`
+        : 'Regent')
+    : l === Layout.CHRONO
+      ? (!store.isOwned('chrono') ? 'Chrono — get it in the Store tab'
+        : !monDrawsChrono ? `Chrono needs gauge ${verStr(CHRONO_MIN)} — update it under Firmware below`
+        : 'Chrono')
+    : '';
   // A page already set to TUNER (the Store's Apply does exactly that) on a gauge
   // that can't draw it: saving would silently hand back HERO. Flag it instead.
   const tunerStale = $derived(!monDrawsTuner && cfg.pages

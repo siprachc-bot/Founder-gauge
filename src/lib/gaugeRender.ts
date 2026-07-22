@@ -89,6 +89,10 @@ export function ensureGaugeFont(): Promise<unknown> {
   return fontReady;
 }
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const hexA = (hex: string, a: number): string => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+};
 
 function dim(hex: string, t: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -253,6 +257,8 @@ export function renderGaugePreview(
   }
 
   if (page.layout === 4) { renderTuner(ctx, page, chan); return; }   // ---- TUNER (paid) ----
+  if (page.layout === 5) { renderRegent(ctx, page, chan); return; }  // ---- REGENT (paid) ----
+  if (page.layout === 6) { renderChrono(ctx, page, chan); return; }  // ---- CHRONO (paid) ----
 
   // ---- HERO (default) ----
   band(ctx, 196, 13, A0, A1, TRACK);
@@ -462,6 +468,119 @@ function renderTuner(ctx: CanvasRenderingContext2D, page: PagePreview, chan: Cha
 function band(ctx: CanvasRenderingContext2D, rmid: number, half: number, a0: number, a1: number, col: string) {
   ctx.strokeStyle = col; ctx.lineWidth = 2 * half; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.arc(CX, CY, rmid, a0 * D, a1 * D, false); ctx.stroke();
+}
+
+// ★ REGENT — coachbuilt fine-instrument dial (mirror of ScreenGauge renderRegent +
+//    sim themes.html). Fanned fine ticks fading to the rim, cardinal majors at
+//    9/12/3, a thin compass needle from a small pivot, value low at the bottom.
+//    (The preview omits the SN monogram — it has no logo asset; the glass draws it.)
+function renderRegent(ctx: CanvasRenderingContext2D, page: PagePreview, chan: ChanLookup): void {
+  const m = chan(page.ch[0]);
+  const arc = page.arc, text = page.text;
+  const A0 = 135, A1 = 405, RO = 182, RRIM = 228, NMIN = 90;
+  const s = m ? sample(m) : null;
+  const f = s ? s.frac : 0;
+
+  // face + soft accent heat glow behind the pivot
+  ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(CX, CY, 231, 0, 2 * Math.PI); ctx.fill();
+  const gl = ctx.createRadialGradient(CX, CY - 30, 15, CX, CY - 30, 230);
+  gl.addColorStop(0, hexA(arc, 0.13));
+  gl.addColorStop(0.55, hexA(arc, 0.04));
+  gl.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(CX, CY, 231, 0, 2 * Math.PI); ctx.fill();
+
+  // fine minors — full length to the rim, fading out
+  for (let i = 0; i <= NMIN; i++) {
+    const a = (A0 + (A1 - A0) * i / NMIN) * D, c = Math.cos(a), sn = Math.sin(a);
+    const x0 = CX + c * (RO - 9), y0 = CY + sn * (RO - 9), x1 = CX + c * RRIM, y1 = CY + sn * RRIM;
+    const lg = ctx.createLinearGradient(x0, y0, x1, y1);
+    lg.addColorStop(0, 'rgba(150,158,168,0.42)');
+    lg.addColorStop(1, 'rgba(150,158,168,0)');
+    ctx.strokeStyle = lg; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  }
+  // majors at 9 / 12 / 3
+  for (const deg of [180, 270, 360]) {
+    const a = deg * D, c = Math.cos(a), sn = Math.sin(a);
+    ctx.strokeStyle = arc; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(CX + c * (RO - 9), CY + sn * (RO - 9)); ctx.lineTo(CX + c * RRIM, CY + sn * RRIM); ctx.stroke();
+  }
+
+  // thin compass needle-bar + short tail
+  { const a = (A0 + (A1 - A0) * f) * D, c = Math.cos(a), sn = Math.sin(a), TIP = 168, TAIL = 22;
+    ctx.strokeStyle = '#e9ecef'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(CX - c * TAIL, CY - sn * TAIL); ctx.lineTo(CX + c * TIP, CY + sn * TIP); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(120,128,138,0.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(CX, CY, 7, 0, 2 * Math.PI); ctx.stroke();
+
+  // value low at the bottom + unit
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (s) {
+    ctx.fillStyle = text; setDevFont(ctx, 'p20', 47 / 43); ctx.fillText(s.text, CX, CY + 190);
+    ctx.fillStyle = MUT; setDevFont(ctx, 'p6'); ctx.fillText((s.unit || '').toUpperCase(), CX, CY + 222);
+  } else {
+    ctx.fillStyle = MUT; setDevFont(ctx, 'p20'); ctx.fillText('—', CX, CY);
+  }
+}
+
+// ★ CHRONO — REGENT DNA as a chronograph (mirror of ScreenGauge renderChrono + sim).
+//    Big main dial + a BORDERLESS sub-dial sharing the main face; the ONLY layout with
+//    a settable background (page.col2): achromatic passes, chromatic → 25% pale tint,
+//    elements flip dark-on-light. Owner-tuned constants baked in.
+function chBg(c565: number): { css: string; light: boolean } {
+  let r = Math.round(((c565 >> 11) & 0x1f) * 255 / 31), g = Math.round(((c565 >> 5) & 0x3f) * 255 / 63), b = Math.round((c565 & 0x1f) * 255 / 31);
+  if (Math.max(r, g, b) - Math.min(r, g, b) > 16) { r = 191 + (r >> 2); g = 191 + (g >> 2); b = 191 + (b >> 2); }
+  return { css: `rgb(${r},${g},${b})`, light: (0.299 * r + 0.587 * g + 0.114 * b) > 128 };
+}
+function chronoDial(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number, f: number,
+                    needleW: number, majors: boolean, minorRGB: string, major: string,
+                    needle: string, pivot: string): void {
+  const A0 = 135, A1 = 405, big = R > 120;
+  const RIN = big ? R - 9 : R - 14, RRIM = big ? R + 46 : R + 2, NMIN = big ? 90 : 54;
+  for (let i = 0; i <= NMIN; i++) {
+    const a = (A0 + (A1 - A0) * i / NMIN) * D, c = Math.cos(a), s = Math.sin(a);
+    const x0 = cx + c * RIN, y0 = cy + s * RIN, x1 = cx + c * RRIM, y1 = cy + s * RRIM;
+    const lg = ctx.createLinearGradient(x0, y0, x1, y1);
+    lg.addColorStop(0, `rgba(${minorRGB},0.42)`); lg.addColorStop(1, `rgba(${minorRGB},0)`);
+    ctx.strokeStyle = lg; ctx.lineWidth = big ? 1.5 : 1; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  }
+  if (majors) for (const deg of [180, 270, 360]) {
+    const a = deg * D, c = Math.cos(a), s = Math.sin(a);
+    ctx.strokeStyle = major; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx + c * RIN, cy + s * RIN); ctx.lineTo(cx + c * RRIM, cy + s * RRIM); ctx.stroke();
+  }
+  const a = (A0 + (A1 - A0) * f) * D, c = Math.cos(a), s = Math.sin(a);
+  ctx.strokeStyle = needle; ctx.lineWidth = needleW; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(cx - c * R * 0.12, cy - s * R * 0.12); ctx.lineTo(cx + c * R * 0.9, cy + s * R * 0.9); ctx.stroke();
+  ctx.strokeStyle = pivot; ctx.lineWidth = big ? 1.5 : 1;
+  ctx.beginPath(); ctx.arc(cx, cy, big ? 7 : 4, 0, 2 * Math.PI); ctx.stroke();
+}
+function renderChrono(ctx: CanvasRenderingContext2D, page: PagePreview, chan: ChanLookup): void {
+  const mM = chan(page.ch[0]), mS = chan(page.ch[1]);
+  const bg = chBg(page.col2 || 0);
+  const light = bg.light;
+  const tint = page.arc;
+  const minorRGB = light ? '70,76,84' : '150,158,168';
+  const needle = light ? '#20242a' : '#e9ecef', pivot = light ? '#3c424a' : '#788088';
+  const inkText = light ? '#14171b' : page.text, inkSub = light ? '#20242a' : '#e9ecef', inkUnit = light ? '#5a616b' : '#8a939f';
+  // face + glow
+  ctx.fillStyle = bg.css; ctx.beginPath(); ctx.arc(CX, CY, 231, 0, 2 * Math.PI); ctx.fill();
+  const gl = ctx.createRadialGradient(CX, CY - 40, 15, CX, CY - 40, 240);
+  gl.addColorStop(0, hexA(tint, light ? 0.06 : 0.12)); gl.addColorStop(0.55, hexA(tint, light ? 0.02 : 0.04)); gl.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(CX, CY, 231, 0, 2 * Math.PI); ctx.fill();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // main dial + value (thin ~ p20 scaled; the glass uses the real thin font)
+  chronoDial(ctx, CX, CY - 16, 166, mM ? sample(mM).frac : 0, 2.5, true, minorRGB, tint, needle, pivot);
+  if (mM) { const s = sample(mM);
+    ctx.fillStyle = inkText; setDevFont(ctx, 'p20', 35 / 43); ctx.fillText(s.text, CX, CY - 74);
+    ctx.fillStyle = inkUnit; setDevFont(ctx, 'p6'); ctx.fillText((s.unit || '').toUpperCase(), CX, CY - 48); }
+  // sub-dial (borderless) + value
+  const sx = CX, sy = CY + 142, SR = 91;
+  chronoDial(ctx, sx, sy, SR, mS ? sample(mS).frac : 0, 2, false, minorRGB, tint, needle, pivot);
+  if (mS) { const s = sample(mS);
+    ctx.fillStyle = inkSub; setDevFont(ctx, 'p20', 30 / 43); ctx.fillText(s.text, sx, sy + 45);
+    ctx.fillStyle = inkUnit; setDevFont(ctx, 'p6'); ctx.fillText((s.unit || '').toUpperCase(), sx, sy + 65); }
 }
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   if (w <= 0) return; r = Math.min(r, h / 2, w / 2);

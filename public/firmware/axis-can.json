@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.32.0",
+      "date": "2026-07-22",
+      "notes": "New REGENT + CHRONO gauge styles (fine-instrument dial + chronograph) with thin Psionic numerals; CHRONO has a settable, auto-muted background.",
+      "url": "firmware/axis_can_monitor-v0.32.0.bin",
+      "size_bytes": 1682976
+    },
+    {
       "version": "0.30.1",
       "date": "2026-07-22",
       "notes": "Center-zero corrected: the fill runs from the start; the scale is expanded so 0 sits at the middle (signed channels).",

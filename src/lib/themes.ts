@@ -32,6 +32,18 @@ export const isFree = (t: GaugeTheme): boolean => themePrice(t) <= 0;
 // word: an artwork the gauge cannot draw until it is bought.
 const CYAN = 0x3E5D;   // #3FC8E8  TUNER's accent, from the sim
 const STEEL = 0x39C9;  // #39404A  honeycomb — its OWN colour, not tied to the accent
+const GOLD = 0xCD09;   // #C9A24A  the SN CI gold — REGENT's accent
+
+// REGENT is a ONE-value dial (owner 2026-07-22): the needle + big number both
+// follow ch[0]; the other slots are unused. Accent = SN gold, value text = white.
+const REGENT = (ch: number): ThemePage =>
+  ({ layout: Layout.REGENT, ch: [ch, 0, 0, 0, 0], arc: GOLD, text: WHITE });
+
+// CHRONO = REGENT as a chronograph: main (ch[0]) + a borderless sub-dial (ch[1]).
+// col2 carries the settable BACKGROUND (0 = black). Achromatic passes; a chromatic
+// bg mutes to a pale 25% tint on the gauge, elements flip dark-on-light.
+const CHRONO = (main: number, sub: number, bg = 0): ThemePage =>
+  ({ layout: Layout.CHRONO, ch: [main, sub, 0, 0, 0], arc: GOLD, col2: bg, text: WHITE });
 
 // TUNER is FOUR slots (owner 2026-07-18): a dot tacho, the arc (a SLOT whose label
 // follows whatever channel is dropped in — reads EV / BOOST / WATER, never a
@@ -51,6 +63,16 @@ export const THEMES: GaugeTheme[] = [
     pages: [ TUNER(Ch.RPM, Ch.SOC,   Ch.BOOST, Ch.COOLANT),
              TUNER(Ch.RPM, Ch.BOOST, Ch.SPEED, Ch.COOLANT),
              TUNER(Ch.RPM, Ch.PWR,   Ch.BOOST, Ch.SOC) ] },
+  { id: 'regent', name: 'Regent', accent: GOLD, price: 199, tag: 'NEW', author: 'SN Motorsports',
+    desc: 'Coachbuilt fine-instrument dial: a fanned field of fine ticks fading to the rim, ' +
+          'bold cardinal marks at 9/12/3, a thin compass needle from a small pivot, and the ' +
+          'value low at the base. Static, formal, unmistakably premium — one value, beautifully.',
+    pages: [ REGENT(Ch.SPEED), REGENT(Ch.RPM), REGENT(Ch.SOC) ] },
+  { id: 'chrono', name: 'Chrono', accent: GOLD, price: 199, tag: 'NEW', author: 'SN Motorsports',
+    desc: 'Regent\'s fine dial as a chronograph: a big main dial plus a borderless sub-dial that ' +
+          'shares the face. The only theme with a settable background — pick any colour and it mutes ' +
+          'to a pale premium tint (white / grey / black pass through untouched). Coachbuilt, formal.',
+    pages: [ CHRONO(Ch.SPEED, Ch.COOLANT), CHRONO(Ch.RPM, Ch.BOOST), CHRONO(Ch.PWR, Ch.SOC) ] },
 ];
 
 // Apply a theme to a config: replace the PAGES (layout/channels/colours + a

@@ -110,7 +110,7 @@ export enum Ch {
 // store sells layouts that don't exist yet, never a recolour of these four.
 // `layout` is a uint8_t on the wire, so adding 4 costs no bytes and needs no
 // lock-step app/firmware release.
-export enum Layout { HERO = 0, BARS = 1, NEEDLE = 2, TICKS = 3, TUNER = 4 }
+export enum Layout { HERO = 0, BARS = 1, NEEDLE = 2, TICKS = 3, TUNER = 4, REGENT = 5, CHRONO = 6 }
 // ★ The highest layout this build knows. Derive every "is this layout real?" test
 // from THIS — never re-type the last enum member.
 //
@@ -120,11 +120,11 @@ export enum Layout { HERO = 0, BARS = 1, NEEDLE = 2, TICKS = 3, TUNER = 4 }
 // reject a Tuner page, it silently REWROTE it to HERO, so the owner picked Tuner,
 // hit Save, and watched it turn into Hero with no error anywhere. The firmware had
 // the same stale rule in its own cfgValid.
-const LAYOUT_MAX = Layout.TUNER;
+const LAYOUT_MAX = Layout.CHRONO;
 export const layoutKnown = (l: number): boolean => l >= Layout.HERO && l <= LAYOUT_MAX;
 export const LAYOUT_NAMES: Record<Layout, string> = {
   [Layout.HERO]: "Hero", [Layout.BARS]: "Bars", [Layout.NEEDLE]: "Needle", [Layout.TICKS]: "Ticks",
-  [Layout.TUNER]: "Tuner",
+  [Layout.TUNER]: "Tuner", [Layout.REGENT]: "Regent", [Layout.CHRONO]: "Chrono",
 };
 
 export const CFG_VERSION   = 11;        // v11 = PageCfg + color2 + textColor → 219 B. MUST equal firmware GaugeCfg.version.
