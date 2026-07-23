@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.34.0",
+      "date": "2026-07-23",
+      "notes": "Per-value colours — give every value on a page its own colour (all 4 bars, both dials, needle + 2nd hand, hero primary/support). Older app versions keep working unchanged.",
+      "url": "firmware/axis_can_monitor-v0.34.0.bin",
+      "size_bytes": 1684272
+    },
+    {
       "version": "0.33.1",
       "date": "2026-07-23",
       "notes": "New Oil pressure channel, and the gauge now keeps working with a sensor that is running an older firmware version.",
