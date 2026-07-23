@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.34.1",
+      "date": "2026-07-23",
+      "notes": "Regent & Chrono faces — removed the centre glow that banded on the screen; cleaner flat face. (Includes v0.34.0 per-value colours.)",
+      "url": "firmware/axis_can_monitor-v0.34.1.bin",
+      "size_bytes": 1683936
+    },
+    {
       "version": "0.34.0",
       "date": "2026-07-23",
       "notes": "Per-value colours — give every value on a page its own colour (all 4 bars, both dials, needle + 2nd hand, hero primary/support). Older app versions keep working unchanged.",
