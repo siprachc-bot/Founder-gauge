@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.37.0",
+      "date": "2026-07-24",
+      "notes": "Set your own gauge scale. Each page's main dial now has a Full-scale (MAX) you can set — the arc sweeps all the way to that number. e.g. set RPM to 7000 and the needle reaches the end at 7000 instead of a generic 8000. NOTE: needs the matching SN AXIS app update (new save format) — update both together.",
+      "url": "firmware/axis_can_monitor-v0.37.0.bin",
+      "size_bytes": 1684176
+    },
+    {
       "version": "0.36.2",
       "date": "2026-07-24",
       "notes": "Colour accuracy pass. Gauge backgrounds & accent colours now show the FULL colour you pick (a bright red stays bright, not washed out); whites and greys no longer pick up a magenta/yellow tint on screen; you can now choose pure black; and on the Chrono face the fine tick ring follows your chosen dial colour. (Cumulative — includes v0.35's restored Chrono fine ticks, smoother 24fps pacing, and neutral-grey fixes.)",
