@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.37.1",
+      "date": "2026-07-25",
+      "notes": "Full-scale (Value) fix: setting the scale max now works on EVERY dial face — Chrono, Regent, Bars and the Tuner needle included (v0.37.0 only applied it to Hero/Needle/Ticks, and put it on the wrong Tuner dial). Same as v0.37.0 otherwise; use with the matching SN AXIS app.",
+      "url": "firmware/axis_can_monitor-v0.37.1.bin",
+      "size_bytes": 1684272
+    },
+    {
       "version": "0.37.0",
       "date": "2026-07-24",
       "notes": "Set your own gauge scale. Each page's main dial now has a Full-scale (MAX) you can set — the arc sweeps all the way to that number. e.g. set RPM to 7000 and the needle reaches the end at 7000 instead of a generic 8000. NOTE: needs the matching SN AXIS app update (new save format) — update both together.",
