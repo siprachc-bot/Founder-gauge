@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.39.0",
+      "date": "2026-07-25",
+      "notes": "FIX: saving to the gauge did nothing on the previous version — the settings packet had grown past the Bluetooth size limit, so the write silently failed and the gauge never changed. Settings are now compact again and save correctly. NOTE: new save format — update the SN AXIS app to match; your gauge resets to defaults once.",
+      "url": "firmware/axis_can_monitor-v0.39.0.bin",
+      "size_bytes": 1684432
+    },
+    {
       "version": "0.38.1",
       "date": "2026-07-25",
       "notes": "Your saved gauge style now SURVIVES future updates — the gauge keeps your faces, colours and scales instead of resetting to defaults when you install a new firmware (as long as the update only adds new options). This patch keeps the current save format, so installing it does NOT reset your gauge.",
