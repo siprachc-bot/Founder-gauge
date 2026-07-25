@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.38.0",
+      "date": "2026-07-25",
+      "notes": "Set the full-scale (Value) for EVERY reading on a page, not just the main one — the main dial, a sub-dial, and each bar can each sweep to their own max (e.g. rev dial to 7000 while the sub speedo goes to 200). NOTE: new save format — update the SN AXIS app to match, and your saved pages reset to defaults once.",
+      "url": "firmware/axis_can_monitor-v0.38.0.bin",
+      "size_bytes": 1684464
+    },
+    {
       "version": "0.37.1",
       "date": "2026-07-25",
       "notes": "Full-scale (Value) fix: setting the scale max now works on EVERY dial face — Chrono, Regent, Bars and the Tuner needle included (v0.37.0 only applied it to Hero/Needle/Ticks, and put it on the wrong Tuner dial). Same as v0.37.0 otherwise; use with the matching SN AXIS app.",
