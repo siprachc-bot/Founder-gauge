@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.38.1",
+      "date": "2026-07-25",
+      "notes": "Your saved gauge style now SURVIVES future updates — the gauge keeps your faces, colours and scales instead of resetting to defaults when you install a new firmware (as long as the update only adds new options). This patch keeps the current save format, so installing it does NOT reset your gauge.",
+      "url": "firmware/axis_can_monitor-v0.38.1.bin",
+      "size_bytes": 1684448
+    },
+    {
       "version": "0.38.0",
       "date": "2026-07-25",
       "notes": "Set the full-scale (Value) for EVERY reading on a page, not just the main one — the main dial, a sub-dial, and each bar can each sweep to their own max (e.g. rev dial to 7000 while the sub speedo goes to 200). NOTE: new save format — update the SN AXIS app to match, and your saved pages reset to defaults once.",
