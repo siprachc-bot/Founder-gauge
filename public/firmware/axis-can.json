@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.42.1",
+      "date": "2026-07-27",
+      "notes": "Press and hold the gauge screen while driving to pull up your SESSION PEAKS (top speed, RPM, boost, power, torque, water temp) \u2014 a quick glance without diving into the menu. Lap timing stays on the AXIS knob and the SN AXIS app (and the gauge menu), where a quick press is easier to time. Everything else is unchanged from v0.42.0.",
+      "url": "firmware/axis_can_monitor-v0.42.1.bin",
+      "size_bytes": 1679696
+    },
+    {
       "version": "0.42.0",
       "date": "2026-07-27",
       "notes": "New TRACK SHORTCUTS. Time your laps with a manual stopwatch, start and stop drive recording, and pull up your session's peak numbers \u2014 top speed, RPM, boost, power and torque \u2014 right on the gauge. Trigger any of them from the gauge itself (press and hold to mark a lap), from the AXIS knob, or from the SN AXIS app, which also shows a live lap board and your peaks. Also includes the clearer, easier-to-read warning-screen font. Your saved gauge style is kept.",
