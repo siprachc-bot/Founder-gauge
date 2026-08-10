@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.42.2",
+      "date": "2026-08-04",
+      "notes": "Smoother gauge motion — fast value changes (like boost dropping when you lift off the throttle) now animate more smoothly instead of stepping. Also the SN 1.75 gauge build: a 5-arc main face, a 4-value hero page, and touch tuned for the rotated screen. Your saved gauge style is kept.",
+      "url": "firmware/axis_can_monitor-v0.42.2.bin",
+      "size_bytes": 1681632
+    },
+    {
       "version": "0.42.1",
       "date": "2026-07-27",
       "notes": "Press and hold the gauge screen while driving to pull up your SESSION PEAKS (top speed, RPM, boost, power, torque, water temp) \u2014 a quick glance without diving into the menu. Lap timing stays on the AXIS knob and the SN AXIS app (and the gauge menu), where a quick press is easier to time. Everything else is unchanged from v0.42.0.",
