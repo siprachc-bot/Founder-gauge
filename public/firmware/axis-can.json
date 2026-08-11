@@ -2,11 +2,11 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
-      "version": "0.42.3",
+      "version": "0.43.0",
       "date": "2026-08-04",
-      "notes": "Much smoother gauge animation — the screen updates faster now, so quick changes (like boost dropping when you lift off the throttle) sweep smoothly instead of stepping. Same look and colours; your saved gauge style is kept.",
-      "url": "firmware/axis_can_monitor-v0.42.3.bin",
-      "size_bytes": 1682464
+      "notes": "New G-METER — a live G-force display using the gauge's built-in motion sensor shows your cornering, braking and acceleration g's; add it as a page from the app. Plus much smoother animation — quick changes (like boost dropping when you lift off) now sweep smoothly instead of stepping. Your saved gauge style is kept.",
+      "url": "firmware/axis_can_monitor-v0.43.0.bin",
+      "size_bytes": 1721744
     },
     {
       "version": "0.42.2",
