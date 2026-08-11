@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.43.1",
+      "date": "2026-08-11",
+      "notes": "G-FORCE meter, dialled in for the road. It now zeroes itself to however your screen is angled in the car — hold the gauge still for a second at start-up and centre is set — and it reads the correct left/right (cornering) vs up/down (braking & acceleration) direction. It's also scaled for a street car on a track day: full-scale is 1.5g, so your real cornering and braking fill the dial instead of hovering near the middle, and the readout is trimmed to two clear numbers — your live g and your peak g. Plus the on-screen menu (five taps) is easier to open: quick taps are no longer mistaken for a press-and-hold. Your saved gauge style is kept.",
+      "url": "firmware/axis_can_monitor-v0.43.1.bin",
+      "size_bytes": 1721792
+    },
+    {
       "version": "0.43.0",
       "date": "2026-08-04",
       "notes": "New G-METER — a live G-force display using the gauge's built-in motion sensor shows your cornering, braking and acceleration g's; add it as a page from the app. Plus much smoother animation — quick changes (like boost dropping when you lift off) now sweep smoothly instead of stepping. Your saved gauge style is kept.",
