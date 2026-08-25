@@ -697,6 +697,13 @@
   ],
   "node": [
     {
+      "version": "0.5.26",
+      "date": "2026-08-13",
+      "notes": "Fixes cars other than the Volvo showing no values. A change made for battery-saving on the Volvo accidentally treated any car without Volvo's specific data broadcast as 'off', so the sensor slept instead of reading it. It now recognises any running car by its live bus activity, so other makes read their engine data again — while the Volvo's parked battery-saving is kept.",
+      "url": "firmware/axis_can_node-v0.5.26.bin",
+      "size_bytes": 934848
+    },
+    {
       "version": "0.5.25",
       "date": "2026-08-13",
       "notes": "Every value on a page now updates live. Before, only the first two values on a page refreshed quickly and the third and fourth lagged; now the sensor fast-polls all of the values you have on screen, so a hero page (big value plus its supporting figures) or a five-arc page updates smoothly across the board.",
