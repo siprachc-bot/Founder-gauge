@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.50.0",
+      "date": "2026-08-25",
+      "notes": "More accurate power and torque, plus the gauge now reopens on the last screen you were viewing. Horsepower no longer over-reads (it was picking up false spikes from the rounded speed signal), and torque now uses the car's real drive-torque reading instead of an engine-rpm estimate that ran away on the hybrid. Your saved gauge style and pages are kept.",
+      "url": "firmware/axis_can_monitor-v0.50.0.bin",
+      "size_bytes": 1968544
+    },
+    {
       "version": "0.48.0",
       "date": "2026-08-13",
       "notes": "Fixes for the app's Analysis and the fuel gauge. The drive log now pulls quickly even after a long drive (before, a long auto-recorded drive could hang the pull). The fuel level reading is steadied so it no longer swings around when you corner, brake or accelerate. And the anime start-up sweep is a touch quieter. Your saved gauge style is kept.",
