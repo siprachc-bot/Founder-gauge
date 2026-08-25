@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.48.0",
+      "date": "2026-08-13",
+      "notes": "Fixes for the app's Analysis and the fuel gauge. The drive log now pulls quickly even after a long drive (before, a long auto-recorded drive could hang the pull). The fuel level reading is steadied so it no longer swings around when you corner, brake or accelerate. And the anime start-up sweep is a touch quieter. Your saved gauge style is kept.",
+      "url": "firmware/axis_can_monitor-v0.48.0.bin",
+      "size_bytes": 1968112
+    },
+    {
       "version": "0.47.0",
       "date": "2026-08-13",
       "notes": "Every value on a page now updates live — before, only the first two values refreshed quickly and the others lagged on pages that show three or more (for the full effect, also update the OBD sensor to its latest version). Your gauge now also logs each drive automatically in the background, so the app's Analysis always has data with no need to press Record — the on-screen REC dot still works from the app or the gauge as before. And you can switch the start-up sound between two themes from the app. Your saved gauge style is kept.",
