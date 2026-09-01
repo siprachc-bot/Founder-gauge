@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.54.0",
+      "date": "2026-09-01",
+      "notes": "Air-fuel and Lambda warnings. They now alert when the mix runs lean UNDER LOAD (the moment that matters), and stay quiet on lift-off and light cruise where a lean reading is harmless. Needs the matching app to enable them.",
+      "url": "firmware/axis_can_monitor-v0.54.0.bin",
+      "size_bytes": 1969776
+    },
+    {
       "version": "0.53.0",
       "date": "2026-09-01",
       "notes": "Warning direction fix. Oil pressure and fuel-rail pressure now alert when they drop too LOW (a low reading is the real danger), like battery voltage and fuel level. Everything else still alerts when it goes too high. Needs the matching app update to set the warnings.",
