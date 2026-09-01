@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.59.0",
+      "date": "2026-09-01",
+      "notes": "Tuner face now matches the new demo on the gauge itself: a bigger honeycomb that glows red toward the boost band and fades to the far edge, and a larger readout — big SPEED, clear GEAR with its shift triangle, and a cleaner BOOST label. Set the tuner's colours and SPEED/GEAR channels in the app.",
+      "url": "firmware/axis_can_monitor-v0.59.0.bin",
+      "size_bytes": 1971200
+    },
+    {
       "version": "0.58.0",
       "date": "2026-09-01",
       "notes": "Tuner honeycomb no longer flashes at the redline — the mesh stays steady while the shift light still fires on the arc, pointer and gear triangle.",
