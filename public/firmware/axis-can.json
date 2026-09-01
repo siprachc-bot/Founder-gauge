@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.57.0",
+      "date": "2026-09-01",
+      "notes": "Tuner face refinements. The triangle beside the gear is now the shift light — it lights red only when it's time to upshift. The outer boost band shows just its name, cleaner. Set the tuner's red colours and SPEED/GEAR readout in the app.",
+      "url": "firmware/axis_can_monitor-v0.57.0.bin",
+      "size_bytes": 1971232
+    },
+    {
       "version": "0.56.0",
       "date": "2026-09-01",
       "notes": "New booth showcase demo. The DEMO menu now runs an eye-catching attract loop: a punchy synthetic drive (hard launch, boost, a brief over-temp alarm) that auto-cycles through every gauge face. Touch it and you can swipe the faces yourself; it resumes on its own after a few seconds. Great for exhibitions with no car connected.",
