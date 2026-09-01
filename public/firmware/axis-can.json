@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.53.0",
+      "date": "2026-09-01",
+      "notes": "Warning direction fix. Oil pressure and fuel-rail pressure now alert when they drop too LOW (a low reading is the real danger), like battery voltage and fuel level. Everything else still alerts when it goes too high. Needs the matching app update to set the warnings.",
+      "url": "firmware/axis_can_monitor-v0.53.0.bin",
+      "size_bytes": 1969664
+    },
+    {
       "version": "0.52.0",
       "date": "2026-08-31",
       "notes": "Per-channel warnings. Every value can have its own warning point (the WARN column). A value showing on the current screen blinks red when it passes its warning; a value not on screen pops a full alarm so you don't miss it. Needs the matching app update to set each warning — until then the built-in safety alarms are unchanged.",
