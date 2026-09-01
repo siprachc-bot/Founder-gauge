@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.55.0",
+      "date": "2026-09-01",
+      "notes": "No more EV false alarms. Every engine-only reading (temps, boost, air flow, air-fuel, oil and fuel pressure, etc.) now only warns while the engine is actually running — so driving on electric no longer sets off warnings for a stopped engine. Battery, fuel level and speed still work as normal.",
+      "url": "firmware/axis_can_monitor-v0.55.0.bin",
+      "size_bytes": 1969984
+    },
+    {
       "version": "0.54.0",
       "date": "2026-09-01",
       "notes": "Air-fuel and Lambda warnings. They now alert when the mix runs lean UNDER LOAD (the moment that matters), and stay quiet on lift-off and light cruise where a lean reading is harmless. Needs the matching app to enable them.",
