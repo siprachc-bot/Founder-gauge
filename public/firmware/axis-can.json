@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.56.0",
+      "date": "2026-09-01",
+      "notes": "New booth showcase demo. The DEMO menu now runs an eye-catching attract loop: a punchy synthetic drive (hard launch, boost, a brief over-temp alarm) that auto-cycles through every gauge face. Touch it and you can swipe the faces yourself; it resumes on its own after a few seconds. Great for exhibitions with no car connected.",
+      "url": "firmware/axis_can_monitor-v0.56.0.bin",
+      "size_bytes": 1971216
+    },
+    {
       "version": "0.55.0",
       "date": "2026-09-01",
       "notes": "No more EV false alarms. Every engine-only reading (temps, boost, air flow, air-fuel, oil and fuel pressure, etc.) now only warns while the engine is actually running — so driving on electric no longer sets off warnings for a stopped engine. Battery, fuel level and speed still work as normal.",
