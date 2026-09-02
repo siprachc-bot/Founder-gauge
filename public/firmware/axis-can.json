@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.61.0",
+      "date": "2026-09-02",
+      "notes": "Cleaner booth demo. The showcase no longer sets off a warning or pops a 0-100 timer card while it runs — temperatures stay in the normal range and the auto-cycling faces play uninterrupted. Your normal driving alarms and lap/acceleration timers are unchanged.",
+      "url": "firmware/axis_can_monitor-v0.61.0.bin",
+      "size_bytes": 1971120
+    },
+    {
       "version": "0.60.0",
       "date": "2026-09-01",
       "notes": "Snappier gauge. The needles and numbers now respond a little quicker — the display smoothing was tuned for the old slower screen and was over-damping; it's now matched to how fast the data actually arrives, so values catch up faster while still moving smoothly. No change to how the car data is read.",
