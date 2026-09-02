@@ -70,7 +70,13 @@ export interface ExhaustAuto { openRpm: number; closeRpm: number; openThr: numbe
 /** Anti-sleep "take a break" reminder (char 7e1c020f). Time-based fatigue aid:
  *  a full-screen reminder after `intervalMin` of continuous driving, reset by a
  *  rest of `restMin` not-moving; a tap snoozes it `snoozeMin` (no reset). */
-export interface AntiSleepCfg { enabled: boolean; intervalMin: number; restMin: number; snoozeMin: number; moveKph: number; }
+export interface AntiSleepCfg {
+  enabled: boolean; intervalMin: number; restMin: number; snoozeMin: number; moveKph: number;
+  gyroOn: boolean;      // phase-2: gyro yaw steering-entropy drowsiness detection
+  sens: number;         // drowsy trigger sensitivity 1(least)..10(most)
+  drowsyScore?: number; // live 0..100 (read-only, from the gauge)
+  baselinePct?: number; // baseline-learning progress 0..100 (read-only)
+}
 /** Car identity decoded by the node from the VIN (char 7e1c0210). `detected` = the
  *  node has read + decoded a VIN; make/year come from the WMI + 10th VIN char.
  *  The VIN itself is NEVER transmitted or exposed (privacy) — only make/year. */
@@ -1012,13 +1018,17 @@ export class MonitorBleClient {
   /** Read the gauge's anti-sleep config. */
   async readAntiSleep(): Promise<AntiSleepCfg> {
     const v = await CapBle.read(this.deviceId, MON_SVC, AS_CHAR);
-    if (v.byteLength < 5) return { enabled: true, intervalMin: 120, restMin: 5, snoozeMin: 15, moveKph: 60 };
+    if (v.byteLength < 5) return { enabled: true, intervalMin: 120, restMin: 5, snoozeMin: 15, moveKph: 60, gyroOn: true, sens: 5, drowsyScore: 0, baselinePct: 0 };
     return {
       enabled: v.getUint8(0) === 1,
       intervalMin: v.getUint16(1, true),
       restMin: v.getUint8(3),
       snoozeMin: v.getUint8(4),
       moveKph: v.byteLength >= 6 ? v.getUint8(5) : 60,
+      gyroOn:  v.byteLength >= 7 ? v.getUint8(6) === 1 : true,
+      sens:    v.byteLength >= 8 ? v.getUint8(7) : 5,
+      drowsyScore: v.byteLength >= 9  ? v.getUint8(8) : 0,
+      baselinePct: v.byteLength >= 10 ? v.getUint8(9) : 0,
     };
   }
   /** Read the car identity the node decoded from the VIN (char 7e1c0210). All
@@ -1050,12 +1060,14 @@ export class MonitorBleClient {
 
   /** Write the anti-sleep config (persists in NVS on the gauge). */
   async setAntiSleep(c: AntiSleepCfg): Promise<void> {
-    const b = new Uint8Array(6); const dv = new DataView(b.buffer);
+    const b = new Uint8Array(8); const dv = new DataView(b.buffer);
     b[0] = c.enabled ? 1 : 0;
     dv.setUint16(1, c.intervalMin & 0xffff, true);
     b[3] = c.restMin & 0xff;
     b[4] = c.snoozeMin & 0xff;
     b[5] = c.moveKph & 0xff;
+    b[6] = c.gyroOn ? 1 : 0;
+    b[7] = Math.max(1, Math.min(10, c.sens | 0)) & 0xff;
     await CapBle.write(this.deviceId, MON_SVC, AS_CHAR, new DataView(b.buffer));
   }
 }

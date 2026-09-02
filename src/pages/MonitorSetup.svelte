@@ -701,6 +701,19 @@
     catch (e) { asMsg = '✗ ' + String((e as Error)?.message ?? e); }
     finally { asBusy = false; }
   }
+  // Live drowsiness telemetry poll — refreshes ONLY the read-only fields (score +
+  // baseline progress) so it never clobbers a slider the user is mid-drag on.
+  let asPoll: ReturnType<typeof setInterval> | null = null;
+  async function pollAntiSleepLive() {
+    if (demo || !store.monClient || asBusy || !as) return;
+    try { const r = await store.monClient.readAntiSleep();
+          as = { ...as, drowsyScore: r.drowsyScore, baselinePct: r.baselinePct }; }
+    catch { /* transient BLE read — ignore, next tick retries */ }
+  }
+  function asToggle(open: boolean) {
+    if (open) { if (!as) readAntiSleep(); if (!asPoll) asPoll = setInterval(pollAntiSleepLive, 2500); }
+    else if (asPoll) { clearInterval(asPoll); asPoll = null; }
+  }
 
   function saveCurrentAsCar() {
     const name = (prompt('Name this car (e.g. "V60 T8", "My BMW")') ?? '').trim();
@@ -1431,8 +1444,8 @@
 
   <!-- Anti-sleep: a time-based "take a break" reminder painted on the gauge -->
   {#if !demo}
-    <details class="card fw-card" ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open && !as) readAntiSleep(); }}>
-      <summary>Anti-sleep reminder</summary>
+    <details class="card fw-card" ontoggle={(e) => asToggle((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary>Anti-sleep &amp; drowsiness</summary>
       <p class="sub dim">
         A full-screen <b>“Take a break”</b> reminder after a set stretch of continuous driving.
         Only time spent <b>above</b> the speed you pick counts — slow city traffic just pauses the
@@ -1462,6 +1475,39 @@
             <input type="range" min="5" max="60" step="5" bind:value={as.snoozeMin} disabled={!as.enabled} style="flex:1;" />
             <b style="min-width:44px;text-align:right;">{as.snoozeMin} min</b>
           </span></label>
+
+        <!-- Phase-2: gyro drowsiness detection -->
+        <div style="height:1px;background:rgba(255,255,255,.08);margin:12px 0 8px;"></div>
+        <label class="exh-row"><span>Drowsiness detection <span class="hint">gyro</span></span>
+          <input type="checkbox" bind:checked={as.gyroOn} disabled={!as.enabled} /></label>
+        {#if as.enabled && as.gyroOn}
+          <p class="sub dim" style="font-size:11px;margin:2px 2px 8px;">
+            On the highway (70–130 km/h) the gauge learns how you normally steer, then watches
+            the car's motion for the drowsy pattern — drifting, then a sharp correction — and pops
+            a <b>“Stay alert”</b> warning. Uses the built-in motion sensor, no extra hardware.
+          </p>
+          <label class="exh-row"><span>Sensitivity</span>
+            <span style="display:flex;align-items:center;gap:8px;min-width:150px;">
+              <input type="range" min="1" max="10" step="1" bind:value={as.sens} style="flex:1;" />
+              <b style="min-width:44px;text-align:right;">{as.sens}/10</b>
+            </span></label>
+          <div style="margin:8px 2px 2px;">
+            <div class="lp-row" style="margin-bottom:3px;"><span>Learning your baseline</span>
+              <b>{as.baselinePct ?? 0}%{(as.baselinePct ?? 0) >= 100 ? ' ✓' : ''}</b></div>
+            <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;">
+              <div style="height:100%;border-radius:3px;transition:width .5s;width:{Math.min(100, as.baselinePct ?? 0)}%;background:var(--gold,#cea24a);"></div>
+            </div>
+            <div class="lp-row" style="margin:8px 0 3px;"><span>Drowsiness now</span>
+              <b style="color:{(as.drowsyScore ?? 0) >= 60 ? '#d9614f' : 'inherit'};">{as.drowsyScore ?? 0}/100</b></div>
+            <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;">
+              <div style="height:100%;border-radius:3px;transition:width .5s;width:{Math.min(100, as.drowsyScore ?? 0)}%;background:{(as.drowsyScore ?? 0) >= 60 ? '#d9614f' : 'var(--gold,#cea24a)'};"></div>
+            </div>
+            <p class="sub dim" style="font-size:10.5px;margin:6px 2px 0;">
+              Updates live while driving on the highway. Below 70 km/h the time-based reminder above still runs.
+            </p>
+          </div>
+        {/if}
+
         <button class="fw-install up" style="margin-top:10px;" onclick={saveAntiSleep} disabled={asBusy}>
           Save to gauge
         </button>
