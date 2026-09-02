@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.62.0",
+      "date": "2026-09-02",
+      "notes": "Drowsy-driving detection. On the highway (about 70-130 km/h) the gauge now learns how you normally hold your lane over the first ~10 minutes, then watches the car's motion for the tell-tale drowsy pattern — drifting with fewer small corrections, then a sharp jerk back. If it keeps seeing it, a full-screen STAY ALERT warning pops up so you take a break. Uses the built-in motion sensor, no extra hardware. It's a safety aid, not a guarantee. The normal 2-hour 'take a break' timer still works everywhere else. App controls arrive in a later update.",
+      "url": "firmware/axis_can_monitor-v0.62.0.bin",
+      "size_bytes": 1972720
+    },
+    {
       "version": "0.61.0",
       "date": "2026-09-02",
       "notes": "Cleaner booth demo. The showcase no longer sets off a warning or pops a 0-100 timer card while it runs — temperatures stay in the normal range and the auto-cycling faces play uninterrupted. Your normal driving alarms and lap/acceleration timers are unchanged.",
