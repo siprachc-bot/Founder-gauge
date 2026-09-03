@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.64.1",
+      "date": "2026-09-02",
+      "notes": "Drowsy-driving detection is now fully automatic. It starts learning how you steer during any normal drive (from about 40 km/h, not just the motorway), keeps adapting to you over time, and calibrates its own sensitivity — nothing to set. If it sees the drowsy pattern it pops the STAY ALERT warning as before.",
+      "url": "firmware/axis_can_monitor-v0.64.1.bin",
+      "size_bytes": 1844864
+    },
+    {
       "version": "0.63.0",
       "date": "2026-09-02",
       "notes": "Boot sound finalized. The gauge now always plays the anime startup voice; the alternate 'gentleman' sound and its selector have been removed. Frees up device storage.",
