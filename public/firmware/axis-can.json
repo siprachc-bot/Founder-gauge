@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.66.1",
+      "date": "2026-09-07",
+      "notes": "Warnings upgrade. On-screen: a value past its limit now blinks together with its arc/bar (was out of sync, arc stayed solid). Off-screen alerts are split by how serious they are: amber warnings (e.g. low fuel) tap once and stay gone until the next start; red dangers (e.g. overheating) keep coming back until the reading is safe again. Twitchy readings (boost, power/torque, air-fuel, fuel trims, pressures) are smoothed so they sit steady instead of dancing.",
+      "url": "firmware/axis_175_fw_idf-v0.66.1.bin",
+      "size_bytes": 4592160
+    },
+    {
       "version": "0.65.1",
       "date": "2026-09-07",
       "notes": "Fixes a rare restart during driving (on-device logging could exhaust memory with voice running) and removes the little beep before spoken answers. Same voice features as 0.65.0 (Alfred wake, spoken temperatures + car status, who-are-you).",
