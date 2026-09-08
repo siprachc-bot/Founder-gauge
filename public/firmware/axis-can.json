@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.67.6",
+      "date": "2026-09-08",
+      "notes": "Robustness hardening (no visible change): validates all incoming node packet lengths before use + zero-inits them, guards log-read buffers, fixes the G-meter page being rejected by the live editor, unifies gauge-layout validation, tightens config version checks, and adds compile-time packet-size guards. Built on v0.67.5 (voice features + boot-loop fix).",
+      "url": "firmware/axis_175_fw_idf-v0.67.6.bin",
+      "size_bytes": 4653104
+    },
+    {
       "version": "0.67.5",
       "date": "2026-09-08",
       "notes": "Fixes the v0.67 restart loop: the offline-voice engine ran out of internal memory building its command recognizer at boot. Freed it by trimming unused Wi-Fi transmit buffers. All the voice features are back — spoken car status, warning blink/severity, cold-start pressure fix, smoothing. Boot sound stays the anime voice for now.",
