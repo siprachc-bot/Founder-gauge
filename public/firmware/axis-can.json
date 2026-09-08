@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.68.1",
+      "date": "2026-09-08",
+      "notes": "Signed firmware + Charlie boot voice. OTA images are now cryptographically signed by SN and verified on-device before install (unsigned/tampered = rejected, current firmware untouched). New default startup sound: spoken 'SN Motorsports / AXIS' (Charlie) with a deep sweep; the anime voice is still selectable via the on-screen BOOT SOUND menu. Plus robustness hardening + the voice/boot-loop fixes. ⚠ This build only accepts SIGNED OTA images.",
+      "url": "firmware/axis_175_fw_idf-v0.68.1-signed.bin",
+      "size_bytes": 4654384,
+      "signed": true
+    },
+    {
       "version": "0.67.6",
       "date": "2026-09-08",
       "notes": "Robustness hardening (no visible change): validates all incoming node packet lengths before use + zero-inits them, guards log-read buffers, fixes the G-meter page being rejected by the live editor, unifies gauge-layout validation, tightens config version checks, and adds compile-time packet-size guards. Built on v0.67.5 (voice features + boot-loop fix).",
