@@ -2,6 +2,13 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.67.4",
+      "date": "2026-09-08",
+      "notes": "Recovery build: restores the proven anime startup sound after v0.67.3's new boot voice caused a restart loop on the gauge. All other features stay (spoken car status, warning blink/severity, cold-start pressure fix, smoothing). The Charlie 'SN Motorsports/AXIS' boot voice will return once its cause is pinned down.",
+      "url": "firmware/axis_175_fw_idf-v0.67.4.bin",
+      "size_bytes": 4653008
+    },
+    {
       "version": "0.67.3",
       "date": "2026-09-07",
       "notes": "New boot sound sweep — a deeper, resolved flourish that matches the Charlie 'SN Motorsports / AXIS' brand voice. The anime startup voice is kept as an option: a new 'BOOT SOUND' item in the on-screen menu toggles between the SN Motorsports voice and the anime voice (takes effect at the next power-on).",
