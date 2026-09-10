@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.73.1",
+      "date": "2026-09-10",
+      "notes": "Voice Wake Gate V2 — far fewer false wakes from music, podcasts, phone calls and the gauge's own voice, without changing how it hears real commands. 'Alfred' now has to be heard steadily (not a one-off spike), the wake ear is muted while AXIS is speaking, and there's a short cooldown so one song can't keep re-triggering. The wake threshold is unchanged this build — it logs wake scores so it can be tuned from real in-car data next. Includes everything from 0.73.0 (Fault Correlation, Event Black Box, voice-memory rework). Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.73.1-signed.bin",
+      "size_bytes": 4666624,
+      "signed": true
+    },
+    {
       "version": "0.73.0",
       "date": "2026-09-10",
       "notes": "Condition Engine Wave 3B — Fault Correlation + Link events, on top of Wave 3A Event Black Box. The gauge now links related faults into a plain-language hint (e.g. a supply-voltage dip plus a telemetry dropout → 'possible power / communication issue'), keeps a pre/post telemetry black box on any critical condition, and gained a voice-memory rework so all of it fits alongside the offline 'Alfred' voice assistant (100 voice phrases — every command preserved). Signed OTA.",
