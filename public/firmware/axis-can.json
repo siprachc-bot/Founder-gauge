@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.72.0-wave3b",
+      "date": "2026-09-10",
+      "notes": "TEST BUILD (not a release) — Condition Engine Wave 3A Event Black Box + 3B Fault Correlation / LINK_STALE, plus the voice-headroom rework (mWW reserve/activate split, numvoice index to PSRAM, PCM worker absent during FST, 100-phrase / 73-intent voice vocabulary). Pushed to verify signed BLE OTA end-to-end + CONNECT operation-first acceptance. A clean v0.73.0 release follows when Wave 3B closes.",
+      "url": "firmware/axis_175_fw_idf-v0.72.0-wave3b-signed.bin",
+      "size_bytes": 4667040,
+      "signed": true
+    },
+    {
       "version": "0.68.2",
       "date": "2026-09-08",
       "notes": "Signed-OTA verification test build (same as 0.68.1). Confirms the gauge accepts a properly SN-signed image over the air.",
