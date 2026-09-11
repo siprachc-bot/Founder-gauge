@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.0",
+      "date": "2026-09-11",
+      "notes": "Snappier readouts. The RPM, speed and throttle numbers now show the exact live value the instant it arrives — before, the number eased in over a fraction of a second (and could briefly show an in-between value the car never actually sent). The needles keep their smooth glide as before. We confirmed on-car that the needle motion was already correct; it was only the number that lagged. No change to alarms, safety limits or the voice assistant. Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.0-signed.bin",
+      "size_bytes": 4668288,
+      "signed": true
+    },
+    {
       "version": "0.73.2",
       "date": "2026-09-10",
       "notes": "Fixes over-the-air updating: the on-gauge 'confirm update' card now actually appears (it was hidden while the gauge waited, so updates timed out) and it waits 30s for your tap. Also includes Voice Wake Gate V2 — far fewer false wakes from music/podcasts/phone/its own voice (must hear 'Alfred' steadily, muted while speaking, short cooldown; wake threshold unchanged, logs scores for tuning) — plus 0.73.0 (Fault Correlation, Event Black Box, voice-memory rework). Signed OTA.",
@@ -868,6 +876,13 @@
     }
   ],
   "node": [
+    {
+      "version": "0.5.27",
+      "date": "2026-09-11",
+      "notes": "The sensor now reports data-quality info alongside every reading: how fresh each value is (measured at the moment it's sent) plus link, timeout and bus-error counters. This lets the gauge know exactly how current each value is — used to keep the RPM needle smooth and honest. Fully backward compatible: nothing you see changes, and it works with any gauge version.",
+      "url": "firmware/axis_can_node-v0.5.27.bin",
+      "size_bytes": 937504
+    },
     {
       "version": "0.5.26",
       "date": "2026-08-13",
