@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.76",
+      "date": "2026-09-28",
+      "notes": "On-gauge Trip computer: Trip A and Trip B — distance, time, average speed and fuel economy — worked out from your car's own speed and fuel-rate over the OBD port, no GPS needed. Add TRIP as a gauge face you swipe to, or open it from the menu. Swipe up/down to reset a trip, with a frosted confirm card so you never wipe one by accident. Also adds a lifetime odometer and a fuel range-to-empty estimate. (Companion app also gains a Drag timer, a G-meter and a Trip computer with shareable SN AXIS record cards, plus per-car Looks profiles that switch automatically.) Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.76-signed.bin",
+      "size_bytes": 4708848,
+      "signed": true
+    },
+    {
       "version": "0.74.0",
       "date": "2026-09-11",
       "notes": "Snappier readouts. The RPM, speed and throttle numbers now show the exact live value the instant it arrives — before, the number eased in over a fraction of a second (and could briefly show an in-between value the car never actually sent). The needles keep their smooth glide as before. We confirmed on-car that the needle motion was already correct; it was only the number that lagged. No change to alarms, safety limits or the voice assistant. Signed OTA.",
