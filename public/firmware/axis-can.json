@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.78",
+      "date": "2026-10-25",
+      "notes": "Drowsiness alert fix — it no longer cries wolf on a smooth, straight cruise. The alert now needs the real drowsy signature (your steering going quiet AND sharp jerk-backs appearing together), not just quiet steering on its own, so highway cruising stops triggering false 'STAY ALERT's. Also adds a small boot code at the bottom of the splash that helps pin down the occasional self-restart — it only shows after an abnormal restart and will be removed once the cause is found. Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.78-signed.bin",
+      "size_bytes": 4560000,
+      "signed": true
+    },
+    {
       "version": "0.74.76",
       "date": "2026-09-28",
       "notes": "On-gauge Trip computer: Trip A and Trip B — distance, time, average speed and fuel economy — worked out from your car's own speed and fuel-rate over the OBD port, no GPS needed. Add TRIP as a gauge face you swipe to, or open it from the menu. Swipe up/down to reset a trip, with a frosted confirm card so you never wipe one by accident. Also adds a lifetime odometer and a fuel range-to-empty estimate. (Companion app also gains a Drag timer, a G-meter and a Trip computer with shareable SN AXIS record cards, plus per-car Looks profiles that switch automatically.) Signed OTA.",
