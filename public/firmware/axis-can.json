@@ -893,6 +893,13 @@
   ],
   "node": [
     {
+      "version": "0.5.30",
+      "date": "2026-10-25",
+      "notes": "Calculated gear is now far more accurate on cars without a direct gear signal: the sensor carries a built-in dictionary of 242 cars' gear ratios and, from your car's VIN, picks that model's actual ratio table (and self-selects the variant from how you drive) instead of two generic 8-speed tables. Also fixes two field bugs: (1) gatewayed cars that throttle the OBD port mid-drive (e.g. Civic FD, BMW F10) no longer 'false-sleep' and blank the gauge after 1-2 minutes — the sensor keeps re-probing while the engine is running and only sleeps once parked; (2) RPM no longer stair-steps / jumps in chunks under acceleration on cars with no passive RPM tap (e.g. Mazda2) — RPM gets priority polling slots again. No protocol change, fully backward compatible with any gauge version — OTA-safe.",
+      "url": "firmware/axis_can_node-v0.5.30.bin",
+      "size_bytes": 950576
+    },
+    {
       "version": "0.5.27",
       "date": "2026-09-11",
       "notes": "The sensor now reports data-quality info alongside every reading: how fresh each value is (measured at the moment it's sent) plus link, timeout and bus-error counters. This lets the gauge know exactly how current each value is — used to keep the RPM needle smooth and honest. Fully backward compatible: nothing you see changes, and it works with any gauge version.",
