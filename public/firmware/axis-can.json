@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.79",
+      "date": "2026-10-31",
+      "notes": "The on-screen voice assistant has been removed. Taking it out makes the gauge much lighter with far more free memory, and it hands the full 2.4 GHz airtime back to the link your shifter knob and OBD adapter share \u2014 so the knob reads its gear rock-solid again. New: the gauge now feeds live RPM to the shifter knob, so the knob's shift light finally lights from your real engine revs (or in Demo mode) \u2014 it never worked before because the gauge was not sending the revs. The phone now connects on demand from the menu's APP CONNECT and disconnects cleanly, with no mode-switch wait. Boot sound, warning beeps and the shift tone are unchanged. A small boot code still shows briefly only after an abnormal restart, to confirm the rare self-restart is gone, and will be removed next update. Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.79-signed.bin",
+      "size_bytes": 1642240,
+      "signed": true
+    },
+    {
       "version": "0.74.78",
       "date": "2026-10-25",
       "notes": "Drowsiness alert fix — it no longer cries wolf on a smooth, straight cruise. The alert now needs the real drowsy signature (your steering going quiet AND sharp jerk-backs appearing together), not just quiet steering on its own, so highway cruising stops triggering false 'STAY ALERT's. Also adds a small boot code at the bottom of the splash that helps pin down the occasional self-restart — it only shows after an abnormal restart and will be removed once the cause is found. Signed OTA.",
