@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.80",
+      "date": "2026-11-01",
+      "notes": "New LIVE GRAPH page (LANES): a real-time telemetry screen with four stacked channel lanes - each shows a big live value plus a scrolling colour sparkline that streams as you drive. Swipe to it like any gauge page; the four channels, their colours and their scales are all set in the app (default RPM / speed / boost / throttle). Also on the G-force page you can now double-tap to re-zero it to however the car is sitting right now (a gold 'ZERO SET' confirms), so the dot reads true again after a key-cycle. Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.80-signed.bin",
+      "size_bytes": 1643408,
+      "signed": true
+    },
+    {
       "version": "0.74.79",
       "date": "2026-10-31",
       "notes": "The on-screen voice assistant has been removed. Taking it out makes the gauge much lighter with far more free memory, and it hands the full 2.4 GHz airtime back to the link your shifter knob and OBD adapter share \u2014 so the knob reads its gear rock-solid again. New: the gauge now feeds live RPM to the shifter knob, so the knob's shift light finally lights from your real engine revs (or in Demo mode) \u2014 it never worked before because the gauge was not sending the revs. The phone now connects on demand from the menu's APP CONNECT and disconnects cleanly, with no mode-switch wait. Boot sound, warning beeps and the shift tone are unchanged. A small boot code still shows briefly only after an abnormal restart, to confirm the rare self-restart is gone, and will be removed next update. Signed OTA.",
