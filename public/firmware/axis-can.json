@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.81",
+      "date": "2026-11-02",
+      "notes": "Fixes the new LANES live-graph page: the big value number was overlapping the channel name on each lane. The name now sits in a top band and the value in a bottom band with a clear gap between them. (If you don't have the LANES page yet, swipe to it or add it in the app.) Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.81-signed.bin",
+      "size_bytes": 1643408,
+      "signed": true
+    },
+    {
       "version": "0.74.80",
       "date": "2026-11-01",
       "notes": "New LIVE GRAPH page (LANES): a real-time telemetry screen with four stacked channel lanes - each shows a big live value plus a scrolling colour sparkline that streams as you drive. Swipe to it like any gauge page; the four channels, their colours and their scales are all set in the app (default RPM / speed / boost / throttle). Also on the G-force page you can now double-tap to re-zero it to however the car is sitting right now (a gold 'ZERO SET' confirms), so the dot reads true again after a key-cycle. Signed OTA.",
