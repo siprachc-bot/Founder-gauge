@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.84",
+      "date": "2026-11-03",
+      "notes": "Smoother gauges: every reading now glides instead of stepping. Before, only RPM looked smooth because the other values arrive from the car in bursts — the gauge now eases between them at each channel's own pace, so boost, temps, pressures and the rest move smoothly. Boost gauge: zero stays dead-center and the vacuum side is pinned to -1 bar — it won't read or sweep past full vacuum no matter how high your boost scale is set. And while the gauge is updating its firmware it now shows a live \"UPDATING %\" screen instead of sitting on the tap-to-allow card. (Also includes the shift-light beep that ticks in time with the light.) Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.84-signed.bin",
+      "size_bytes": 1659440,
+      "signed": true
+    },
+    {
       "version": "0.74.83",
       "date": "2026-11-03",
       "notes": "The shift-light beep is back — and now it ticks in time with the light. It starts beeping as the shift light comes on and speeds up to a rapid tick right at the limiter, so you can shift by ear without looking down. (Before, the tone was a single steady note at the shift point and didn't match the new fading/blinking light.) Signed OTA.",
