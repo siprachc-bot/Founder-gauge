@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.83",
+      "date": "2026-11-03",
+      "notes": "The shift-light beep is back — and now it ticks in time with the light. It starts beeping as the shift light comes on and speeds up to a rapid tick right at the limiter, so you can shift by ear without looking down. (Before, the tone was a single steady note at the shift point and didn't match the new fading/blinking light.) Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.83-signed.bin",
+      "size_bytes": 1661104,
+      "signed": true
+    },
+    {
       "version": "0.74.82",
       "date": "2026-11-03",
       "notes": "New shift light: a red ring around the screen fades in as you approach your shift point and pulses faster and faster into a rapid strobe right at the limiter — easy to catch at the edge of your vision. Smoother alarms: the warning screen no longer stutters the moment it pops up. Faster readings: boost, O2, oil/fuel pressures and the power/torque numbers now respond noticeably quicker while staying rock-steady — no more lag on the values (under 200 ms). Also rolls in everything since the last update. Signed OTA.",
