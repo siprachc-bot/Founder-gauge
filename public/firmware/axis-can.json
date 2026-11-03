@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.85",
+      "date": "2026-11-03",
+      "notes": "Boost responds faster: the gauge was adding noticeable lag to slow-updating readings (boost, pressures, mixture) by over-smoothing them — that's fixed, so boost tracks the throttle much more closely. Smooth channels stay smooth. Builds on the previous update (adaptive smoothing, boost arc centred with a -1 bar vacuum floor, on-screen update %, shift-light beep). Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.85-signed.bin",
+      "size_bytes": 1659456,
+      "signed": true
+    },
+    {
       "version": "0.74.84",
       "date": "2026-11-03",
       "notes": "Smoother gauges: every reading now glides instead of stepping. Before, only RPM looked smooth because the other values arrive from the car in bursts — the gauge now eases between them at each channel's own pace, so boost, temps, pressures and the rest move smoothly. Boost gauge: zero stays dead-center and the vacuum side is pinned to -1 bar — it won't read or sweep past full vacuum no matter how high your boost scale is set. And while the gauge is updating its firmware it now shows a live \"UPDATING %\" screen instead of sitting on the tap-to-allow card. (Also includes the shift-light beep that ticks in time with the light.) Signed OTA.",
