@@ -2,6 +2,14 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.82",
+      "date": "2026-11-03",
+      "notes": "New shift light: a red ring around the screen fades in as you approach your shift point and pulses faster and faster into a rapid strobe right at the limiter — easy to catch at the edge of your vision. Smoother alarms: the warning screen no longer stutters the moment it pops up. Faster readings: boost, O2, oil/fuel pressures and the power/torque numbers now respond noticeably quicker while staying rock-steady — no more lag on the values (under 200 ms). Also rolls in everything since the last update. Signed OTA.",
+      "url": "firmware/axis_175_fw_idf-v0.74.82-signed.bin",
+      "size_bytes": 1660848,
+      "signed": true
+    },
+    {
       "version": "0.74.81",
       "date": "2026-11-02",
       "notes": "Fixes the new LANES live-graph page: the big value number was overlapping the channel name on each lane. The name now sits in a top band and the value in a bottom band with a clear gap between them. (If you don't have the LANES page yet, swipe to it or add it in the app.) Signed OTA.",
