@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.86",
+      "date": "2026-11-04",
+      "notes": "New shift light: a steady flash with a matching beep that snaps on right at your shift RPM. The beep now uses the same clear tone as the warning alert and stays perfectly locked to the light — no fade-in and no drift, even when the screen is busy. Builds on the previous boost-response and smoothing fixes.",
+      "url": "firmware/axis_175_fw_idf-v0.74.86-signed.bin",
+      "size_bytes": 1659888,
+      "sha256": "d4c7cfba5ae9c564bb75979c87cdab9a17fdb2d20210f49318710c54a2a4c95b",
+      "signed": true
+    },
+    {
       "version": "0.74.85",
       "date": "2026-11-03",
       "notes": "Boost responds faster: the gauge was adding noticeable lag to slow-updating readings (boost, pressures, mixture) by over-smoothing them — that's fixed, so boost tracks the throttle much more closely. Smooth channels stay smooth. Builds on the previous update (adaptive smoothing, boost arc centred with a -1 bar vacuum floor, on-screen update %, shift-light beep). Signed OTA.",
@@ -52,7 +61,7 @@
     {
       "version": "0.74.79",
       "date": "2026-10-31",
-      "notes": "The on-screen voice assistant has been removed. Taking it out makes the gauge much lighter with far more free memory, and it hands the full 2.4 GHz airtime back to the link your shifter knob and OBD adapter share \u2014 so the knob reads its gear rock-solid again. New: the gauge now feeds live RPM to the shifter knob, so the knob's shift light finally lights from your real engine revs (or in Demo mode) \u2014 it never worked before because the gauge was not sending the revs. The phone now connects on demand from the menu's APP CONNECT and disconnects cleanly, with no mode-switch wait. Boot sound, warning beeps and the shift tone are unchanged. A small boot code still shows briefly only after an abnormal restart, to confirm the rare self-restart is gone, and will be removed next update. Signed OTA.",
+      "notes": "The on-screen voice assistant has been removed. Taking it out makes the gauge much lighter with far more free memory, and it hands the full 2.4 GHz airtime back to the link your shifter knob and OBD adapter share — so the knob reads its gear rock-solid again. New: the gauge now feeds live RPM to the shifter knob, so the knob's shift light finally lights from your real engine revs (or in Demo mode) — it never worked before because the gauge was not sending the revs. The phone now connects on demand from the menu's APP CONNECT and disconnects cleanly, with no mode-switch wait. Boot sound, warning beeps and the shift tone are unchanged. A small boot code still shows briefly only after an abnormal restart, to confirm the rare self-restart is gone, and will be removed next update. Signed OTA.",
       "url": "firmware/axis_175_fw_idf-v0.74.79-signed.bin",
       "size_bytes": 1642240,
       "signed": true
