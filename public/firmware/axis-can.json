@@ -949,6 +949,13 @@
   ],
   "node": [
     {
+      "version": "0.5.31",
+      "date": "2026-11-03",
+      "notes": "Boost responds much faster. The sensor was sharing its fast polling slots equally among every value on your gauge screen, so boost — the value you watch spool with the throttle — only refreshed a couple of times a second. It now gives the quick slots to the fast-moving values (boost, throttle, load) and polls the slow ones (temps, battery, voltage) in the background, so boost tracks the throttle 2-4x faster. No protocol change, works with any gauge version — OTA-safe.",
+      "url": "firmware/axis_can_node-v0.5.31.bin",
+      "size_bytes": 960288
+    },
+    {
       "version": "0.5.30",
       "date": "2026-10-25",
       "notes": "Calculated gear is now far more accurate on cars without a direct gear signal: the sensor carries a built-in dictionary of 242 cars' gear ratios and, from your car's VIN, picks that model's actual ratio table (and self-selects the variant from how you drive) instead of two generic 8-speed tables. Also fixes two field bugs: (1) gatewayed cars that throttle the OBD port mid-drive (e.g. Civic FD, BMW F10) no longer 'false-sleep' and blank the gauge after 1-2 minutes — the sensor keeps re-probing while the engine is running and only sleeps once parked; (2) RPM no longer stair-steps / jumps in chunks under acceleration on cars with no passive RPM tap (e.g. Mazda2) — RPM gets priority polling slots again. No protocol change, fully backward compatible with any gauge version — OTA-safe.",
