@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.93",
+      "date": "2026-11-04",
+      "notes": "Config sync: set up one gauge in the app, tap “Apply to all”, and every other AXIS gauge in the car copies the same pages, colours, units, redline and warnings over the air - no cable, no re-doing each one. It's a button you press on purpose, so a gauge you deliberately set up differently is left alone.",
+      "url": "firmware/axis_175_fw_idf-v0.74.93-signed.bin",
+      "size_bytes": 1663456,
+      "sha256": "c9c4256f381c557a76406513176e8fe4ee0b8b1d6911d2bc38218fb7f6100821",
+      "signed": true
+    },
+    {
       "version": "0.74.92",
       "date": "2026-11-04",
       "notes": "Day/Night switch: tap the screen with TWO fingers to flip between day and night brightness - no app, no clock needed, and it's remembered after you turn the car off. If you run more than one gauge, toggling one dims them all together.",
