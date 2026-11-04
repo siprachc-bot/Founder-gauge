@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.91",
+      "date": "2026-11-04",
+      "notes": "Shift tone reworked: now a smooth sustained tone (no more beeping) that sounds only while the revs are climbing — it cuts out the moment you lift or shift. The shift light itself is unchanged.",
+      "url": "firmware/axis_175_fw_idf-v0.74.91-signed.bin",
+      "size_bytes": 1661056,
+      "sha256": "a7997096ecc178029ea04689bf6949e864a563091becc1947e48e8cc3a1d928d",
+      "signed": true
+    },
+    {
       "version": "0.74.90",
       "date": "2026-11-04",
       "notes": "Shift light fixed & upgraded: it now blinks from your RPM warning up to the limiter, then holds a solid light + steady tone right near the limiter — before, it only fired at a single hidden 'shift RPM' that was easy to set above the revs you actually reach. Set your Redline (limiter) and RPM Warning and the light follows them. Works on any car.",
