@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.89",
+      "date": "2026-11-04",
+      "notes": "G-meter upgrade for the upright dash mount: it now levels against gravity in 3 axes, so cornering and accel/braking read on the correct screen axes regardless of how far the gauge is tilted. Double-tap the G-meter to re-zero/align it to your car. If any direction reads mirrored, let us know and we'll flip it.",
+      "url": "firmware/axis_175_fw_idf-v0.74.89-signed.bin",
+      "size_bytes": 1660400,
+      "sha256": "005c4a8a2dc0a75d9f94e13c6f450e4bd1389c0e5e32e55758824854d2075c7b",
+      "signed": true
+    },
+    {
       "version": "0.74.88",
       "date": "2026-11-04",
       "notes": "Steadier readouts: the Fuel % now holds a smooth average instead of swinging as fuel sloshes in corners, and the fuel-rail / oil pressure low-warning no longer flashes at start-up while the pressure is still building. A genuine low-pressure fault still alarms, and measurement accuracy is unchanged.",
