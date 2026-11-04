@@ -958,6 +958,13 @@
   ],
   "node": [
     {
+      "version": "0.5.32",
+      "date": "2026-11-04",
+      "notes": "แบตมอเตอร์ (SOC) และน้ำมันไม่ค้างตอนขับ EV อีกต่อไป เมื่อก่อนพอรถวิ่งด้วยมอเตอร์ (เครื่องดับ) เซนเซอร์จะหยุดอ่าน OBD เพื่อกันชนเกตเวย์ ทำให้ % แบต/น้ำมันค้างค่าเดิม ตอนนี้จะแอบอ่าน SOC เบา ๆ ทุก ~10 วิระหว่างขับ EV และถ้ารถหยุดตอบจะขึ้น STALE แทนเลขค้างหลอก ๆ อ่านเฉพาะตอนรถพร้อมวิ่งเท่านั้น ไม่อ่านตอนจอดชาร์จ จึงไม่กินไฟแบตและไม่กวนเกตเวย์ ไม่เปลี่ยนโปรโตคอล ใช้ได้กับเกจทุกเวอร์ชัน (OTA-safe). ⚠ รุ่นทดสอบ: ช่วยสังเกตว่าค่ากลับมาหรือเกตเวย์ล็อกไหมระหว่างขับ EV",
+      "url": "firmware/axis_can_node-v0.5.32.bin",
+      "size_bytes": 960720
+    },
+    {
       "version": "0.5.31",
       "date": "2026-11-03",
       "notes": "Boost responds much faster. The sensor was sharing its fast polling slots equally among every value on your gauge screen, so boost — the value you watch spool with the throttle — only refreshed a couple of times a second. It now gives the quick slots to the fast-moving values (boost, throttle, load) and polls the slow ones (temps, battery, voltage) in the background, so boost tracks the throttle 2-4x faster. No protocol change, works with any gauge version — OTA-safe.",
