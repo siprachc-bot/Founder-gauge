@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.94",
+      "date": "2026-11-04",
+      "notes": "Multi-gauge config sync with target picking: connect to one gauge, tick which other gauges (Gauge 1/2/3) should receive the setup, and it copies over the air to just those - or to all. Gauges now announce themselves so the app can list them.",
+      "url": "firmware/axis_175_fw_idf-v0.74.94-signed.bin",
+      "size_bytes": 1665168,
+      "sha256": "df305b325cae707e8d8ae5cb3073d236040078fd32eec3a4d7671a8b27dc11bc",
+      "signed": true
+    },
+    {
       "version": "0.74.93",
       "date": "2026-11-04",
       "notes": "Config sync: set up one gauge in the app, tap “Apply to all”, and every other AXIS gauge in the car copies the same pages, colours, units, redline and warnings over the air - no cable, no re-doing each one. It's a button you press on purpose, so a gauge you deliberately set up differently is left alone.",
@@ -62,55 +71,6 @@
       "url": "firmware/axis_175_fw_idf-v0.74.87-signed.bin",
       "size_bytes": 1659968,
       "sha256": "74d23074f8924c0fd17914bba5eea8c6ac0a226eb1d648ac66a628795f1a9a14",
-      "signed": true
-    },
-    {
-      "version": "0.74.86",
-      "date": "2026-11-04",
-      "notes": "New shift light: a steady flash with a matching beep that snaps on right at your shift RPM. The beep now uses the same clear tone as the warning alert and stays perfectly locked to the light — no fade-in and no drift, even when the screen is busy. Builds on the previous boost-response and smoothing fixes.",
-      "url": "firmware/axis_175_fw_idf-v0.74.86-signed.bin",
-      "size_bytes": 1659888,
-      "sha256": "d4c7cfba5ae9c564bb75979c87cdab9a17fdb2d20210f49318710c54a2a4c95b",
-      "signed": true
-    },
-    {
-      "version": "0.74.85",
-      "date": "2026-11-03",
-      "notes": "Boost responds faster: the gauge was adding noticeable lag to slow-updating readings (boost, pressures, mixture) by over-smoothing them — that's fixed, so boost tracks the throttle much more closely. Smooth channels stay smooth. Builds on the previous update (adaptive smoothing, boost arc centred with a -1 bar vacuum floor, on-screen update %, shift-light beep). Signed OTA.",
-      "url": "firmware/axis_175_fw_idf-v0.74.85-signed.bin",
-      "size_bytes": 1659456,
-      "signed": true
-    },
-    {
-      "version": "0.74.84",
-      "date": "2026-11-03",
-      "notes": "Smoother gauges: every reading now glides instead of stepping. Before, only RPM looked smooth because the other values arrive from the car in bursts — the gauge now eases between them at each channel's own pace, so boost, temps, pressures and the rest move smoothly. Boost gauge: zero stays dead-center and the vacuum side is pinned to -1 bar — it won't read or sweep past full vacuum no matter how high your boost scale is set. And while the gauge is updating its firmware it now shows a live \"UPDATING %\" screen instead of sitting on the tap-to-allow card. (Also includes the shift-light beep that ticks in time with the light.) Signed OTA.",
-      "url": "firmware/axis_175_fw_idf-v0.74.84-signed.bin",
-      "size_bytes": 1659440,
-      "signed": true
-    },
-    {
-      "version": "0.74.83",
-      "date": "2026-11-03",
-      "notes": "The shift-light beep is back — and now it ticks in time with the light. It starts beeping as the shift light comes on and speeds up to a rapid tick right at the limiter, so you can shift by ear without looking down. (Before, the tone was a single steady note at the shift point and didn't match the new fading/blinking light.) Signed OTA.",
-      "url": "firmware/axis_175_fw_idf-v0.74.83-signed.bin",
-      "size_bytes": 1661104,
-      "signed": true
-    },
-    {
-      "version": "0.74.82",
-      "date": "2026-11-03",
-      "notes": "New shift light: a red ring around the screen fades in as you approach your shift point and pulses faster and faster into a rapid strobe right at the limiter — easy to catch at the edge of your vision. Smoother alarms: the warning screen no longer stutters the moment it pops up. Faster readings: boost, O2, oil/fuel pressures and the power/torque numbers now respond noticeably quicker while staying rock-steady — no more lag on the values (under 200 ms). Also rolls in everything since the last update. Signed OTA.",
-      "url": "firmware/axis_175_fw_idf-v0.74.82-signed.bin",
-      "size_bytes": 1660848,
-      "signed": true
-    },
-    {
-      "version": "0.74.81",
-      "date": "2026-11-02",
-      "notes": "Fixes the new LANES live-graph page: the big value number was overlapping the channel name on each lane. The name now sits in a top band and the value in a bottom band with a clear gap between them. (If you don't have the LANES page yet, swipe to it or add it in the app.) Signed OTA.",
-      "url": "firmware/axis_175_fw_idf-v0.74.81-signed.bin",
-      "size_bytes": 1643408,
       "signed": true
     }
   ],
