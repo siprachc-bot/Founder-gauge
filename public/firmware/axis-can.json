@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.88",
+      "date": "2026-11-04",
+      "notes": "Steadier readouts: the Fuel % now holds a smooth average instead of swinging as fuel sloshes in corners, and the fuel-rail / oil pressure low-warning no longer flashes at start-up while the pressure is still building. A genuine low-pressure fault still alarms, and measurement accuracy is unchanged.",
+      "url": "firmware/axis_175_fw_idf-v0.74.88-signed.bin",
+      "size_bytes": 1660080,
+      "sha256": "a81aefd0e4098de21875491c6488a42442d9f7368711723aa37e27664654938f",
+      "signed": true
+    },
+    {
       "version": "0.74.87",
       "date": "2026-11-04",
       "notes": "The Air/Fuel (AF ACT) readout now settles to a steady average instead of flickering with every closed-loop swing, so it's easy to read at a glance while still tracking a real change when you get on the throttle. Measurement accuracy and every other channel are unchanged.",
