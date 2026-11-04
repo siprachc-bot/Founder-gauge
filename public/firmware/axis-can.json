@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.90",
+      "date": "2026-11-04",
+      "notes": "Shift light fixed & upgraded: it now blinks from your RPM warning up to the limiter, then holds a solid light + steady tone right near the limiter — before, it only fired at a single hidden 'shift RPM' that was easy to set above the revs you actually reach. Set your Redline (limiter) and RPM Warning and the light follows them. Works on any car.",
+      "url": "firmware/axis_175_fw_idf-v0.74.90-signed.bin",
+      "size_bytes": 1661184,
+      "sha256": "f249a1b4f8017f33d4418c33e9c424b3162a2fd4960764ad94a7a04ae6f78926",
+      "signed": true
+    },
+    {
       "version": "0.74.89",
       "date": "2026-11-04",
       "notes": "G-meter upgrade for the upright dash mount: it now levels against gravity in 3 axes, so cornering and accel/braking read on the correct screen axes regardless of how far the gauge is tilted. Double-tap the G-meter to re-zero/align it to your car. If any direction reads mirrored, let us know and we'll flip it.",
