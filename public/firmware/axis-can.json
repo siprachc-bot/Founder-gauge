@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.95",
+      "date": "2026-11-04",
+      "notes": "Day/night shortcut is now a TRIPLE-TAP (tap 3 times) instead of a two-finger tap. The 1.75 touch panel is single-touch, so the two-finger gesture never worked - triple-tap toggles day/night (dim) reliably and still syncs to the other gauges. Double-tap still shows peaks.",
+      "url": "firmware/axis_175_fw_idf-v0.74.95-signed.bin",
+      "size_bytes": 1665296,
+      "sha256": "3049126008b3a6ce3a2f6bd9e186e6c88e5e20493dfe2b13f22f7874a58cbe99",
+      "signed": true
+    },
+    {
       "version": "0.74.94",
       "date": "2026-11-04",
       "notes": "Multi-gauge config sync with target picking: connect to one gauge, tick which other gauges (Gauge 1/2/3) should receive the setup, and it copies over the air to just those - or to all. Gauges now announce themselves so the app can list them.",
@@ -62,15 +71,6 @@
       "url": "firmware/axis_175_fw_idf-v0.74.88-signed.bin",
       "size_bytes": 1660080,
       "sha256": "a81aefd0e4098de21875491c6488a42442d9f7368711723aa37e27664654938f",
-      "signed": true
-    },
-    {
-      "version": "0.74.87",
-      "date": "2026-11-04",
-      "notes": "The Air/Fuel (AF ACT) readout now settles to a steady average instead of flickering with every closed-loop swing, so it's easy to read at a glance while still tracking a real change when you get on the throttle. Measurement accuracy and every other channel are unchanged.",
-      "url": "firmware/axis_175_fw_idf-v0.74.87-signed.bin",
-      "size_bytes": 1659968,
-      "sha256": "74d23074f8924c0fd17914bba5eea8c6ac0a226eb1d648ac66a628795f1a9a14",
       "signed": true
     }
   ],
