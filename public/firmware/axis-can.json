@@ -2,6 +2,15 @@
   "_schema": "axis-can-firmware/v1",
   "monitor": [
     {
+      "version": "0.74.92",
+      "date": "2026-11-04",
+      "notes": "Day/Night switch: tap the screen with TWO fingers to flip between day and night brightness - no app, no clock needed, and it's remembered after you turn the car off. If you run more than one gauge, toggling one dims them all together.",
+      "url": "firmware/axis_175_fw_idf-v0.74.92-signed.bin",
+      "size_bytes": 1661584,
+      "sha256": "1c32ef439b00cf8f5c7d15e1bc5b3a938068ae77be8eb58cd32ea890ead134d1",
+      "signed": true
+    },
+    {
       "version": "0.74.91",
       "date": "2026-11-04",
       "notes": "Shift tone reworked: now a smooth sustained tone (no more beeping) that sounds only while the revs are climbing — it cuts out the moment you lift or shift. The shift light itself is unchanged.",
