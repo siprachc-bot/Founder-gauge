@@ -76,6 +76,13 @@
   ],
   "node": [
     {
+      "version": "0.5.35",
+      "date": "2026-11-11",
+      "notes": "รองรับรถที่มีแค่เซนเซอร์ OBD + หัวเกียร์ (ไม่มีจอ 1.75) ให้ปลอดการกวนเกตเวย์ตอนจอด: เดิม (v0.5.34) ด่านกันการจอดดูสัญญาณจากจอ 1.75 อย่างเดียว รถที่ไม่มีจอจึงไม่เข้าเงื่อนไข เวอร์ชันนี้ใช้หัวเกียร์เป็นสัญญาณแทนได้ด้วย เพราะหัวเกียร์กินไฟ ACC (ดับเมื่อปิดสวิตช์) และกระจายสัญญาณเกียร์ 10 ครั้ง/วินาทีอยู่แล้ว พอจอด/ปิดสวิตช์ หัวเกียร์ดับ node จะหยุดยิง OBD ทันที เหมือนกรณีมีจอ ไม่แตะเฟิร์มแวร์หัวเกียร์ ไม่แตะการสตรีมปกติและสลีป ใช้ได้กับทุกอุปกรณ์ (OTA-safe) เสริมกับ v0.5.33/v0.5.34. ⚠ ลองดูว่าค่ากลับมาไวตอนเปิดสวิตช์ และตอนจอดไม่มี poke",
+      "url": "firmware/axis_can_node-v0.5.35.bin",
+      "size_bytes": 951328
+    },
+    {
       "version": "0.5.34",
       "date": "2026-11-11",
       "notes": "เซนเซอร์ (node) เสียบ OBD ซึ่งมีไฟตลอดเวลาแม้ดับเครื่อง ส่วนเกจเสียบ USB ที่มีไฟเฉพาะตอนเปิดสวิตช์ (ACC) รุ่นนี้ให้ node ยิง OBD เฉพาะตอน 'ได้ยินเกจ' (เกจกระจายสัญญาณทุก 3 วินาทีเมื่อมีไฟ) พอจอดแล้วเกจดับ node จะหยุดยิง OBD ทันที จึงไม่ไปกวนเกตเวย์ตอนรถจอด/ชาร์จอีก ไม่แตะการสตรีมค่าปกติและโหมดสลีป ใช้ได้กับเกจทุกเวอร์ชัน (OTA-safe) เสริมกับ v0.5.33 ที่คุมอัตราตอนขับ EV. ⚠ ลองดูว่าค่ากลับมาไวตอนเปิดสวิตช์ และตอนจอดไม่มี poke",
@@ -123,13 +130,6 @@
       "notes": "Fixes cars other than the Volvo showing no values. A change made for battery-saving on the Volvo accidentally treated any car without Volvo's specific data broadcast as 'off', so the sensor slept instead of reading it. It now recognises any running car by its live bus activity, so other makes read their engine data again — while the Volvo's parked battery-saving is kept.",
       "url": "firmware/axis_can_node-v0.5.26.bin",
       "size_bytes": 934848
-    },
-    {
-      "version": "0.5.25",
-      "date": "2026-08-13",
-      "notes": "Every value on a page now updates live. Before, only the first two values on a page refreshed quickly and the third and fourth lagged; now the sensor fast-polls all of the values you have on screen, so a hero page (big value plus its supporting figures) or a five-arc page updates smoothly across the board.",
-      "url": "firmware/axis_can_node-v0.5.25.bin",
-      "size_bytes": 934624
     }
   ]
 }
