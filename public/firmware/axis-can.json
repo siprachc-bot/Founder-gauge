@@ -76,6 +76,13 @@
   ],
   "node": [
     {
+      "version": "0.5.34",
+      "date": "2026-11-11",
+      "notes": "เซนเซอร์ (node) เสียบ OBD ซึ่งมีไฟตลอดเวลาแม้ดับเครื่อง ส่วนเกจเสียบ USB ที่มีไฟเฉพาะตอนเปิดสวิตช์ (ACC) รุ่นนี้ให้ node ยิง OBD เฉพาะตอน 'ได้ยินเกจ' (เกจกระจายสัญญาณทุก 3 วินาทีเมื่อมีไฟ) พอจอดแล้วเกจดับ node จะหยุดยิง OBD ทันที จึงไม่ไปกวนเกตเวย์ตอนรถจอด/ชาร์จอีก ไม่แตะการสตรีมค่าปกติและโหมดสลีป ใช้ได้กับเกจทุกเวอร์ชัน (OTA-safe) เสริมกับ v0.5.33 ที่คุมอัตราตอนขับ EV. ⚠ ลองดูว่าค่ากลับมาไวตอนเปิดสวิตช์ และตอนจอดไม่มี poke",
+      "url": "firmware/axis_can_node-v0.5.34.bin",
+      "size_bytes": 951328
+    },
+    {
       "version": "0.5.33",
       "date": "2026-11-11",
       "notes": "แก้เกตเวย์ล็อกตอนขับ EV นาน ๆ รุ่น v0.5.32 แอบอ่าน SOC ทุก 8 วิระหว่างวิ่งด้วยมอเตอร์ ซึ่งถี่เกินไปเมื่อขับ EV ยาว ๆ เลยไปสะสมจนเกตเวย์ Volvo ล็อก (เหลือแต่รอบ/ความเร็ว ค่าอื่นหาย) รุ่นนี้ผ่อนเป็นทุก 30 วิ (อัตราที่พิสูจน์แล้วว่าเกตเวย์รับไหว) แบตมอเตอร์ยังขยับทุก ~40 วิไม่ค้าง ไม่เปลี่ยนโปรโตคอล ใช้ได้กับเกจทุกเวอร์ชัน (OTA-safe). ⚠ ช่วยลองขับ EV ยาว ๆ 1 รอบ ว่าไม่ล็อกอีก",
@@ -123,13 +130,6 @@
       "notes": "Every value on a page now updates live. Before, only the first two values on a page refreshed quickly and the third and fourth lagged; now the sensor fast-polls all of the values you have on screen, so a hero page (big value plus its supporting figures) or a five-arc page updates smoothly across the board.",
       "url": "firmware/axis_can_node-v0.5.25.bin",
       "size_bytes": 934624
-    },
-    {
-      "version": "0.5.24",
-      "date": "2026-07-24",
-      "notes": "The smaller (2nd) value on a gauge page now refreshes as fast as the main value — the two stay in sync with no lag between them.",
-      "url": "firmware/axis_can_node-v0.5.24.bin",
-      "size_bytes": 934576
     }
   ]
 }
